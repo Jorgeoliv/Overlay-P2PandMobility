@@ -1,0 +1,19 @@
+Formar a rede:
+
+-> Cada peer deve ser identificado unicamente por um ID (neste caso um nome)
+
+-> Se um nodo não encontrar, após várias tentativas, outro nodo que pertença à rede então ele pode conformar-se a ficar sozinho na rede
+    => No entanto acho boa ideia ele periodicamente tentar encontrar novos elementos
+
+-> Uma condição para que um nodo esteja na rede P2P pode ser a de ter de estar ligado a N nodos (para efeitos de experiência podem ser 2)
+    => Isto pode ajudar no caso da descoberta da rede e de o nodo estar "sozinho". Desta forma ele não tenta apenas uma vez para se ligar à rede, mas vai tentando em intervalos de tempo para ter os N nodos conectados
+    => Isto pode fazer sentido ou não ... Porque mesmo que ele não tente encontrar mais nenhum, supostamente quando um nodo estiver ao alcance vai tentar comunicar com ele ... Mas no caso de um nodo já estiver ao alcance e na rede se calhar não vai andar à procura de novos nodos da P2P, pelo que é responsabilidade do nodo que está sozinho em se juntar à rede ...
+
+-> Uma vez na rede os nodos devem periodicamente enviar mensagens "isAlived" para os seus vizinhos. Caso não recebam resposta podem retirar a conectivdade do vizinho e procurar por um novos
+
+-> Os nodos devem ainda ser capazes de enviar mensagens a informar que vão abandonar a rede
+
+Extra:
+
+-> Para além de se ligar aos mais pertos, pode pedir aos vizinhos nodos que estejam mais longe para depois ter um caminho mais perto para nodos que possam estar mais longe. Isto são tipo "atalhos" para nodos distantes
+
