@@ -12,25 +12,50 @@ Formar a rede:
 -> Se um nodo não encontrar, após várias tentativas, outro nodo que pertença à rede então ele pode conformar-se a ficar sozinho na rede
     => No entanto acho boa ideia ele periodicamente tentar encontrar novos elementos
     
--> Uma vez na rede os nodos devem periodicamente enviar mensagens "isAlived" para os seus vizinhos. Caso não recebam resposta podem retirar a conectivdade do vizinho e procurar por um novos
+-> Uma vez na rede os nodos devem periodicamente enviar mensagens "isAlive" para os seus vizinhos. Caso não recebam resposta podem retirar a conectivdade do vizinho e procurar por um novos
 
 -> Os nodos devem ainda ser capazes de enviar mensagens a informar que vão abandonar a rede
 
 -> Cada nodo deve de guardar duas HashTables:
     => Uma para identificar os nodos vizinhos
-    => E outra para identificar onde se encontra o conteúdo
+    => E outra para identificar onde se encontra o conteúdo (ficheiros)
 
 -> Para não termos problemas a enviar os ficheiros, ao invés de o ritmo ser determinado por quem envia, pode ser determinado por quem recebe
     => Onde são feitos vários "request/reply" ou "pull/push" (almost same thing ...) pelo "recetor" do conteúdo
 
 -> Se quisermos fazer poliferação de conteúdo, i.e, o nodo que recebe o conteúdo envia para os outros, podemos apenas enviar um cabeçalho e não o conteúdo para informar os nodos vizinhos se querem a informação ou não
+Por exemplo quando um nodo recebe um ficheiro deve partilhá-lo com os outros? 
+    Se sim para fazer isso podemos só mandar uma espécie de cabeçalho para os vizinhos para saber se eles querem o ficheiro ou não
+        Não sei se é bem assim que se faz para ter o ficheiro em vários nodos. Ou se simplesmente fica só para o nodo que o pediu.
+            Se tivermos isto, antes de pedir o ficheiro o nodo tem de verificar se já o tem, não? Para não andar a pedir ficheiros que já possui
+                Acho que isto também pode ser bom para o caso de um nodo morrer termos a certeza de que os ficheiros estão nos seus vizinhos
 
-Procolos:
+Mensagens:
 
 Ping -> Para descoberta de novos nodos na rede. Deve de enviar a informação básica do nodo
 
 Pong -> Para responder se está na rede ou não. Deve de enviar a informação do nodo e ainda os seus vizinhos
 
-isAlived -> Mensagem periódica para saber se o seu vizinho está up
+isAlive -> Mensagem periódica para saber se o seu vizinho está up
+
+Quit -> Informa que vai sair e envia os ficheiros que tem? (pode distribuir os ficheiros para os diferentes vizinhos e não lhe mandar ficheiros que já tenha)
+    Se mandarmos os ficheiros para os vizinhos, convem por exemplo mandar um ficheiros para 2 viznhos no minimo?
+
+DiscoveryContent -> Pede a um nodo um ficheiro ou parte de um ficheiro (tem de mandar o id do pedido - fase da descoberta)
+    Não sei bem como é que é possivel mandar em várias partes um ficheiro utilizando UDP ...
+
+UpdateTable -> atualiza a tabela dos vizinhos ou pede atualização do vizinho
+
+???headFile -> para o caso de querermos enviar apenas informações do cabeçalho para um vizinho relativas a um ficheiro que possui
+
+PullContent -> para receber um ficheiro
+
+PushContent -> para enviar o ficheiro
+
+ack -> confirma a mensagem (pode funcionar para qualquer mensagem)
+
+update tabela
+
+
 
 (... em construção)
