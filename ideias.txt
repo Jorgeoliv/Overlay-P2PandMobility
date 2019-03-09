@@ -46,8 +46,6 @@ DiscoveryContent -> Pede a um nodo um ficheiro ou parte de um ficheiro (tem de m
 
 UpdateTable -> atualiza a tabela dos vizinhos ou pede atualização do vizinho
 
-???headFile -> para o caso de querermos enviar apenas informações do cabeçalho para um vizinho relativas a um ficheiro que possui
-
 PullContent -> para receber um ficheiro
 
 PushContent -> para enviar o ficheiro

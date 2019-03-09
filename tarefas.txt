@@ -1,0 +1,100 @@
+Interação:
+
+-> Criar um menu para tratar da interação com o "nodo"? Tipo fazer upload do ficheiro, ou então pedir um ficheiro
+
+Comunicação:
+
+====> Fazer parsing das mensagens ou então, em algumas, dividir em diferentes portas? 
+    Ver qual a melhor estratégia, colocar os prós e contras (pensar neste aspeto)
+
+
+Identificador:
+
+Como escolher? No inicio IP+Porta? Como é que escolhemos o ip e a porta? UTILIZAMOS O IP DO CORE
+
+
+(Fase 2)Quando atribuirmos mobilidade temos de identificar unicamente por nome, sem ser por IP porque ele pode alterar o seu IP
+--> Neste caso vai ser preciso que sempre que recebamos uma mensagem temos de verificar qual o IP 
+    de onde veio para podermos saber se o IP de algum nodo foi alterado ou não
+
+Routing Pedidos:
+
+    Posso falar logo diretamente, porque neste cenario concreto no trabalho pode ser possivel que é uam rede móvel
+    em que todos têm comunicação entre outros
+
+Tabelas:
+
+ - Com a identificação dos vizinhos (idVizinho -> ipVizinho)
+ - Identificação do Conteúdo (idFile -> ListaVizinhos)
+ - O meu conteúdo (os ficheiros que eu tenho)
+ - Informação sobre os pedidos efetuados, onde temos de ter um estado se já foi respondido ou não
+
+Mensagens:
+
+Cabeçalho
+
+ - Identificador pedido -> Hash (identificador nodo, timestamp, random)
+ - Qual o tipo de mensagem
+ - Identificador do nodo
+ - Timestamp?****************** (posteriormente)
+
+Ping: Necessário efetuar um multicast.
+Questão: ====> Temos de criar um grupo, vamos assumir por exemplo um endereço: "230.0.0.0" e porta 4321?
+    SIM É DESTA FORMA!
+
+Pong: 
+    - Os seus vizinhos
+    - O identificador Ping
+
+    VER A ESTRATÉGIA PARA ESCOLHER VIZINHOS
+
+neighbourConfirmation:
+
+ - Para confirmar que vão ser vizinhos
+ - Mando a lista com os ficheiros que possui
+
+alive:
+    
+    - Temos de ter uma thread de x em x tempo incrementar o contador do "alive"
+        Sempre que recebemos um pacote UDP relativo ao "alive" de um nodo, temos que por o contador deste a 0
+        Se o contador chegar a um valor y (a definir), assumimos que foi perdida conectividade com este nodo
+            Neste caso será necessário encontrar um novo vizinho, perguntando aos vizinhos atuais pelos seus vizinhos e escolhendo um
+
+newNeighbour:
+
+    - Pede aos seus viznhos quem é que eles conhecem para depois selecionar um novo vizinho
+
+quit: 
+    - Informa apenas que vai sair da rede.
+    Os vizinhos têm de atualizar a tabela e utilizar uma estratégia igual de descoberta de vizinho como no "alive"
+
+ContentDiscovery:
+
+    - Se tiver nos viznhos envia uma mensagem unicast para o vizinho correspondente
+    - Senão é um flooding por todos os vizinhos
+
+    ====> Vale a pena fazer uma procura multicast para um nodo que esteja perto e que não esteja nos vizinhos?
+            Iamos procurar de dudas formas, no mundo fisico e na nossa rede lógica
+
+    O nodo antecessor de quem tem o ficheiro comunica diretamente (através de uma mensagem ContentOwner)
+
+ContentOwner:
+
+    - Numa primeira tentativa envia diretamente a informação para o nodo "questionador" sobre o dono do ficheiro (identificador, IP, info do ficheiro)
+    - Caso não receba um ack, envia pela rede
+
+UpdateTable:
+
+    - Informa os vizinhos sobre a remoção ou adição de conteúdo
+
+PullContent:
+
+    - Diz qual o tamanho do buffer, MTU, ritmo de pacotes segundo, o identificador do ficheiro
+    - Tentamos diretamente ou então tem de ir pela Rede P2P
+
+PushContent:
+
+    - basicamente envia o ficheiro (se for bem comportado, envia consoante as caraterisitcas pedidas)
+        *****Depois podemos cifrar o conteudo
+    - Tentamos diretamente ou então tem de ir pela Rede P2P
+
