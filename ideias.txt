@@ -32,25 +32,29 @@ Por exemplo quando um nodo recebe um ficheiro deve partilhá-lo com os outros?
 
 Mensagens:
 
-Ping -> Para descoberta de novos nodos na rede. Deve de enviar a informação básica do nodo
+    1 thread:
+        Ping -> Para descoberta de novos nodos na rede. Deve de enviar a informação básica do nodo
 
-Pong -> Para responder se está na rede ou não. Deve de enviar a informação do nodo e ainda os seus vizinhos
+        Pong -> Para responder se está na rede ou não. Deve de enviar a informação do nodo e ainda os seus vizinhos
 
-isAlive -> Mensagem periódica para saber se o seu vizinho está up
+        isAlive -> Mensagem periódica para saber se o seu vizinho está up
 
-Quit -> Informa que vai sair e envia os ficheiros que tem? (pode distribuir os ficheiros para os diferentes vizinhos e não lhe mandar ficheiros que já tenha)
-    Se mandarmos os ficheiros para os vizinhos, convem por exemplo mandar um ficheiros para 2 viznhos no minimo?
+        Quit -> Informa que vai sair e envia os ficheiros que tem? (pode distribuir os ficheiros para os diferentes vizinhos e não lhe mandar ficheiros que já tenha)
+            Se mandarmos os ficheiros para os vizinhos, convem por exemplo mandar um ficheiros para 2 viznhos no minimo?
 
-DiscoveryContent -> Pede a um nodo um ficheiro ou parte de um ficheiro (tem de mandar o id do pedido - fase da descoberta)
-    Não sei bem como é que é possivel mandar em várias partes um ficheiro utilizando UDP ...
+        DiscoveryContent -> Pede a um nodo um ficheiro ou parte de um ficheiro (tem de mandar o id do pedido - fase da descoberta)
+            Não sei bem como é que é possivel mandar em várias partes um ficheiro utilizando UDP ...
 
-UpdateTable -> atualiza a tabela dos vizinhos ou pede atualização do vizinho
+        UpdateTable -> atualiza a tabela dos vizinhos ou pede atualização do vizinho
+        
+        ack -> confirma a mensagem (pode funcionar para qualquer mensagem)
 
-PullContent -> para receber um ficheiro
+    multiplas threads:
+        PullContent -> para receber um ficheiro
 
-PushContent -> para enviar o ficheiro
+        PushContent -> para enviar o ficheiro
 
-ack -> confirma a mensagem (pode funcionar para qualquer mensagem)
+
 
 update tabela
 
