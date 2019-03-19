@@ -1,0 +1,26 @@
+-> StartP2P => Main e vai conter a interface para interagir com o utilizador
+
+-> Cada mensagem dará origem a uma classe em java. Com a ressalva que todas vão fazer um <<extends>> à Header
+
+-> CreatePacket => para criar os pacotes (um método por pacote)
+
+-> SendUnicast e SendMultiCast
+
+-> Nodo => info do nodo
+
+-> FileInfo => contém a meta-informação de um ficheiro
+
+-> File => contém todos os métodos e restante informação necessária para manipular um ficheiro
+
+-> NetworkTables => info sobre a <<rede>> de vizinhos de um nodo
+    - tabela dos vizinhos N1 (HashTable: ID do nodo -> Nodo)
+    - tabela dos vizinhos N2 (HashTable: ID do nodo -> Nodo)
+    - tabela dos vizinhos N3 ???????????????????????
+
+-> FileTables => info sobre os ficheiros de um nodo
+    - os meus ficheiros (HashTable:  Nome ficheiro -> ficheiro (File))
+    - os ficheiros presentes nos meus vizinhos (HashTable: Nome ficheiro -> Lista de vizinhos que possuem o ficheiro (ArrayList<Nodo>))
+
+-> RequestTables => info sobre os pedidos que um nodo fez "root" e que pediu. POR TAMBÉM AQUELES QUE ELE ERA O DESTINO?
+    - lista de pedidos que teve de efetuar root (basicamente todos os pedidos que lhe chegam)
+    - lista de pedidos efetuados

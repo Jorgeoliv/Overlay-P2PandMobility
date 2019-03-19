@@ -21,15 +21,6 @@
     </build>
 
     <dependencies>
-        <!-- https://mvnrepository.com/artifact/org.zeromq/jeromq -->
-        <dependency>
-            <groupId>org.zeromq</groupId>
-            <artifactId>jeromq</artifactId>
-            <version>0.3.5</version>
-        </dependency>
-
-
-
     </dependencies>
 
 

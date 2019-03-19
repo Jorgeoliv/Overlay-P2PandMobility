@@ -4,8 +4,6 @@ import java.util.ArrayList;
 import files.*;
 import mensagens.*;
 import network.*;
-import org.zeromq.ZMQ;
-import sun.misc.Request;
 
 public class StartP2P {
 
@@ -58,6 +56,7 @@ public class StartP2P {
         } catch (UnknownHostException e) {
             e.printStackTrace();
         }
+
     }
 
 }
