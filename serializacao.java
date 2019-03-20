@@ -1,3 +1,12 @@
+/**
+ * Maven dependency:
+ * <dependency>
+        <groupId>com.esotericsoftware</groupId>
+        <artifactId>kryo</artifactId>
+        <version>4.0.1</version>
+    </dependency>
+ */
+
 Serialize:
 
 ByteArrayOutputStream bStream = new ByteArrayOutputStream();
