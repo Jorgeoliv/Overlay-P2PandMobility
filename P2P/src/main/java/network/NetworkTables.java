@@ -1,32 +1,72 @@
 package network;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Hashtable;
+import files.FileTables;
+
+import java.util.*;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class NetworkTables{
 
-    private Hashtable<String, Nodo> nbrN1 = new Hashtable<>(); //vizinhos nivel 1
+    private HashMap<String, Nodo> nbrN1 = new HashMap<>(); //vizinhos nivel 1
     private ReentrantLock rlN1 = new ReentrantLock();
-    private Hashtable<String, Nodo> nbrN2 = new Hashtable<>(); //vizinhos nivel 2
+    private HashMap<String, ArrayList<Nodo>> nbrN2 = new HashMap<>(); //vizinhos nivel 2 (ID string n1 -> vizinhos nivel2 que passam por este de nivel1)
     private ReentrantLock rlN2 = new ReentrantLock();
     // ??????? Hashtable<String, Nodo> nbrN3 = new Hashtable<>(); //vizinhos nivel 3 ???????
 
+    //
+    private HashMap<String, Integer> nbrUp = new HashMap<>();
+    private ReentrantLock rlUp = new ReentrantLock();
 
-    public NetworkTables(){
+    private FileTables ft;
 
+
+    public NetworkTables(FileTables ft){
+        this.ft = ft;
+    }
+
+    public ArrayList<Nodo> getNbrsN1(){
+        rlN1.lock();
+        try{
+            return (new ArrayList<Nodo>(nbrN1.values()));
+        }finally {
+            rlN1.unlock();
+        }
+    }
+
+    private ArrayList<Nodo> concat(ArrayList<Nodo> a1, ArrayList<Nodo> a2){
+        a1.addAll(a2);
+        return a1;
+    }
+
+    public ArrayList<Nodo> getNbrsN2(){
+        rlN2.lock();
+        try{
+            Optional<ArrayList<Nodo>> a = nbrN2.values().stream().reduce((x, y) -> concat(x, y));
+            if(a.isPresent()) {
+                HashSet<Nodo> b = new HashSet<Nodo>(a.get());
+                return new ArrayList<>(b);
+            }else{
+                return new ArrayList<>();
+            }
+        }finally {
+            rlN2.unlock();
+        }
     }
 
     public void addNbrN1(ArrayList<Nodo> nodos){
 
         rlN1.lock();
+        rlUp.lock();
         try{
-            for(Nodo n: nodos)
+            for(Nodo n: nodos) {
                 nbrN1.put(n.id, n);
+                nbrUp.put(n.id, 0);
+            }
         }finally {
             rlN1.unlock();
+            rlUp.unlock();
         }
+        System.out.println(nbrN1.toString());
 
     }
 
@@ -42,28 +82,80 @@ public class NetworkTables{
 
     }
 
-    public void addNbrN2(ArrayList<Nodo> nodos){
-
+    public void addNbrN2(String id, ArrayList<Nodo> nodos){
         rlN2.lock();
         try{
-            for(Nodo n: nodos)
-                nbrN2.put(n.id, n);
+            ArrayList<Nodo> aux = nbrN2.get(id);
+            if(aux == null)
+                aux = new ArrayList<>();
+            aux.addAll(nodos);
+            nbrN2.put(id, aux);
         }finally {
             rlN2.unlock();
         }
 
     }
 
-    public void rmNbrN2(ArrayList<Nodo> nodos){
-
+    public void rmNbrN2(String id, ArrayList<Nodo> nodos){
         rlN2.lock();
         try{
-            for(Nodo n: nodos)
-                nbrN2.remove(n);
+            ArrayList<Nodo> aux = nbrN2.get(id);
+            if(aux == null)
+                aux = new ArrayList<>();
+            aux.removeAll(nodos);
+            nbrN2.put(id, aux);
         }finally {
             rlN2.unlock();
         }
 
+    }
+
+
+    /**
+     * Para fazer reset a um determinado nodo
+     * Despoltado por um alive que se recebeu
+     * @param id
+     */
+    public void reset(String id){
+        rlUp.lock();
+        try{
+            System.out.println("LA VOU EU FAZER UM RESET!! " + id);
+            nbrUp.put(id, 0);
+            System.out.println(nbrUp);
+        }finally {
+            rlUp.unlock();
+        }
+    }
+
+    /**
+     * Para incrementar o valor dos "ups". Se atingir o valor de 3 para algum vizinho quer dizer que deixou de ser um vizinho
+     */
+    public void inc(){
+        rlUp.lock();
+        try{
+            for(Map.Entry<String, Integer> a: this.nbrUp.entrySet()){
+                int value = a.getValue();
+                value++;
+                if(value == 3){
+                    //Temos de eliminar o vizinho ...
+                    System.out.println("VAMOS LA ELIMINAR UM GAJO DE UM VIZNHO!!!! " + a.getKey());
+                    rlN1.lock();
+                    rlN2.lock();
+                    String id = a.getKey();
+                    nbrN1.remove(id);
+                    nbrN2.remove(id);
+                    nbrUp.remove(id);
+                    ft.rmNbr(id);
+                    rlN1.unlock();
+                    rlN2.unlock();
+                }else
+                    this.nbrUp.put(a.getKey(), value);
+            }
+        }finally {
+            rlUp.unlock();
+        }
+
+        System.out.println("O valor é: " + nbrUp.toString());
     }
 
 //    @Override

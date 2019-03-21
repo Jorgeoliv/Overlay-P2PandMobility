@@ -2,15 +2,21 @@ package mensagens;
 
 import network.*;
 
-public class Header {
+import java.io.Serializable;
 
-    String requestID; //id referente ao pedido
+public class Header /*implements Serializable*/ {
+
+    public String requestID; //id referente ao pedido
     /**
      * VAMOS POR O TIPO DE MENSAGEM?
      */
-    Nodo origin; //Info do nodo origem
-    Nodo antecessor; //Info do nodo que fez "root"
-    long ttl = 1; //time to live de uma pacote, por defeito tem o valor 1
+    public Nodo origin; //Info do nodo origem
+    public Nodo antecessor; //Info do nodo que fez "root"
+    public long ttl = 1; //time to live de uma pacote, por defeito tem o valor 1
+
+    public Header(){
+
+    }
 
     public Header(String requestID, Nodo origin, Nodo antecessor, long ttl) {
         this.requestID = requestID;

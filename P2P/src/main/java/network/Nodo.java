@@ -1,16 +1,21 @@
 package network;
 
+import java.io.Serializable;
+import java.net.InetAddress;
 import java.util.Objects;
 
-public class Nodo {
+public class Nodo /*implements Serializable*/ {
 
-    String id; //representa o id do Nodo => Posteriormente o nome (para já é o ID?)
-    String ip;
+    public String id; //representa o id do Nodo => Posteriormente o nome (para já é o ID?)
+    public InetAddress ip;
 
     //MAIS ALGUMA COISA???
 
+    public Nodo(){
 
-    public Nodo(String id, String ip) {
+    }
+
+    public Nodo(String id, InetAddress ip) {
         this.id = id;
         this.ip = ip;
     }
@@ -26,5 +31,13 @@ public class Nodo {
     @Override
     public int hashCode() {
         return Objects.hash(id);
+    }
+
+    @Override
+    public String toString() {
+        return "Nodo{" +
+                "id='" + id + '\'' +
+                ", ip='" + ip + '\'' +
+                '}';
     }
 }
