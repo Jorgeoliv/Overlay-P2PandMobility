@@ -139,15 +139,19 @@ public class NetworkTables{
                 if(value == 3){
                     //Temos de eliminar o vizinho ...
                     System.out.println("VAMOS LA ELIMINAR UM GAJO DE UM VIZNHO!!!! " + a.getKey());
-                    rlN1.lock();
-                    rlN2.lock();
                     String id = a.getKey();
+
+                    rlN1.lock();
                     nbrN1.remove(id);
-                    nbrN2.remove(id);
-                    nbrUp.remove(id);
-                    ft.rmNbr(id);
                     rlN1.unlock();
+
+                    rlN2.lock();
+                    nbrN2.remove(id);
                     rlN2.unlock();
+
+                    nbrUp.remove(id);
+
+                    ft.rmNbr(id);
                 }else
                     this.nbrUp.put(a.getKey(), value);
             }
