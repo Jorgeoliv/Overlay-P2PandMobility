@@ -102,6 +102,7 @@ public class AliveSupport implements Runnable {
                     System.out.println("ALIVE:::: " + alive);
 
                     nt.reset(alive.origin.id);
+                    nt.updateNbrN2(alive.origin.id, alive.nbrN1);
                 }
 
 
