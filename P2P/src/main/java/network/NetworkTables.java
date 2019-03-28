@@ -96,6 +96,16 @@ public class NetworkTables{
 
     }
 
+    public void updateNbrN2(String id, ArrayList<Nodo> nodos){
+        rlN2.lock();
+        try{
+            nbrN2.put(id, nodos);
+        }finally {
+            rlN2.unlock();
+        }
+
+    }
+
     public void rmNbrN2(String id, ArrayList<Nodo> nodos){
         rlN2.lock();
         try{

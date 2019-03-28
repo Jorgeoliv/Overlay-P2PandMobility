@@ -6,8 +6,8 @@ import network.*;
 
 public class Alive extends Header /*implements Serializable*/ {
 
-    ArrayList<Nodo> nbrN1 = new ArrayList<Nodo>(); //lista de vizinhos nivel 1
-    ArrayList<Nodo> nbrN2 = new ArrayList<Nodo>(); //lista de vizinhos de nivel 2
+    public ArrayList<Nodo> nbrN1 = new ArrayList<Nodo>(); //lista de vizinhos nivel 1
+    public ArrayList<Nodo> nbrN2 = new ArrayList<Nodo>(); //lista de vizinhos de nivel 2
 
     public Alive(){
         super();
