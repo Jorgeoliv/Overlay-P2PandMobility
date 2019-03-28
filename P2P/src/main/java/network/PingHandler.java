@@ -21,25 +21,36 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class PingHandler implements Runnable{
-    public Nodo myNode;
-    public ArrayList<Nodo> myN1Nbrs;
-    public ArrayList<Nodo> myN2Nbrs;
+    private int softcap;
+    private int hardcap;
 
-    public InetAddress groupIP;
-    public int mcport;
-    public int ucport;
-    public int ttl;
+    private NetworkHandler nh;
 
-    public MulticastSocket mcs;
+    private Nodo myNode;
+    private ArrayList<Nodo> myN1Nbrs;
+    private ArrayList<Nodo> myN2Nbrs;
+
+    private InetAddress groupIP;
+    private int mcport;
+    private int ucport;
+    private int ttl;
+
+    private MulticastSocket mcs;
     private DatagramSocket ucs;
 
-    public NetworkTables nt; //Para obter os vizinhos
-    public ArrayList<DatagramPacket> pingTray; //Tabuleiro de DatagramPackets
+    private NetworkTables nt; //Para obter os vizinhos
+    private ArrayList<DatagramPacket> pingTray; //Tabuleiro de DatagramPackets
 
-    public int standartNumNbrs;
     private ReentrantLock trayLock;
+    private IDGen idGen;
 
-    public PingHandler(Nodo myNode, InetAddress ip, int mcport, int ucport, int ttl, NetworkTables nt, int standartNumNbrs){
+    public PingHandler(int softcap, int hardcap, NetworkHandler nh, IDGen idGen, Nodo myNode, InetAddress ip, int mcport, int ucport, int ttl, NetworkTables nt){
+        this.softcap = softcap;
+        this.hardcap = hardcap;
+
+        this.nh = nh;
+        this.idGen = idGen;
+
         this.myNode = myNode;
         this.myN1Nbrs = null;
         this.myN2Nbrs = null;
@@ -53,7 +64,6 @@ public class PingHandler implements Runnable{
 
         this.pingTray = new ArrayList<DatagramPacket>();
 
-        this.standartNumNbrs = standartNumNbrs;
         this.trayLock = new ReentrantLock();
 
         try {
@@ -67,11 +77,14 @@ public class PingHandler implements Runnable{
 
     }
 
-    Runnable sendPing = () -> {
+    private Runnable sendPing = () -> {
         myN1Nbrs = nt.getNbrsN1();
         myN2Nbrs = nt.getNbrsN2();
 
-        Ping ping = new Ping("teste", myNode, ttl, myN1Nbrs, myN2Nbrs);
+        String id = this.idGen.getID();
+        Ping ping = new Ping(id, myNode, ttl, myN1Nbrs, myN2Nbrs);
+
+        this.nh.registerPing(id);
 
         ByteArrayOutputStream bStream = new ByteArrayOutputStream();
         Output output = new Output(bStream);
@@ -87,13 +100,13 @@ public class PingHandler implements Runnable{
 
         try {
             new MulticastSocket().send(packet);
-            System.out.println("PING ENVIADO\n");
+            System.out.println("PING "+ id + "ENVIADO\n");
         } catch (IOException e) {
             e.printStackTrace();
         }
     };
 
-    Runnable emptyTray = () -> {
+    private Runnable emptyPingTray = () -> {
         byte[] buf;
         Kryo kryo = new Kryo();
 
@@ -110,9 +123,10 @@ public class PingHandler implements Runnable{
             if(header instanceof Ping){
                 Ping ping = (Ping) header;
 
-                if (analisePing(ping))
+                if (analisePing(ping)) {
                     sendPong(ping);
-
+                    this.nh.registerNode(ping.requestID, ping.origin);
+                }
                 else
                     System.out.println("NÃO PRECISO DE ENVIAR PONG");
             }
@@ -125,8 +139,10 @@ public class PingHandler implements Runnable{
     };
 
     private void sendPong(Ping ping) {
-        Pong pong = new Pong("resposta", this.myNode, 64, ping.requestID, this.myN1Nbrs, this.myN2Nbrs);
 
+        Pong pong = new Pong(this.idGen.getID(), this.myNode, 64, ping.requestID, this.myN1Nbrs, this.myN2Nbrs);
+
+        //System.out.println("Pong enviado\n\tsendTO: "+ ping.origin.ip + "\n\tmynode.ip => " + this.myNode.ip + "\n\tpong.requestID => " + pong.requestID +"\n\tpong.pingID => " +pong.pingID);
         ByteArrayOutputStream bStream = new ByteArrayOutputStream();
         Output output = new Output(bStream);
 
@@ -136,9 +152,9 @@ public class PingHandler implements Runnable{
 
         byte[] serializedPong = bStream.toByteArray();
 
-        DatagramPacket packet = new DatagramPacket(serializedPong, serializedPong.length, ping.origin.ip, this.ucport);
 
         try {
+            DatagramPacket packet = new DatagramPacket(serializedPong, serializedPong.length, InetAddress.getByName(ping.origin.ip), this.ucport);
             this.ucs.send(packet);
             System.out.println("PONG ENVIADO\n");
         } catch (IOException e) {
@@ -151,9 +167,9 @@ public class PingHandler implements Runnable{
 
 
         // condição 1
-        if(!ping.nbrN1.contains(this.myNode)){
+        if((!ping.nbrN1.contains(this.myNode)) && (!this.nh.contains(ping.origin))){
             // condição 2
-            if((ping.nbrN1.size() + ping.nbrN2.size()) < this.standartNumNbrs || (this.myN1Nbrs.size() + this.myN2Nbrs.size()) < this.standartNumNbrs)
+            if((ping.nbrN1.size() + ping.nbrN2.size()) < this.softcap || (this.nt.getNumVN1() + this.nt.getNumVN2()) < this.softcap)
                 decision = true;
             else{
                 // condição 3
@@ -173,6 +189,8 @@ public class PingHandler implements Runnable{
                 }
             }
         }
+        else
+            System.out.println("JÁ É MEU VIZINHO");
 
         return decision;
     }
@@ -185,18 +203,20 @@ public class PingHandler implements Runnable{
 
             ScheduledExecutorService ses = Executors.newSingleThreadScheduledExecutor();
 
-            ses.scheduleWithFixedDelay(sendPing, 0, 4, TimeUnit.SECONDS);
-            ses.scheduleWithFixedDelay(emptyTray, 2, 4, TimeUnit.SECONDS);
+            ses.scheduleWithFixedDelay(sendPing, 0, 10, TimeUnit.SECONDS);
+            ses.scheduleWithFixedDelay(emptyPingTray, 4, 10, TimeUnit.SECONDS);
+            InetAddress myIP = InetAddress.getByName(this.myNode.ip);
 
             while(true){
                 buf = new byte[1500];
                 ping = new DatagramPacket(buf, 1500);
                 mcs.receive(ping);
-                if (!ping.getAddress().equals(this.myNode.ip)) {
+                //Filtragem por IP
+
+                if (!ping.getAddress().equals(myIP)) {
                     this.trayLock.lock();
                     this.pingTray.add(ping);
                     this.trayLock.unlock();
-                    System.out.println("PING RECEBIDO\n");
                 }
             }
         } catch (IOException e) {

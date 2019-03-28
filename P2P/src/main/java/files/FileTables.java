@@ -100,6 +100,13 @@ public class FileTables {
         System.out.println("Conteudo depois de eliminar o vizinho: " + nbrContent.toString());
     }
 
+    public ArrayList<FileInfo> getFileInfo(){
+        ArrayList<FileInfo> fi = new ArrayList<>();
 
+        for(myFile mf : this.myContent.values())
+            fi.add(mf.fileInfo);
+
+        return fi;
+    }
 
 }

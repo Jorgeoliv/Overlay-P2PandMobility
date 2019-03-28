@@ -7,7 +7,7 @@ import java.util.Objects;
 public class Nodo /*implements Serializable*/ {
 
     public String id; //representa o id do Nodo => Posteriormente o nome (para já é o ID?)
-    public InetAddress ip;
+    public String ip;
 
     //MAIS ALGUMA COISA???
 
@@ -15,7 +15,7 @@ public class Nodo /*implements Serializable*/ {
 
     }
 
-    public Nodo(String id, InetAddress ip) {
+    public Nodo(String id, String ip) {
         this.id = id;
         this.ip = ip;
     }

@@ -18,10 +18,16 @@ import org.boon.json.ObjectMapper;
 public class StartP2P {
 
     final static int port = 6000;
+    final static int mcp = 6789;
+    final static int ucp_Pong = 9876;
+    final static int ucp_NbrConfirmation = 9877;
+
+    final static int SOFTCAP = 3;
+    final static int HARDCAP = 6;
 
     public static void main(String[] args) throws UnknownHostException {
 
-        Nodo me = new Nodo("a", InetAddress.getByName(InetAddress.getLocalHost().getHostAddress()));
+        Nodo me = new Nodo("a", InetAddress.getByName(InetAddress.getLocalHost().getHostAddress()).toString().replace("/", ""));
 
         System.out.println("O meu ip é: " + InetAddress.getByName(InetAddress.getLocalHost().getHostAddress()));
         System.out.println("Na string é: " + InetAddress.getByName(InetAddress.getLocalHost().getHostAddress()).toString());
@@ -31,16 +37,11 @@ public class StartP2P {
         FileTables ft = new FileTables();
         NetworkTables nt = new NetworkTables(ft);
 
-        System.out.println("CRIAR O PINGHANDLER");
-        PingHandler pingHandler = new PingHandler(me,InetAddress.getByName("224.0.2.14"), 6789, 9876, 1, nt, 5);
-        PongHandler pongHandler = new PongHandler(me, 9876, nt);
-        Thread t = new Thread(pingHandler);
-        t.start();
-        System.out.println("PINGHANDLER CRIADO");
+        NetworkHandler nh = new NetworkHandler(me, nt);
 
-        t = new Thread(pongHandler);
+        Thread t = new Thread(nh);
         t.start();
-        System.out.println("PONGHANDLER CRIADO");
+        System.out.println("NETWORKHANDLER CRIADO");
 
     }
 

@@ -5,7 +5,7 @@ import network.*;
 
 public class Pong extends Header {
 
-    String pingID; //para saber qual é o ping a que este pong responde
+    public String pingID; //para saber qual é o ping a que este pong responde
     ArrayList<Nodo> nbrN1 = new ArrayList<>(); //lista de vizinhos nivel 1
     ArrayList<Nodo> nbrN2 = new ArrayList<>(); //lista de vizinhos de nivel 2
 

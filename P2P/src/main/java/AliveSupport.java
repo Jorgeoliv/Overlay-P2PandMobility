@@ -52,8 +52,7 @@ public class AliveSupport implements Runnable {
 
                 byte[] serializedMessage = bStream.toByteArray();
 
-                DatagramPacket packet
-                        = new DatagramPacket(serializedMessage, serializedMessage.length, n.ip, this.port);
+                DatagramPacket packet = new DatagramPacket(serializedMessage, serializedMessage.length, InetAddress.getByName(n.ip), this.port);
                 socket.send(packet);
 
             } catch (UnknownHostException e) {

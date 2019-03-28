@@ -1,5 +1,6 @@
 package network;
 
+import files.FileInfo;
 import files.FileTables;
 
 import java.util.*;
@@ -62,6 +63,20 @@ public class NetworkTables{
                 nbrN1.put(n.id, n);
                 nbrUp.put(n.id, 0);
             }
+        }finally {
+            rlN1.unlock();
+            rlUp.unlock();
+        }
+        System.out.println(nbrN1.toString());
+
+    }
+    public void addNbrN1(Nodo nodo){
+
+        rlN1.lock();
+        rlUp.lock();
+        try{
+            nbrN1.put(nodo.id, nodo);
+            nbrUp.put(nodo.id, 0);
         }finally {
             rlN1.unlock();
             rlUp.unlock();
@@ -160,6 +175,23 @@ public class NetworkTables{
         }
 
         System.out.println("O valor é: " + nbrUp.toString());
+    }
+
+    public ArrayList<FileInfo> getFileInfo(){
+        return this.ft.getFileInfo();
+    }
+
+    public int getNumVN1(){
+        this.rlN1.lock();
+        int tam = this.nbrN1.size();
+        this.rlN1.unlock();
+        return tam;
+    }
+    public int getNumVN2(){
+        this.rlN2.lock();
+        int tam = this.nbrN2.size();
+        this.rlN2.unlock();
+        return tam;
     }
 
 //    @Override

@@ -22,8 +22,10 @@ Construção da rede
             -> lista de vizinhos N2
             -> ID do Ping a que está a responder
 
-        AddNBR:
+        nbrConfirmation:
             -> Lista de informações sobre os ficheiros que possui
+        addNbrs:
+            Lista de vizinhos
 
         Quit: (só tem mesmo o header)
 
