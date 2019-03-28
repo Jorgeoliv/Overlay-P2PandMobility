@@ -18,6 +18,26 @@ public class FileTables {
 
     public FileTables(){ }
 
+    public boolean itsMyFile(String filename){
+        try{
+            rlMyContent.lock();
+            return this.myContent.containsKey(filename);
+        }finally {
+            rlMyContent.unlock();
+        }
+    }
+
+    public HashSet<Nodo> nbrWithFile(String filename){
+        try{
+            rlNbrContent.lock();
+            return this.nbrContent.get(filename);
+        }finally {
+            rlNbrContent.unlock();
+        }
+    }
+
+
+
     public void addMyContent(ArrayList<myFile> files){
 
         rlMyContent.lock();

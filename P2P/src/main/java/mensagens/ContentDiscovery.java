@@ -4,7 +4,11 @@ import network.*;
 
 public class ContentDiscovery extends Header{
 
-    String fileName; //nome do ficheiro para descobrir
+    public String fileName; //nome do ficheiro para descobrir
+
+    public ContentDiscovery(){
+        super();
+    }
 
     public ContentDiscovery(String requestID, Nodo origin, Nodo antecessor, long ttl, String fileName) {
         super(requestID, origin, antecessor, ttl);

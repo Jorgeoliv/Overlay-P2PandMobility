@@ -18,9 +18,9 @@ import java.util.concurrent.TimeUnit;
 public class UpdateHandler implements Runnable{
 
     final int port = 6003;
-    FileTables ft;
-    TreeSet<String> updateRequests = new TreeSet<>();
-    ScheduledExecutorService ses = Executors.newSingleThreadScheduledExecutor();
+    private FileTables ft;
+    private TreeSet<String> updateRequests = new TreeSet<>();
+    private ScheduledExecutorService ses = Executors.newSingleThreadScheduledExecutor();
 
     public UpdateHandler(){}
 
@@ -83,6 +83,7 @@ public class UpdateHandler implements Runnable{
                     System.out.println("RECEBI: " + ut.toString());
                     String nodeID = ut.origin.id;
                     String requestID = ut.requestID;
+                    System.out.println("OLHA O MEU IP: " + ut.origin.ip);
                     //Só vai processar senão estiver na lista
                     if(!this.containsRequest(requestID)) {
                         this.addRequest(requestID);
