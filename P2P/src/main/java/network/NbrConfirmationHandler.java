@@ -5,7 +5,6 @@ import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 import mensagens.Header;
 import mensagens.NbrConfirmation;
-import mensagens.Pong;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -21,45 +20,21 @@ public class NbrConfirmationHandler implements Runnable {
     private Nodo myNode;
 
     private int ucp_NbrConfirmation;
+    private int ucp_Alive;
 
     private NetworkTables nt;
 
 
-    public NbrConfirmationHandler(NetworkHandler nh, Nodo myNode, int ucp_NbrConfirmation, NetworkTables nt){
+    public NbrConfirmationHandler(NetworkHandler nh, Nodo myNode, int ucp_NbrConfirmation, int ucp_Alive, NetworkTables nt){
 
         this.nh = nh;
 
         this.myNode = myNode;
 
         this.ucp_NbrConfirmation = ucp_NbrConfirmation;
+        this.ucp_Alive = ucp_Alive;
 
         this.nt = nt;
-    }
-
-    public void run (){
-        try {
-
-            DatagramSocket ucs = new DatagramSocket(this.ucp_NbrConfirmation);
-            byte[] buf;
-            DatagramPacket nbrConfirmation;
-
-            while (true){
-                buf = new byte[1500];
-                nbrConfirmation = new DatagramPacket(buf, buf.length);
-                ucs.receive(nbrConfirmation);
-
-                System.out.println("RECEBI O NBRCONFIRMATION!!!!!!!!!!!!!!!!!!!!");
-
-                // Adicionar o vizinho e o seu conteudo
-                    //Preciso do lock para mexer na tabela de vizinhos e tabela de conteudos
-                processNbrConfirmation(nbrConfirmation);
-                //this.nt.addNbrN1(nbrConfirmation.origin);
-                // Enviar o meu NbrConfirmation
-            }
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
     }
 
     private void processNbrConfirmation(DatagramPacket nbrConfirmation) {
@@ -75,12 +50,13 @@ public class NbrConfirmationHandler implements Runnable {
             NbrConfirmation nbrc = (NbrConfirmation) header;
             if(this.nh.isNodeValid(nbrc.requestID, nbrc.origin)){
                 this.nt.addNbrN1(nbrc.origin);
-                this.nh.removeNode(nbrc.requestID, nbrc.origin);
+                this.nh.removeNode(nbrc.requestID, nbrc.origin); //??????????????????????????
 
                 //falta adicionar o conteudo do vizinho
                 System.out.println("NOVO VIZINHO !!!!!!!");
                 if(nbrc.added){
                     System.out.println("TENHO QUE ENVIAR O ALIVE");
+                    sendEmergencyAlive(nbrc);
                 }
                 else{
                     sendNbrConfirmation(nbrc);
@@ -89,6 +65,28 @@ public class NbrConfirmationHandler implements Runnable {
             else
                 System.out.println("COMBINAÇÃO ID NODO INEXISTENTE");
 
+        }
+    }
+
+    private void sendEmergencyAlive(NbrConfirmation nbrc){
+        Kryo kryo = new Kryo();
+
+        EmergencyAlive ealive = new EmergencyAlive(nbrc.IDresponse, this.myNode, this.nt.getNbrsN1(),nbrc.requestID, false);
+
+        try {
+            ByteArrayOutputStream bStream = new ByteArrayOutputStream();
+            Output output = new Output(bStream);
+            kryo.writeClassAndObject(output, ealive);
+            output.close();
+
+            byte[] serializedMessage = bStream.toByteArray();
+
+            DatagramPacket packet = new DatagramPacket(serializedMessage, serializedMessage.length, InetAddress.getByName(nbrc.origin.ip), this.ucp_Alive);
+            (new DatagramSocket()).send(packet);
+            System.out.println("EMERGENCY ALIVE ENVIADO");
+        }
+        catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
@@ -112,4 +110,29 @@ public class NbrConfirmationHandler implements Runnable {
             e.printStackTrace();
         }
     }
+
+    public void run (){
+        try {
+
+            DatagramSocket ucs = new DatagramSocket(this.ucp_NbrConfirmation);
+            byte[] buf;
+            DatagramPacket nbrConfirmation;
+
+            while (true){
+                buf = new byte[1500];
+                nbrConfirmation = new DatagramPacket(buf, buf.length);
+                ucs.receive(nbrConfirmation);
+
+                System.out.println("RECEBI O NBRCONFIRMATION!!!!!!!!!!!!!!!!!!!!");
+
+                // Adicionar o vizinho e o seu conteudo
+                    //Preciso do lock para mexer na tabela de vizinhos e tabela de conteudos
+                processNbrConfirmation(nbrConfirmation);
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 }
+

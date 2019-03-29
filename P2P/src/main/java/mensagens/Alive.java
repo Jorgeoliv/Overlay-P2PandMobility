@@ -19,7 +19,6 @@ public class Alive extends Header /*implements Serializable*/ {
         this.nbrN2 = nbrN2;
     }
 
-    @Override
     public String toString() {
         return "Alive{" +
                 "nbrN1=" + nbrN1 +

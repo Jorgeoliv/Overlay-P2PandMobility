@@ -161,7 +161,7 @@ public class PongHandler implements Runnable {
         try {
             DatagramPacket packet = new DatagramPacket(serializedNbrConfirmation, serializedNbrConfirmation.length, InetAddress.getByName(pong.origin.ip), this.ucp_NbrConfirmation);
             this.ucs.send(packet);
-            System.out.println("PONG ENVIADO\n");
+            System.out.println("NBRCNFIRMATION ENVIADO\n");
         } catch (IOException e) {
             e.printStackTrace();
         }
