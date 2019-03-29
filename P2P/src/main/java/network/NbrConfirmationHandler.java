@@ -3,6 +3,7 @@ package network;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
+import mensagens.EmergencyAlive;
 import mensagens.Header;
 import mensagens.NbrConfirmation;
 
@@ -50,12 +51,10 @@ public class NbrConfirmationHandler implements Runnable {
             NbrConfirmation nbrc = (NbrConfirmation) header;
             if(this.nh.isNodeValid(nbrc.requestID, nbrc.origin)){
                 this.nt.addNbrN1(nbrc.origin);
-                this.nh.removeNode(nbrc.requestID, nbrc.origin); //??????????????????????????
 
                 //falta adicionar o conteudo do vizinho
                 System.out.println("NOVO VIZINHO !!!!!!!");
                 if(nbrc.added){
-                    System.out.println("TENHO QUE ENVIAR O ALIVE");
                     sendEmergencyAlive(nbrc);
                 }
                 else{
@@ -83,7 +82,7 @@ public class NbrConfirmationHandler implements Runnable {
 
             DatagramPacket packet = new DatagramPacket(serializedMessage, serializedMessage.length, InetAddress.getByName(nbrc.origin.ip), this.ucp_Alive);
             (new DatagramSocket()).send(packet);
-            System.out.println("EMERGENCY ALIVE ENVIADO");
+            System.out.println("EMERGENCY ALIVE ENVIADO\n");
         }
         catch (IOException e) {
             e.printStackTrace();

@@ -1,6 +1,6 @@
-package network;
+package mensagens;
 
-import mensagens.Header;
+import network.Nodo;
 
 import java.util.ArrayList;
 

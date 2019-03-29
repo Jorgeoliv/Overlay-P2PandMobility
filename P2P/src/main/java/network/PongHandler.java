@@ -126,7 +126,6 @@ public class PongHandler implements Runnable {
                     if(this.nh.isPingValid(pong.pingID)) {
                         //Enviar NBRConfirmation
                         sendNbrConfirmation(pong);
-                        System.out.println("ENVIOU NBRCONFIRMATION");
                     }
                     else {
                         System.out.println("PING INVÁLIDO");

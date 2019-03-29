@@ -46,9 +46,10 @@ public class NetworkHandler implements Runnable{
     private ReentrantLock pingLock;
     private ScheduledExecutorService ses;
 
-    public NetworkHandler(Nodo me, NetworkTables nt) throws UnknownHostException {
+    public NetworkHandler(NetworkTables nt) throws UnknownHostException {
         this.idgen = new IDGen(8);
-        this.myNode = me;
+        this.myNode = new Nodo(idgen.getNodeID(), InetAddress.getByName(InetAddress.getLocalHost().getHostAddress()).toString().replace("/", ""));;
+
         this.nt = nt;
 
         this.pingHandler = new PingHandler(SOFTCAP, HARDCAP, this, this.idgen, this.myNode, InetAddress.getByName("224.0.2.14"), mcp, ucp_Pong, 1, this.nt);
@@ -67,28 +68,30 @@ public class NetworkHandler implements Runnable{
     }
 
     public void run() {
-
+        System.out.println("\n--------------------------------------------\n");
         Thread t = new Thread(this.pingHandler);
         t.start();
-        System.out.println("PINGHANDLER CRIADO");
+        System.out.println("\t=> PINGHANDLER CRIADO");
 
         t = new Thread(this.pongHandler);
         t.start();
-        System.out.println("PONGHANDLER CRIADO");
+        System.out.println("\t=> PONGHANDLER CRIADO");
 
         t = new Thread(this.nbrcHandler);
         t.start();
-        System.out.println("NBRCONFIRMATIONHANDLER CRIADO");
+        System.out.println("\t=> NBRCONFIRMATIONHANDLER CRIADO");
 
         t = new Thread(this.addNbrHandler);
         t.start();
-        System.out.println("ADDNBRHANDLER CRIADO");
+        System.out.println("\t=> ADDNBRHANDLER CRIADO");
 
         t = new Thread(this.aliveHandler);
         t.start();
-        System.out.println("ALIVEHANDLER CRIADO");
+        System.out.println("\t=> ALIVEHANDLER CRIADO");
 
         t = null;
+        System.out.println("\n--------------------------------------------\n");
+
     }
     private Runnable invalidatePing = () ->{
         this.validPings.remove(0);
@@ -104,10 +107,6 @@ public class NetworkHandler implements Runnable{
     public boolean isPingValid(String id) {
         this.pingLock.lock();
         boolean res = this.validPings.contains(id);
-
-        for(String a : this.validPings)
-            System.out.println(a);
-        System.out.println(id);
         this.pingLock.unlock();
         return res;
     }
@@ -121,7 +120,6 @@ public class NetworkHandler implements Runnable{
     public boolean isNodeValid(String id, Nodo node){
         this.nodeLock.lock();
         boolean res = this.idNodo.get(id).equals(node);
-        System.out.println("\nIS VALID?? => " + res);
         this.nodeLock.unlock();
         return res;
     }
@@ -129,7 +127,6 @@ public class NetworkHandler implements Runnable{
     public boolean contains(Nodo node){
         this.nodeLock.lock();
         boolean res = this.idNodo.containsValue(node);
-        System.out.println("\nCONTAINS?? => " + res);
         this.nodeLock.unlock();
         return res;
     }

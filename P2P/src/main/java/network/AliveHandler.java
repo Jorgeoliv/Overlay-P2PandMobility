@@ -4,15 +4,9 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 import mensagens.*;
-import network.NetworkTables;
-import network.Nodo;
-import org.boon.json.JsonParser;
-import org.boon.json.JsonParserFactory;
 
 import java.io.*;
 import java.net.*;
-import java.sql.SQLOutput;
-import java.sql.Time;
 import java.util.ArrayList;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -91,11 +85,13 @@ public class AliveHandler implements Runnable {
 
 
     private void processEmergencyAlive(EmergencyAlive ealive) {
-        if(this.nh.contains(ealive.origin)){
+        if(this.nh.contains(ealive.origin) || this.nt.nbrN1Contains(ealive.origin)){
             //confirmar ids!!!!
             if(this.nh.isNodeValid(ealive.requestID, ealive.origin)){
                 //adicionar vizinhos
                 this.nt.addNbrN1(ealive.nbrN1);
+                this.nh.removeNode(ealive.requestID, ealive.origin);
+
 
                 //reset das variáveis
                 this.nt.reset(ealive.origin.id);
@@ -128,7 +124,7 @@ public class AliveHandler implements Runnable {
 
             DatagramPacket packet = new DatagramPacket(serializedMessage, serializedMessage.length, InetAddress.getByName(ea.origin.ip), this.ucp_Alive);
             (new DatagramSocket()).send(packet);
-            System.out.println("EMERGENCY ALIVE ENVIADO");
+            System.out.println("EMERGENCY ALIVE ENVIADO\n");
         }
         catch (IOException e) {
             e.printStackTrace();

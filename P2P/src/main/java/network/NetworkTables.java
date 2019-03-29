@@ -144,7 +144,6 @@ public class NetworkTables{
     public void reset(String id){
         rlUp.lock();
         try{
-            System.out.println("LA VOU EU FAZER UM RESET!! " + id);
             nbrUp.put(id, 0);
             System.out.println(nbrUp);
         }finally {
@@ -204,53 +203,10 @@ public class NetworkTables{
         return tam;
     }
 
-//    @Override
-//    public void run() {
-//        byte[] b = null;
-//        int opcao = -1;
-//        ArrayList<Nodo> lista = null;
-//        while(true){
-//
-//            System.out.println("Em escuta!");
-//
-//            //multi-part messaging
-//            b = socket.recv(0);
-//            opcao = Integer.parseInt(new String(b));
-//            System.out.println("A opção é: " + opcao);
-//
-//            /**
-//             * Caso a opção seja:
-//             * 1 -> é para adicionar no N1
-//             * 2 -> é para adicionar no N2
-//             * 3 -> é para remover no N1
-//             * 4 -> é para remover no N2
-//             */
-//
-//            if(socket.hasReceiveMore()) {
-//
-//                byte[] l = socket.recv(0);
-//                ArrayList<String> testeLista = new ArrayList<String>(Arrays.asList((new String(l)).split(" , ")));
-//                for(String s: testeLista){
-//                    Nodo n = (Nodo) s.;
-//
-//                }
-//                System.out.println("O que eu recebi foi: " + new String(l));
-//
-//                switch (opcao) {
-//                    case 1:
-//                        break;
-//                    case 2:
-//                        break;
-//                    case 3:
-//                        break;
-//                    case 4:
-//                        break;
-//                }
-//            }
-//        }
-//    }
-
-
-
-
+    public boolean nbrN1Contains(Nodo node){
+        this.rlN1.lock();
+        boolean res = this.nbrN1.containsValue(node);
+        this.rlN1.unlock();
+        return res;
+    }
 }

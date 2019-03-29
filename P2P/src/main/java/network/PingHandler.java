@@ -100,7 +100,7 @@ public class PingHandler implements Runnable{
 
         try {
             new MulticastSocket().send(packet);
-            System.out.println("PING "+ id + "ENVIADO\n");
+            System.out.println("PING "+ id + " ENVIADO\n");
         } catch (IOException e) {
             e.printStackTrace();
         }

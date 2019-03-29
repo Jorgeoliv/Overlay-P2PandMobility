@@ -27,17 +27,11 @@ public class StartP2P {
 
     public static void main(String[] args) throws UnknownHostException {
 
-        Nodo me = new Nodo("a", InetAddress.getByName(InetAddress.getLocalHost().getHostAddress()).toString().replace("/", ""));
-
-        System.out.println("O meu ip é: " + InetAddress.getByName(InetAddress.getLocalHost().getHostAddress()));
-        System.out.println("Na string é: " + InetAddress.getByName(InetAddress.getLocalHost().getHostAddress()).toString());
-        System.out.println("No me é: " + me.ip);
-
         //Vai ter de começar a iniciar o multicast com o Ping
         FileTables ft = new FileTables();
         NetworkTables nt = new NetworkTables(ft);
 
-        NetworkHandler nh = new NetworkHandler(me, nt);
+        NetworkHandler nh = new NetworkHandler(nt);
 
         Thread t = new Thread(nh);
         t.start();
