@@ -207,7 +207,7 @@ public class PongHandler implements Runnable {
         byte[] serializedAddNbr = bStream.toByteArray();
 
         try {
-            DatagramPacket packet = new DatagramPacket(serializedAddNbr, serializedAddNbr.length, InetAddress.getByName(pong.origin.ip), this.ucp_AddNbr);
+            DatagramPacket packet = new DatagramPacket(serializedAddNbr, serializedAddNbr.length, InetAddress.getByName(nodo.ip), this.ucp_AddNbr);
             this.ucs.send(packet);
             System.out.println("ADDNBR ENVIADO\n");
         } catch (IOException e) {

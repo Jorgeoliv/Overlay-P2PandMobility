@@ -65,6 +65,7 @@ public class NbrConfirmationHandler implements Runnable {
                 }
 
                 if(valid) {
+                    System.out.println("VOU REGISTAR O ADDNBR E REMOVER DA LISTA DE NBR VÁLIDOS");
                     this.nh.registerNode(nbrc.requestID, nbrc.origin);
                     this.nh.removeAddNbr(nbrc.IDresponse);
                 }

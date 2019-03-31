@@ -150,7 +150,9 @@ public class NetworkHandler implements Runnable{
 
     public boolean isNodeValid(String id, Nodo node){
         this.nodeLock.lock();
-        boolean res = this.idNodo.get(id).equals(node);
+        boolean res = false;
+        if(this.idNodo.containsKey(id))
+            res = this.idNodo.get(id).equals(node);
         this.nodeLock.unlock();
         return res;
     }
