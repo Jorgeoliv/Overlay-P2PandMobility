@@ -9,8 +9,8 @@ public class AddNbr extends Header {
     public AddNbr(){
         super();
     }
-    public AddNbr(String requestID, Nodo origin, long ttl, Nodo intermediary){
-        super(requestID, origin, ttl);
+    public AddNbr(String requestID, Nodo origin, Nodo intermediary){
+        super(requestID, origin);
         this.intermediary = intermediary;
     }
 }

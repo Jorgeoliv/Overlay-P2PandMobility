@@ -40,6 +40,7 @@ public class NbrConfirmationHandler implements Runnable {
 
     private void processNbrConfirmation(DatagramPacket nbrConfirmation) {
         Kryo kryo = new Kryo();
+        boolean valid = false;
 
         byte [] buf = nbrConfirmation.getData();
         ByteArrayInputStream bStream = new ByteArrayInputStream(buf);
@@ -49,22 +50,45 @@ public class NbrConfirmationHandler implements Runnable {
 
         if(header instanceof NbrConfirmation) {
             NbrConfirmation nbrc = (NbrConfirmation) header;
-            if(this.nh.isNodeValid(nbrc.requestID, nbrc.origin)){
+            printNbrConfirmation(nbrc);
+
+            if(this.nh.isNodeValid(nbrc.requestID, nbrc.origin) || (valid = this.nh.isAddNbrValid(nbrc.IDresponse))){
                 this.nt.addNbrN1(nbrc.origin);
 
                 //falta adicionar o conteudo do vizinho
-                System.out.println("NOVO VIZINHO !!!!!!!");
+                System.out.println("New NBR Added");
                 if(nbrc.added){
                     sendEmergencyAlive(nbrc);
                 }
                 else{
                     sendNbrConfirmation(nbrc);
                 }
+
+                if(valid) {
+                    this.nh.registerNode(nbrc.requestID, nbrc.origin);
+                    this.nh.removeAddNbr(nbrc.IDresponse);
+                }
             }
             else
                 System.out.println("COMBINAÇÃO ID NODO INEXISTENTE");
 
         }
+    }
+
+    private void printNbrConfirmation(NbrConfirmation nbrc) {
+        System.out.println("\nRECEBI O NBRCONFIRMATION");
+        System.out.println("\n|----------------------------------------");
+        System.out.println("|>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n|");
+        System.out.println("|TYPE:       NbrConfirmation");
+        System.out.println("|\tNbrConfirmation ID => " + nbrc.requestID);
+        System.out.println("|\tNodo origem => " + nbrc.origin);
+
+        System.out.println("|\n|");
+        System.out.println("|\tResponse ID => " + nbrc.IDresponse);
+        System.out.println("|\tAdded => " + nbrc.added);
+        System.out.println("|\tFileInfos => " + nbrc.fileInfos);
+        System.out.println("|\n|<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<");
+        System.out.println("|----------------------------------------\n");
     }
 
     private void sendEmergencyAlive(NbrConfirmation nbrc){
@@ -104,7 +128,7 @@ public class NbrConfirmationHandler implements Runnable {
         try {
             DatagramPacket packet = new DatagramPacket(serializedNbrConfirmation, serializedNbrConfirmation.length, InetAddress.getByName(nbrc.origin.ip), this.ucp_NbrConfirmation);
             (new DatagramSocket()).send(packet);
-            System.out.println("NBRCONFIRMATION 2 ENVIADO\n");
+            System.out.println("NBRCONFIRMATION RESPONSE ENVIADO\n");
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -121,8 +145,6 @@ public class NbrConfirmationHandler implements Runnable {
                 buf = new byte[1500];
                 nbrConfirmation = new DatagramPacket(buf, buf.length);
                 ucs.receive(nbrConfirmation);
-
-                System.out.println("RECEBI O NBRCONFIRMATION!!!!!!!!!!!!!!!!!!!!");
 
                 // Adicionar o vizinho e o seu conteudo
                     //Preciso do lock para mexer na tabela de vizinhos e tabela de conteudos

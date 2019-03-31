@@ -78,18 +78,19 @@ public class PingHandler implements Runnable{
     }
 
     private Runnable sendPing = () -> {
-        myN1Nbrs = nt.getNbrsN1();
-        myN2Nbrs = nt.getNbrsN2();
 
         String id = this.idGen.getID();
-        Ping ping = new Ping(id, myNode, ttl, myN1Nbrs, myN2Nbrs);
-
         this.nh.registerPing(id);
 
         ByteArrayOutputStream bStream = new ByteArrayOutputStream();
         Output output = new Output(bStream);
 
         Kryo kryo = new Kryo();
+
+        myN1Nbrs = nt.getNbrsN1();
+        myN2Nbrs = nt.getNbrsN2();
+        Ping ping = new Ping(id, myNode, ttl, myN1Nbrs, myN2Nbrs);
+
         kryo.writeClassAndObject(output, ping);
         output.close();
 
@@ -122,7 +123,7 @@ public class PingHandler implements Runnable{
 
             if(header instanceof Ping){
                 Ping ping = (Ping) header;
-
+                printPing(ping);
                 if (analisePing(ping)) {
                     sendPong(ping);
                     this.nh.registerNode(ping.requestID, ping.origin);
@@ -138,11 +139,25 @@ public class PingHandler implements Runnable{
         this.trayLock.unlock();
     };
 
+    private void printPing(Ping ping) {
+        System.out.println("\nRECEBI O PING");
+        System.out.println("\n|----------------------------------------");
+        System.out.println("|>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n|");
+        System.out.println("|TYPE:       Ping");
+        System.out.println("|\tPing ID => " + ping.requestID);
+        System.out.println("|\tNodo origem => " + ping.origin);
+
+        System.out.println("|\n|");
+        System.out.println("|\tNBR N1 => " + ping.nbrN1);
+        System.out.println("|\tNBR N2 => " + ping.nbrN2);
+        System.out.println("|\n|<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<");
+        System.out.println("|----------------------------------------\n");
+    }
+
     private void sendPong(Ping ping) {
 
         Pong pong = new Pong(this.idGen.getID(), this.myNode, 64, ping.requestID, this.myN1Nbrs, this.myN2Nbrs);
 
-        //System.out.println("Pong enviado\n\tsendTO: "+ ping.origin.ip + "\n\tmynode.ip => " + this.myNode.ip + "\n\tpong.requestID => " + pong.requestID +"\n\tpong.pingID => " +pong.pingID);
         ByteArrayOutputStream bStream = new ByteArrayOutputStream();
         Output output = new Output(bStream);
 
@@ -167,7 +182,7 @@ public class PingHandler implements Runnable{
 
 
         // condição 1
-        if((!ping.nbrN1.contains(this.myNode)) && (!this.nh.contains(ping.origin))){
+        if((!ping.nbrN1.contains(this.myNode)) && (!this.nh.contains(ping.origin)) && (!this.nt.nbrN1Contains(ping.origin))){
             // condição 2
             if((ping.nbrN1.size() + ping.nbrN2.size()) < this.softcap || (this.nt.getNumVN1() + this.nt.getNumVN2()) < this.softcap)
                 decision = true;
@@ -204,7 +219,7 @@ public class PingHandler implements Runnable{
             ScheduledExecutorService ses = Executors.newSingleThreadScheduledExecutor();
 
             ses.scheduleWithFixedDelay(sendPing, 0, 10, TimeUnit.SECONDS);
-            ses.scheduleWithFixedDelay(emptyPingTray, 4, 10, TimeUnit.SECONDS);
+            ses.scheduleWithFixedDelay(emptyPingTray, 2, 5, TimeUnit.SECONDS);
             InetAddress myIP = InetAddress.getByName(this.myNode.ip);
 
             while(true){

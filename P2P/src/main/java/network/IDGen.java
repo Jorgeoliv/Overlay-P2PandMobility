@@ -2,7 +2,6 @@ package network;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.Random;
 
 public class IDGen {
@@ -29,26 +28,80 @@ public class IDGen {
     }
 
     public String getNodeID(){
+        String id = null;
 
-        Random rand = new Random();
+        while(id == null)
+            id = this.newID();
+        /*try {
+            String macAddress = null;
+            Enumeration<NetworkInterface> nI = NetworkInterface.getNetworkInterfaces();
+            while(macAddress == null || !nI.hasMoreElements())
+                macAddress = new String((byte[]) nI.nextElement().getHardwareAddress());
 
-        String id = this.getID();
-        String date = "" + System.currentTimeMillis();
-        String nounce = "" + rand.nextInt();
+            File macFolder = new File(macAddress);
 
-        System.out.println(id + " " + date + " " + nounce);
+            if (!macFolder.exists() || !macFolder.isDirectory()) {
+                macFolder.mkdir();
 
-        String toHash = id + date + nounce;
+                 while (id == null)
+                     id = newID(macAddress);
 
-        MessageDigest digest = null;
-        byte[] encodedhash = null;
-        String hash = "ola";
+            }
+            else {
+
+                File f = new File(macAddress + "/config");
+                if (f.exists() && !f.isDirectory()) {
+
+                    Path path = Paths.get(macAddress + "/config");
+
+                    byte[] fileContents = null;
+
+                    fileContents = Files.readAllBytes(path);
+
+                    if (fileContents != null)
+                        id = new String(fileContents);
+                    else
+                        System.out.println("ERRO NA LEITURA DO ID DO NODO");
+                }
+                else{
+                    while (id == null)
+                        id = newID(macAddress);
+                }
+            }
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }*/
+        System.out.println("NEW NODE ID => " + id);
+        return id;
+    }
+
+    private String newID(){//String macAddress){
+        String hash = null;
         try {
+            Random rand = new Random();
+
+            String id = this.getID();
+            String date = "" + System.currentTimeMillis();
+            String nounce = "" + rand.nextInt();
+
+            System.out.println(id + " " + date + " " + nounce);
+
+            String toHash = id + date + nounce;
+
+            MessageDigest digest = null;
+            byte[] encodedhash = null;
+
             digest = MessageDigest.getInstance("SHA-256");
             encodedhash = digest.digest(toHash.getBytes(StandardCharsets.UTF_8));
             hash = new String(encodedhash);
 
-        } catch (NoSuchAlgorithmException e) {
+            /*if (hash != null) {
+                Path file = Paths.get(macAddress + "/config");
+                Files.write(file, encodedhash);
+            }*/
+        }
+        catch (Exception e){
             e.printStackTrace();
         }
         return hash;

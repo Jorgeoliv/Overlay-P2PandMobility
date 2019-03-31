@@ -4,6 +4,7 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 import mensagens.*;
+import org.boon.Str;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -42,28 +43,6 @@ public class AddNbrHandler implements Runnable{
         this.nt = nt;
     }
 
-    public void run() {
-        try {
-
-            DatagramSocket ucs = new DatagramSocket(this.ucp_AddNbr);
-            byte[] buf;
-            DatagramPacket addNbr;
-
-            while (true){
-                buf = new byte[1500];
-                addNbr = new DatagramPacket(buf, buf.length);
-                ucs.receive(addNbr);
-
-                System.out.println("RECEBI O ADDNBR!!!!!!!!!!!!!!!!!!!!");
-
-                processAddNbr(addNbr);
-            }
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
     private void processAddNbr(DatagramPacket addnbr) {
         Kryo kryo = new Kryo();
         byte[] buf = addnbr.getData();
@@ -75,6 +54,7 @@ public class AddNbrHandler implements Runnable{
 
         if(header instanceof AddNbr) {
             AddNbr addNbr = (AddNbr) header;
+            printAddNbr(addNbr);
 
             if (this.nt.getNbrsN1().contains(addNbr.intermediary)){
                 //Confirmar se o nodo intermediário tem o nodo originário desta msg como vizinho?? PROBLEMAS??
@@ -90,24 +70,60 @@ public class AddNbrHandler implements Runnable{
 
     private void sendNbrConfirmation(AddNbr addNbr) {
 
-            NbrConfirmation nc = new NbrConfirmation(this.idGen.getID(), this.myNode, this.nt.getFileInfo(), addNbr.requestID, false);
+        NbrConfirmation nc = new NbrConfirmation(this.idGen.getID(), this.myNode, this.nt.getFileInfo(), addNbr.requestID, false);
 
-            ByteArrayOutputStream bStream = new ByteArrayOutputStream();
-            Output output = new Output(bStream);
+        this.nh.registerNode(addNbr.requestID, addNbr.origin);
 
-            Kryo kryo = new Kryo();
-            kryo.writeClassAndObject(output, nc);
-            output.close();
+        ByteArrayOutputStream bStream = new ByteArrayOutputStream();
+        Output output = new Output(bStream);
 
-            byte[] serializedNbrConfirmation = bStream.toByteArray();
+        Kryo kryo = new Kryo();
+        kryo.writeClassAndObject(output, nc);
+        output.close();
+
+        byte[] serializedNbrConfirmation = bStream.toByteArray();
 
 
-            try {
-                DatagramPacket packet = new DatagramPacket(serializedNbrConfirmation, serializedNbrConfirmation.length, InetAddress.getByName(addNbr.origin.ip), this.ucp_NbrConfirmation);
-                (new DatagramSocket()).send(packet);
-                System.out.println("NBRCONFIRMATION ENVIADO\n");
-            } catch (IOException e) {
-                e.printStackTrace();
+        try {
+            DatagramPacket packet = new DatagramPacket(serializedNbrConfirmation, serializedNbrConfirmation.length, InetAddress.getByName(addNbr.origin.ip), this.ucp_NbrConfirmation);
+            (new DatagramSocket()).send(packet);
+            System.out.println("NBRCONFIRMATION ENVIADO\n");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void printAddNbr(AddNbr addNbr) {
+        System.out.println("\nRECEBI O ADDNBR");
+        System.out.println("\n|----------------------------------------");
+        System.out.println("|>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n|");
+        System.out.println("|TYPE:       AddNbr");
+        System.out.println("|\tAddNbr ID => " + addNbr.requestID);
+        System.out.println("|\tNodo origem => " + addNbr.origin);
+
+        System.out.println("|\n|");
+        System.out.println("|\tIntermediary => " + addNbr.intermediary);
+        System.out.println("|\n|<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<");
+        System.out.println("|----------------------------------------\n");
+    }
+
+    public void run() {
+        try {
+
+            DatagramSocket ucs = new DatagramSocket(this.ucp_AddNbr);
+            byte[] buf;
+            DatagramPacket addNbr;
+
+            while (true){
+                buf = new byte[1500];
+                addNbr = new DatagramPacket(buf, buf.length);
+                ucs.receive(addNbr);
+
+                processAddNbr(addNbr);
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 }

@@ -36,11 +36,27 @@ public class AliveHandler implements Runnable {
     private Runnable emptyAliveTray = () ->{
         if(this.aliveTray.size() > 0){
             for(Alive alive : this.aliveTray) {
+                printAlive(alive);
                 this.nt.reset(alive.origin.id);
                 this.nt.updateNbrN2(alive.origin.id, alive.nbrN1);
             }
         }
     };
+
+    private void printAlive(Alive alive) {
+        System.out.println("\nRECEBI O ALIVE");
+        System.out.println("\n|----------------------------------------");
+        System.out.println("|>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n|");
+        System.out.println("|TYPE:       Alive");
+        System.out.println("|\tAlive ID => " + alive.requestID);
+        System.out.println("|\tNodo origem => " + alive.origin);
+
+        System.out.println("|\n|");
+        System.out.println("|\tNBR N1 => " + alive.nbrN1);
+        System.out.println("|\tNBR N2 => " + alive.nbrN2);
+        System.out.println("|\n|<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<");
+        System.out.println("|----------------------------------------\n");
+    }
 
     private Runnable sendAlive = () -> {
 
@@ -68,11 +84,8 @@ public class AliveHandler implements Runnable {
                 DatagramPacket packet = new DatagramPacket(serializedMessage, serializedMessage.length, InetAddress.getByName(n.ip), this.ucp_Alive);
                 socket.send(packet);
 
-            } catch (UnknownHostException e) {
-                e.printStackTrace();
-            } catch (SocketException e) {
-                e.printStackTrace();
-            } catch (IOException e) {
+            }
+            catch (Exception e) {
                 e.printStackTrace();
             }
         }
@@ -85,11 +98,12 @@ public class AliveHandler implements Runnable {
 
 
     private void processEmergencyAlive(EmergencyAlive ealive) {
+        printEmergencyAlive(ealive);
         if(this.nh.contains(ealive.origin) || this.nt.nbrN1Contains(ealive.origin)){
             //confirmar ids!!!!
             if(this.nh.isNodeValid(ealive.requestID, ealive.origin)){
                 //adicionar vizinhos
-                this.nt.addNbrN1(ealive.nbrN1);
+                this.nt.addNbrN2(ealive.origin.id,ealive.nbrN1);
                 this.nh.removeNode(ealive.requestID, ealive.origin);
 
 
@@ -107,6 +121,22 @@ public class AliveHandler implements Runnable {
         }
         else
             System.out.println("Nodo Desconhecido");
+    }
+
+    private void printEmergencyAlive (EmergencyAlive ealive) {
+        System.out.println("\nRECEBI O EMERGENCYALIVE");
+        System.out.println("\n|----------------------------------------");
+        System.out.println("|>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n|");
+        System.out.println("|TYPE:       EmergencyAlive");
+        System.out.println("|\tEmergencyAlive ID => " + ealive.requestID);
+        System.out.println("|\tNodo origem => " + ealive.origin);
+
+        System.out.println("|\n|");
+        System.out.println("|\tResponse ID => " + ealive.IDresponse);
+        System.out.println("|\tUpdated => " + ealive.updated);
+        System.out.println("|\tNBR N1 => " + ealive.nbrN1);
+        System.out.println("|\n|<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<");
+        System.out.println("|----------------------------------------\n");
     }
 
     private void sendEmergencyAlive(EmergencyAlive ea){
@@ -163,7 +193,6 @@ public class AliveHandler implements Runnable {
                 else
                     if(header instanceof EmergencyAlive) {
                         processEmergencyAlive((EmergencyAlive) header);
-                        System.out.println("EMERCENCY ALIVE RECEBIDO");
                     }
                     else
                         System.out.println("ERRO AO PROCESSAR ALIVE");
