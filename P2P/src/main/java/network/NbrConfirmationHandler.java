@@ -56,7 +56,7 @@ public class NbrConfirmationHandler implements Runnable {
                 this.nt.addNbrN1(nbrc.origin);
 
                 //falta adicionar o conteudo do vizinho
-                System.out.println("New NBR Added");
+                System.out.println("=============================================>New NBR Added");
                 if(nbrc.added){
                     sendEmergencyAlive(nbrc);
                 }
