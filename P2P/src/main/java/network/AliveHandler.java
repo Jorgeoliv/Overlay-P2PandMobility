@@ -36,7 +36,7 @@ public class AliveHandler implements Runnable {
     private Runnable emptyAliveTray = () ->{
         if(this.aliveTray.size() > 0){
             for(Alive alive : this.aliveTray) {
-                printAlive(alive);
+                //printAlive(alive);
                 this.nt.reset(alive.origin.id);
                 this.nt.updateNbrN2(alive.origin.id, alive.nbrN1);
             }
@@ -98,12 +98,12 @@ public class AliveHandler implements Runnable {
 
 
     private void processEmergencyAlive(EmergencyAlive ealive) {
-        printEmergencyAlive(ealive);
+        //printEmergencyAlive(ealive);
         if(this.nh.contains(ealive.origin) || this.nt.nbrN1Contains(ealive.origin)){
             //confirmar ids!!!!
             if(this.nh.isNodeValid(ealive.requestID, ealive.origin)){
                 //adicionar vizinhos
-                this.nt.addNbrN2(ealive.origin.id,ealive.nbrN1);
+                this.nt.addNbrN2(ealive.origin.id,ealive.nbrN1, this.myNode);
                 this.nh.removeNode(ealive.requestID, ealive.origin);
 
 

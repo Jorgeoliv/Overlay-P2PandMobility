@@ -1,7 +1,9 @@
 package network;
 
+import com.sun.security.auth.NTDomainPrincipal;
 import files.FileInfo;
 import files.FileTables;
+import sun.rmi.runtime.NewThreadAction;
 
 import java.util.*;
 import java.util.concurrent.locks.ReentrantLock;
@@ -25,6 +27,11 @@ public class NetworkTables{
         this.ft = ft;
     }
 
+    private ArrayList<Nodo> concat(ArrayList<Nodo> a1, ArrayList<Nodo> a2){
+        a1.addAll(a2);
+        return a1;
+    }
+
     public ArrayList<Nodo> getNbrsN1(){
         rlN1.lock();
         try{
@@ -32,11 +39,6 @@ public class NetworkTables{
         }finally {
             rlN1.unlock();
         }
-    }
-
-    private ArrayList<Nodo> concat(ArrayList<Nodo> a1, ArrayList<Nodo> a2){
-        a1.addAll(a2);
-        return a1;
     }
 
     public ArrayList<Nodo> getNbrsN2(){
@@ -70,6 +72,7 @@ public class NetworkTables{
         System.out.println(nbrN1.toString());
 
     }
+
     public void addNbrN1(Nodo nodo){
 
         rlN1.lock();
@@ -97,24 +100,15 @@ public class NetworkTables{
 
     }
 
-    public void addNbrN2(String id, ArrayList<Nodo> nodos){
+    public void addNbrN2(String id, ArrayList<Nodo> nodos, Nodo myNode){
         rlN2.lock();
         try{
             ArrayList<Nodo> aux = nbrN2.get(id);
             if(aux == null)
                 aux = new ArrayList<>();
+            nodos.remove(myNode);
             aux.addAll(nodos);
             nbrN2.put(id, aux);
-        }finally {
-            rlN2.unlock();
-        }
-
-    }
-
-    public void updateNbrN2(String id, ArrayList<Nodo> nodos){
-        rlN2.lock();
-        try{
-            nbrN2.put(id, nodos);
         }finally {
             rlN2.unlock();
         }
@@ -135,6 +129,15 @@ public class NetworkTables{
 
     }
 
+    public void updateNbrN2(String id, ArrayList<Nodo> nodos){
+        rlN2.lock();
+        try{
+            nbrN2.put(id, nodos);
+        }finally {
+            rlN2.unlock();
+        }
+
+    }
 
     /**
      * Para fazer reset a um determinado nodo
@@ -196,6 +199,7 @@ public class NetworkTables{
         this.rlN1.unlock();
         return tam;
     }
+
     public int getNumVN2(){
         this.rlN2.lock();
         int tam = this.nbrN2.size();
@@ -208,5 +212,28 @@ public class NetworkTables{
         boolean res = this.nbrN1.containsValue(node);
         this.rlN1.unlock();
         return res;
+    }
+
+    public Nodo getRandomNN1(){
+        Random rand = new Random();
+
+        ArrayList<String> aux = new ArrayList<String>();
+
+        for(String n : this.nbrN1.keySet())
+            if(this.nbrN2.containsKey(n))
+                if(this.nbrN2.get(n).size()>0)
+                    aux.add(n);
+
+        if(aux.size()>0)
+            return this.nbrN1.get(aux.get(rand.nextInt(aux.size())));
+        else
+            return null;
+    }
+
+    public Nodo getRandomNN2(Nodo node){
+        Random rand = new Random();
+
+        ArrayList<Nodo> aux = this.nbrN2.get(node.id);
+        return aux.get(rand.nextInt(this.nbrN2.size()));
     }
 }

@@ -123,7 +123,7 @@ public class PingHandler implements Runnable{
 
             if(header instanceof Ping){
                 Ping ping = (Ping) header;
-                printPing(ping);
+                //printPing(ping);
                 if (analisePing(ping)) {
                     sendPong(ping);
                     this.nh.registerNode(ping.requestID, ping.origin);
@@ -219,7 +219,7 @@ public class PingHandler implements Runnable{
             ScheduledExecutorService ses = Executors.newSingleThreadScheduledExecutor();
 
             ses.scheduleWithFixedDelay(sendPing, 0, 10, TimeUnit.SECONDS);
-            ses.scheduleWithFixedDelay(emptyPingTray, 2, 5, TimeUnit.SECONDS);
+            ses.scheduleWithFixedDelay(emptyPingTray, 7, 5, TimeUnit.SECONDS);
             InetAddress myIP = InetAddress.getByName(this.myNode.ip);
 
             while(true){

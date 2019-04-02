@@ -4,7 +4,6 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 import mensagens.*;
-import org.boon.Str;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -12,6 +11,9 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 public class AddNbrHandler implements Runnable{
 
@@ -47,6 +49,7 @@ public class AddNbrHandler implements Runnable{
         Kryo kryo = new Kryo();
         byte[] buf = addnbr.getData();
 
+        System.out.println("RECEBI UM ADDNBR!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
         ByteArrayInputStream bStream = new ByteArrayInputStream(buf);
         Input input = new Input(bStream);
         Header header = (Header) kryo.readClassAndObject(input);
@@ -107,8 +110,48 @@ public class AddNbrHandler implements Runnable{
         System.out.println("|----------------------------------------\n");
     }
 
+    private Runnable sendAddNbr = () -> {
+        int numNN1 = this.nt.getNumVN1();
+
+        if(numNN1 < this.softcap) {
+            if (numNN1 > 0) {
+                Nodo nN1 = this.nt.getRandomNN1();
+                if (nN1 != null) {
+                    Nodo nN2 = this.nt.getRandomNN2(nN1);
+
+                    String id = this.idGen.getID();
+                    AddNbr addNbr = new AddNbr(id, this.myNode, nN1);
+
+                    this.nh.registerAddNbr(id);
+
+                    ByteArrayOutputStream bStream = new ByteArrayOutputStream();
+                    Output output = new Output(bStream);
+
+                    Kryo kryo = new Kryo();
+                    kryo.writeClassAndObject(output, addNbr);
+                    output.close();
+
+                    byte[] serializedAddNbr = bStream.toByteArray();
+                    try {
+                        DatagramPacket packet = new DatagramPacket(serializedAddNbr, serializedAddNbr.length, InetAddress.getByName(nN2.ip), this.ucp_AddNbr);
+                        (new DatagramSocket()).send(packet);
+                        System.out.println("ADDNBR ENVIADO PARA " + nN2.ip + "\n");
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+                else
+                    System.out.println("SEM VIZINHOS DE NÍVEL 2!!");
+            }
+        }
+    };
+
     public void run() {
         try {
+
+            ScheduledExecutorService ses = Executors.newSingleThreadScheduledExecutor();
+
+            ses.scheduleWithFixedDelay(sendAddNbr, 20, 20, TimeUnit.SECONDS);
 
             DatagramSocket ucs = new DatagramSocket(this.ucp_AddNbr);
             byte[] buf;

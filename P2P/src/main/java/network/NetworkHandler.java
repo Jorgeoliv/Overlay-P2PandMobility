@@ -1,6 +1,8 @@
 package network;
 
 
+import files.FileTables;
+
 import java.lang.reflect.Array;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -26,8 +28,20 @@ public class NetworkHandler implements Runnable{
     private int HARDCAP = 6;
 
     //Estruturas de dados externas
+    private IDGen idgen;
     private Nodo myNode;
+
+    //Estruturas de dados Internas
+    //estruturas de segurança
+    private HashMap<String, Nodo> idNodo;
+    private ArrayList<String> validPings;
+    private ArrayList<String> validAddNbrs;
+
     private NetworkTables nt;
+    private ReentrantLock nodeLock;
+    private ReentrantLock pingLock;
+    private ReentrantLock addNbrsLock;
+    private ScheduledExecutorService ses;
 
     //Handlers
     private PingHandler pingHandler;
@@ -36,23 +50,21 @@ public class NetworkHandler implements Runnable{
     private AddNbrHandler addNbrHandler;
     private AliveHandler aliveHandler;
 
-    //Estruturas de dados Internas
-        //estruturas de segurança
-    private HashMap<String, Nodo> idNodo;
-    private ArrayList<String> validPings;
-    private ArrayList<String> validAddNbrs;
 
-    private IDGen idgen;
-    private ReentrantLock nodeLock;
-    private ReentrantLock pingLock;
-    private ReentrantLock addNbrsLock;
-    private ScheduledExecutorService ses;
 
-    public NetworkHandler(NetworkTables nt) throws UnknownHostException {
+    public NetworkHandler(FileTables ft) throws UnknownHostException {
         this.idgen = new IDGen(8);
         this.myNode = new Nodo(idgen.getNodeID(), InetAddress.getByName(InetAddress.getLocalHost().getHostAddress()).toString().replace("/", ""));;
 
-        this.nt = nt;
+        this.idNodo = new HashMap<String, Nodo>();
+        this.validPings = new ArrayList<String>();
+        this.validAddNbrs = new ArrayList<String>();
+
+        this.nt = new NetworkTables(ft);
+        this.nodeLock = new ReentrantLock();
+        this.pingLock = new ReentrantLock();
+        this.addNbrsLock = new ReentrantLock();
+        this.ses = Executors.newSingleThreadScheduledExecutor();
 
         this.pingHandler = new PingHandler(SOFTCAP, HARDCAP, this, this.idgen, this.myNode, InetAddress.getByName("224.0.2.14"), mcp, ucp_Pong, 1, this.nt);
         this.pongHandler = new PongHandler(SOFTCAP, HARDCAP, this, this.idgen, this.myNode, ucp_Pong, ucp_NbrConfirmation, ucp_AddNbr, nt);
@@ -60,38 +72,62 @@ public class NetworkHandler implements Runnable{
         this.addNbrHandler = new AddNbrHandler(SOFTCAP, HARDCAP, this.idgen, this, this.myNode, this.ucp_AddNbr, this.ucp_NbrConfirmation, this.nt);
         this.aliveHandler = new AliveHandler(this, this.nt, this.myNode, this.ucp_Alive, this.idgen);
 
-        this.idNodo = new HashMap<String, Nodo>();
-        this.validPings = new ArrayList<String>();
-        this.validAddNbrs = new ArrayList<String>();
-
-        this.nodeLock = new ReentrantLock();
-        this.pingLock = new ReentrantLock();
-        this.addNbrsLock = new ReentrantLock();
-
-        this.ses = Executors.newSingleThreadScheduledExecutor();
     }
 
     public void run() {
+
+        Thread t;
+
         System.out.println("\n--------------------------------------------\n");
-        Thread t = new Thread(this.pingHandler);
-        t.start();
-        System.out.println("\t=> PINGHANDLER CRIADO");
+        try {
+            t = new Thread(this.pingHandler);
+            t.start();
+            System.out.println("\t=> PINGHANDLER CRIADO");
+        }
+        catch (Exception e){
+            e.printStackTrace();
+            System.out.println("=> ERRO AO CRIAR PINGHANDLER");
+        }
 
-        t = new Thread(this.pongHandler);
-        t.start();
-        System.out.println("\t=> PONGHANDLER CRIADO");
+        try {
+            t = new Thread(this.pongHandler);
+            t.start();
+            System.out.println("\t=> PONGHANDLER CRIADO");
+        }
+        catch (Exception e){
+            e.printStackTrace();
+            System.out.println("=> ERRO AO CRIAR PONGHANDLER");
+        }
 
-        t = new Thread(this.nbrcHandler);
-        t.start();
-        System.out.println("\t=> NBRCONFIRMATIONHANDLER CRIADO");
+        try {
+            t = new Thread(this.nbrcHandler);
+            t.start();
+            System.out.println("\t=> NBRCONFIRMATIONHANDLER CRIADO");
+        }
+        catch (Exception e){
+            e.printStackTrace();
+            System.out.println("=> ERRO AO CRIAR NBRCONFIRMATIONHANDLER");
+        }
 
-        t = new Thread(this.addNbrHandler);
-        t.start();
-        System.out.println("\t=> ADDNBRHANDLER CRIADO");
+        try {
+            t = new Thread(this.addNbrHandler);
+            t.start();
+            System.out.println("\t=> ADDNBRHANDLER CRIADO");
+        }
+        catch (Exception e){
+            e.printStackTrace();
+            System.out.println("=> ERRO AO CRIAR ADDNBRHANDLER");
+        }
 
-        t = new Thread(this.aliveHandler);
-        t.start();
-        System.out.println("\t=> ALIVEHANDLER CRIADO");
+        try {
+            t = new Thread(this.aliveHandler);
+            t.start();
+            System.out.println("\t=> ALIVEHANDLER CRIADO");
+        }
+        catch (Exception e){
+            e.printStackTrace();
+            System.out.println("=> ERRO AO CRIAR ALIVEHANDLER");
+        }
 
         t = null;
         System.out.println("\n--------------------------------------------\n");

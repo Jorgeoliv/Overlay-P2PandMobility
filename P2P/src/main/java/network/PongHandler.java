@@ -15,6 +15,7 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
+import java.time.format.DecimalStyle;
 import java.util.ArrayList;
 import java.util.Random;
 import java.util.concurrent.Executors;
@@ -80,7 +81,6 @@ public class PongHandler implements Runnable {
             //System.out.println("PRIMEIRA ESCOLHA n_pongs " + n_pongs + " vagas " + vagas);
             //Verificar se o numero de pongs no tray é menor que o número de lugares restantes para vizinhos
             //Se FOR, enviar NBRConfirmations a todos
-            int nbrN2 = 0;
             for(DatagramPacket dp : this.pongTray){
 
                 buf = dp.getData();
@@ -91,10 +91,9 @@ public class PongHandler implements Runnable {
 
                 if(header instanceof Pong){
                     Pong pong = (Pong) header;
-                    printPong(pong);
+                    //printPong(pong);
                     if(this.nh.isPingValid(pong.pingID)) {
                         //Enviar NBRConfirmation
-                        nbrN2 += pong.nbrN2.size();
                         sendNbrConfirmation(pong);
                         System.out.println("ENVIOU NBRCONFIRMATION");
                     }
@@ -106,38 +105,6 @@ public class PongHandler implements Runnable {
                     System.out.println("ERRO NO PARSE DO DATAGRAMPACKET (PONGHANDLER)");
 
             }
-
-            vagas = vagas - n_pongs;
-            if (vagas > 0 && nbrN2 > 0){
-
-                //Escolher Vizinhos para preencher os lugares restantes (max 1 por pong, 3 Pongs => 3 vizinhos extra) Random??
-
-                Random random = new Random();
-                for(int i = 0; i < vagas; i++){
-                    DatagramPacket dp = this.pongTray.get(random.nextInt(this.pongTray.size()));
-                    this.pongTray.remove(dp);
-
-                    buf = dp.getData();
-                    ByteArrayInputStream bStream = new ByteArrayInputStream(buf);
-                    Input input = new Input(bStream);
-                    Header header = (Header) kryo.readClassAndObject(input);
-                    input.close();
-
-                    if(header instanceof Pong){
-                        Pong pong = (Pong) header;
-                        if(this.nh.isPingValid(pong.pingID)) {
-                            sendAddNbr(pong, pong.nbrN1.get(random.nextInt(pong.nbrN2.size())));
-                        }
-                        else {
-                            System.out.println("PING INVÁLIDO");
-                            i--;
-                        }
-                    }
-                    else
-                        System.out.println("ERRO NO PARSE DO DATAGRAMPACKET (PONGHANDLER)");
-                }
-            }
-
         }
         else{
             //Se for MAIOR escolher ao calhas o número de lugares restantes
@@ -145,6 +112,7 @@ public class PongHandler implements Runnable {
 
             Random random = new Random();
             for(int i = 0; i < vagas; i++){
+                System.out.println("ESCOLHA DE UM VIZINHO Nº " + i + "/" + vagas);
                 DatagramPacket dp = this.pongTray.get(random.nextInt(this.pongTray.size()));
                 this.pongTray.remove(dp);
 
@@ -188,31 +156,6 @@ public class PongHandler implements Runnable {
         System.out.println("|\tNBR N2 => " + pong.nbrN2);
         System.out.println("|\n|<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<");
         System.out.println("|----------------------------------------\n");
-    }
-
-    private void sendAddNbr(Pong pong, Nodo nodo) {
-
-        String id = this.idGen.getID();
-        AddNbr addNbr = new AddNbr(id, this.myNode, pong.origin);
-
-        this.nh.registerAddNbr(id);
-
-        ByteArrayOutputStream bStream = new ByteArrayOutputStream();
-        Output output = new Output(bStream);
-
-        Kryo kryo = new Kryo();
-        kryo.writeClassAndObject(output, addNbr);
-        output.close();
-
-        byte[] serializedAddNbr = bStream.toByteArray();
-
-        try {
-            DatagramPacket packet = new DatagramPacket(serializedAddNbr, serializedAddNbr.length, InetAddress.getByName(nodo.ip), this.ucp_AddNbr);
-            this.ucs.send(packet);
-            System.out.println("ADDNBR ENVIADO\n");
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
     }
 
     private void sendNbrConfirmation(Pong pong) {

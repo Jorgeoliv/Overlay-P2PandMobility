@@ -29,9 +29,8 @@ public class StartP2P {
 
         //Vai ter de começar a iniciar o multicast com o Ping
         FileTables ft = new FileTables();
-        NetworkTables nt = new NetworkTables(ft);
 
-        NetworkHandler nh = new NetworkHandler(nt);
+        NetworkHandler nh = new NetworkHandler(ft);
 
         Thread t = new Thread(nh);
         t.start();

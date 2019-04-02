@@ -50,7 +50,7 @@ public class NbrConfirmationHandler implements Runnable {
 
         if(header instanceof NbrConfirmation) {
             NbrConfirmation nbrc = (NbrConfirmation) header;
-            printNbrConfirmation(nbrc);
+            //printNbrConfirmation(nbrc);
 
             if(this.nh.isNodeValid(nbrc.requestID, nbrc.origin) || (valid = this.nh.isAddNbrValid(nbrc.IDresponse))){
                 this.nt.addNbrN1(nbrc.origin);
