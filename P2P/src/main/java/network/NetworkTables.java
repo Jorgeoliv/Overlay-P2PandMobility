@@ -20,7 +20,7 @@ public class NetworkTables{
     private HashMap<String, Integer> nbrUp = new HashMap<>();
     private ReentrantLock rlUp = new ReentrantLock();
 
-    private FileTables ft;
+    public FileTables ft;
 
 
     public NetworkTables(FileTables ft){
