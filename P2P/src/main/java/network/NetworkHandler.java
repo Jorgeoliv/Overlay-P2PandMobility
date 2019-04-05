@@ -33,7 +33,7 @@ public class NetworkHandler implements Runnable{
 
     //Estruturas de dados Internas
     //estruturas de segurança
-    private HashMap<String, Nodo> idNodo;
+    private HashMap<String, String> idNodo;
     private ArrayList<String> validPings;
     private ArrayList<String> validAddNbrs;
 
@@ -56,7 +56,7 @@ public class NetworkHandler implements Runnable{
         this.idgen = new IDGen(8);
         this.myNode = new Nodo(idgen.getNodeID(), InetAddress.getByName(InetAddress.getLocalHost().getHostAddress()).toString().replace("/", ""));;
 
-        this.idNodo = new HashMap<String, Nodo>();
+        this.idNodo = new HashMap<String, String>();
         this.validPings = new ArrayList<String>();
         this.validAddNbrs = new ArrayList<String>();
 
@@ -180,7 +180,7 @@ public class NetworkHandler implements Runnable{
 
     public void registerNode(String id, Nodo node){
         this.nodeLock.lock();
-        this.idNodo.put(id, node);
+        this.idNodo.put(id, node.id);
         this.nodeLock.unlock();
     }
 
@@ -188,21 +188,30 @@ public class NetworkHandler implements Runnable{
         this.nodeLock.lock();
         boolean res = false;
         if(this.idNodo.containsKey(id))
-            res = this.idNodo.get(id).equals(node);
+            res = this.idNodo.get(id).equals(node.id);
         this.nodeLock.unlock();
+        return res;
+    }
+
+    public boolean isNodePresent(Nodo node) {
+        boolean res = false;
+        this.nodeLock.lock();
+        res = this.idNodo.containsValue(node.id);
+        this.nodeLock.unlock();
+
         return res;
     }
 
     public boolean contains(Nodo node){
         this.nodeLock.lock();
-        boolean res = this.idNodo.containsValue(node);
+        boolean res = this.idNodo.containsValue(node.id);
         this.nodeLock.unlock();
         return res;
     }
 
     public  void removeNode(String id, Nodo node){
         this.nodeLock.lock();
-        this.idNodo.remove(id,node);
+        this.idNodo.remove(id,node.id);
         this.nodeLock.unlock();
     }
 }

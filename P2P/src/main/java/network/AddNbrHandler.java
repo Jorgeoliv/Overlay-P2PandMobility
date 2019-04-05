@@ -118,29 +118,32 @@ public class AddNbrHandler implements Runnable{
                 Nodo nN1 = this.nt.getRandomNN1();
                 if (nN1 != null) {
                     Nodo nN2 = this.nt.getRandomNN2(nN1);
+                    System.out.println("QUEM É QUE ESCOLHI!!!!!!\n" + "\t" + nN2 + "\n\t" + nN2.equals(this.myNode));
+                    if (!this.nh.isNodePresent(nN2)) {
+                        String id = this.idGen.getID();
+                        AddNbr addNbr = new AddNbr(id, this.myNode, nN1);
 
-                    String id = this.idGen.getID();
-                    AddNbr addNbr = new AddNbr(id, this.myNode, nN1);
+                        this.nh.registerAddNbr(id);
 
-                    this.nh.registerAddNbr(id);
+                        ByteArrayOutputStream bStream = new ByteArrayOutputStream();
+                        Output output = new Output(bStream);
 
-                    ByteArrayOutputStream bStream = new ByteArrayOutputStream();
-                    Output output = new Output(bStream);
+                        Kryo kryo = new Kryo();
+                        kryo.writeClassAndObject(output, addNbr);
+                        output.close();
 
-                    Kryo kryo = new Kryo();
-                    kryo.writeClassAndObject(output, addNbr);
-                    output.close();
-
-                    byte[] serializedAddNbr = bStream.toByteArray();
-                    try {
-                        DatagramPacket packet = new DatagramPacket(serializedAddNbr, serializedAddNbr.length, InetAddress.getByName(nN2.ip), this.ucp_AddNbr);
-                        (new DatagramSocket()).send(packet);
-                        System.out.println("ADDNBR ENVIADO PARA " + nN2.ip + "\n");
-                    } catch (IOException e) {
-                        e.printStackTrace();
+                        byte[] serializedAddNbr = bStream.toByteArray();
+                        try {
+                            DatagramPacket packet = new DatagramPacket(serializedAddNbr, serializedAddNbr.length, InetAddress.getByName(nN2.ip), this.ucp_AddNbr);
+                            (new DatagramSocket()).send(packet);
+                            System.out.println("ADDNBR ENVIADO PARA " + nN2.ip + "\n");
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
                     }
-                }
-                else
+                    else
+                        System.out.println("NÃO PRECISO DE ADICIONAR ESTE NODO COMO VIZINHO!!");
+                } else
                     System.out.println("SEM VIZINHOS DE NÍVEL 2!!");
             }
         }

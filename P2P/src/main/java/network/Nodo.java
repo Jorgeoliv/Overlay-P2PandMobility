@@ -4,7 +4,7 @@ import java.io.Serializable;
 import java.net.InetAddress;
 import java.util.Objects;
 
-public class Nodo /*implements Serializable*/ {
+public class Nodo implements Comparable {
 
     public String id; //representa o id do Nodo => Posteriormente o nome (para já é o ID?)
     public String ip;
@@ -36,8 +36,14 @@ public class Nodo /*implements Serializable*/ {
     @Override
     public String toString() {
         return "Nodo{" +
-                "id='" + id + '\'' +
                 ", ip='" + ip + '\'' +
-                '}';
+                "}\t";
     }
+
+    public int compareTo(Object o){
+
+        Nodo n = (Nodo) o;
+        return this.id.compareTo(n.id);
+    }
+
 }

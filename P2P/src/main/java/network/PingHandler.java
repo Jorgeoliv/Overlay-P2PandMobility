@@ -112,7 +112,7 @@ public class PingHandler implements Runnable{
         Kryo kryo = new Kryo();
 
         this.trayLock.lock();
-
+        int num = 0;
         for(DatagramPacket dp : this.pingTray){
 
             buf = dp.getData();
@@ -124,7 +124,8 @@ public class PingHandler implements Runnable{
             if(header instanceof Ping){
                 Ping ping = (Ping) header;
                 //printPing(ping);
-                if (analisePing(ping)) {
+                if (analisePing(ping, num)) {
+                    num++;
                     sendPong(ping);
                     this.nh.registerNode(ping.requestID, ping.origin);
                 }
@@ -177,17 +178,17 @@ public class PingHandler implements Runnable{
         }
     }
 
-    private boolean analisePing(Ping ping) {
+    private boolean analisePing(Ping ping, int num) {
         boolean decision = false;
 
 
-        // condição 1
-        if((!ping.nbrN1.contains(this.myNode)) && (!this.nh.contains(ping.origin)) && (!this.nt.nbrN1Contains(ping.origin))){
-            // condição 2
-            if((ping.nbrN1.size() + ping.nbrN2.size()) < this.softcap || (this.nt.getNumVN1() + this.nt.getNumVN2()) < this.softcap)
+        // condição 1 VIZINHOS DIRETOS OU EM PROCESSO DE SER
+        if((!ping.nbrN1.contains(this.myNode)) && (!this.nt.nbrN1Contains(ping.origin) && (!this.nh.contains(ping.origin)))){
+            // condição 2 FALTA DE VIZINHOS??
+            if((ping.nbrN1.size() + ping.nbrN2.size()) < this.softcap || (this.nt.getNumVN1() + this.nt.getNumVN2() + num) < this.softcap)
                 decision = true;
             else{
-                // condição 3
+                // condição 3 SOU VIZINHO DE N2?
                 if(!ping.nbrN2.contains(this.myNode)){
                     ArrayList <Nodo> myNbrs = new ArrayList<>(this.myN1Nbrs);
                     myNbrs.addAll(this.myN2Nbrs);
@@ -195,7 +196,7 @@ public class PingHandler implements Runnable{
                     pingNbrs.addAll(ping.nbrN2);
 
                     boolean interception = false;
-                    // condição 4
+                    // condição 4 INTERCEÇAO ENTRE OS VIZINHOS DE N1 e N2? MESMA REDE? É PRECISO MANDAR ALGUM QUIT??
                     for (Nodo n : myNbrs)
                         if (pingNbrs.contains(n))
                             interception = true;

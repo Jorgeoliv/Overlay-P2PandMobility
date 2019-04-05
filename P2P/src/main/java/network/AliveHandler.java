@@ -38,7 +38,7 @@ public class AliveHandler implements Runnable {
             for(Alive alive : this.aliveTray) {
                 //printAlive(alive);
                 this.nt.reset(alive.origin.id);
-                this.nt.updateNbrN2(alive.origin.id, alive.nbrN1);
+                this.nt.updateNbrN2(alive.origin.id, alive.nbrN1, this.myNode);
             }
         }
     };
@@ -64,7 +64,10 @@ public class AliveHandler implements Runnable {
         ArrayList<Nodo> myNbrsN2 = nt.getNbrsN2();
 
         System.out.println("Vou enviar as coisas para " + myNbrs.size() + " vizinhos!!!");
-
+        System.out.println("Os meus vizinhos de nivel 1 são: ");
+        System.out.println("\t " + myNbrs.toString());
+        System.out.println("Os meus vizinhos de nivel 2 são: ");
+        System.out.println("\t " + myNbrsN2.toString());
         /**
          * ISTO DEPPIS VAI PARA O CREATE PACKET!!!
          */
@@ -109,7 +112,7 @@ public class AliveHandler implements Runnable {
 
                 //reset das variáveis
                 this.nt.reset(ealive.origin.id);
-                this.nt.updateNbrN2(ealive.origin.id, ealive.nbrN1);
+                //this.nt.updateNbrN2(ealive.origin.id, ealive.nbrN1);
 
                 if(!ealive.updated){
                     //enviar emergencyalive!!!

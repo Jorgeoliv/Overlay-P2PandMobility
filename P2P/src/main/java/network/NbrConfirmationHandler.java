@@ -53,6 +53,8 @@ public class NbrConfirmationHandler implements Runnable {
             //printNbrConfirmation(nbrc);
 
             if(this.nh.isNodeValid(nbrc.requestID, nbrc.origin) || (valid = this.nh.isAddNbrValid(nbrc.IDresponse))){
+                System.out.println("NBRCONF => " + nbrc.origin.ip + " VS MYNODE => " + this.myNode.ip + "\n\n");
+                System.out.println("RESULTADO DO EQUALS: " + nbrc.origin.equals(this.myNode));
                 this.nt.addNbrN1(nbrc.origin);
 
                 //falta adicionar o conteudo do vizinho
