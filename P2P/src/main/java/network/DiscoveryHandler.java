@@ -17,21 +17,24 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-public class DiscoveryHandler {
+public class DiscoveryHandler implements Runnable{
 
-    private final int port = 6004;
+    private int ucp_Discovery;
     private FileTables ft;
     private NetworkTables nt;
-    private Nodo me;
+    private Nodo myNodo;
+    private IDGen idGen;
     private TreeSet<String> discoveryRequest = new TreeSet<>();
     private ScheduledExecutorService ses = Executors.newSingleThreadScheduledExecutor();
 
     public DiscoveryHandler(){}
 
-    public DiscoveryHandler(FileTables ft, NetworkTables nt, Nodo me){
-        this.ft = ft;
+    public DiscoveryHandler(NetworkTables nt, Nodo myNodo, int ucp_Discovery, IDGen idGen){
         this.nt = nt;
-        this.me = me;
+        this.ft = this.nt.ft;
+        this.myNodo = myNodo;
+        this.ucp_Discovery = ucp_Discovery;
+        this.idGen = idGen;
     }
 
     private synchronized boolean containsRequest(String id){
@@ -69,7 +72,7 @@ public class DiscoveryHandler {
 
             byte[] serializedMessage = bStream.toByteArray();
 
-            DatagramPacket packet = new DatagramPacket(serializedMessage, serializedMessage.length, InetAddress.getByName(n.ip), this.port);
+            DatagramPacket packet = new DatagramPacket(serializedMessage, serializedMessage.length, InetAddress.getByName(n.ip), this.ucp_Discovery);
             socket.send(packet);
 
         } catch (UnknownHostException e) {
@@ -83,7 +86,7 @@ public class DiscoveryHandler {
 
     public void run() {
         try {
-            DatagramSocket socket = new DatagramSocket(port, InetAddress.getByName(InetAddress.getLocalHost().getHostAddress()));
+            DatagramSocket socket = new DatagramSocket(ucp_Discovery, InetAddress.getByName(InetAddress.getLocalHost().getHostAddress()));
             System.out.println("O endereço é: " + InetAddress.getByName(InetAddress.getLocalHost().getHostAddress()));
 
             byte[] buffer = new byte[2048];
@@ -108,15 +111,18 @@ public class DiscoveryHandler {
                         addRequest(requestID);
 
                         String filename = cd.fileName;
+
+                        //Primeiro verificar se eu tenho o ficheiro
                         if(this.ft.itsMyFile(filename)){
                             //VAMOS TER DE VER O QUE FAZEMOS A SEGUIR!
                             //AQUI
                             //AQUI
                             //AQUI
                         }else{
+                            //Depois vou verificar se algum dos meus vizinhos tem o ficheiro
                             HashSet<Nodo> fileInNbr = this.ft.nbrWithFile(filename);
                             //VOu me colocar a mim como antecessor
-                            cd.antecessor = me;
+                            cd.antecessor = myNodo;
                             if(fileInNbr != null){
                                 //Só preciso de enviar o DiscoveryContent para os meus vizinhos do hashset ...
                                 cd.ttl = 1;

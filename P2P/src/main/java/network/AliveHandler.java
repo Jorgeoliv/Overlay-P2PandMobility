@@ -33,6 +33,7 @@ public class AliveHandler implements Runnable {
 
         this.aliveTray = new ArrayList<Alive>();
     }
+
     private Runnable emptyAliveTray = () ->{
         if(this.aliveTray.size() > 0){
             for(Alive alive : this.aliveTray) {

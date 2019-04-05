@@ -22,6 +22,8 @@ public class NetworkHandler implements Runnable{
     private int ucp_NbrConfirmation = 9877;
     private int ucp_AddNbr = 7789;
     private int ucp_Alive = 6001;
+    private int ucp_Update = 6003;
+    private int ucp_Discovery = 6004;
 
     //Caps
     private int SOFTCAP = 3;
@@ -49,7 +51,8 @@ public class NetworkHandler implements Runnable{
     private NbrConfirmationHandler nbrcHandler;
     private AddNbrHandler addNbrHandler;
     private AliveHandler aliveHandler;
-
+    private UpdateHandler updateHandler;
+    private DiscoveryHandler discoveryHandler;
 
 
     public NetworkHandler(FileTables ft) throws UnknownHostException {
@@ -71,6 +74,8 @@ public class NetworkHandler implements Runnable{
         this.nbrcHandler = new NbrConfirmationHandler(this, this.myNode, this.ucp_NbrConfirmation, this.ucp_Alive, nt);
         this.addNbrHandler = new AddNbrHandler(SOFTCAP, HARDCAP, this.idgen, this, this.myNode, this.ucp_AddNbr, this.ucp_NbrConfirmation, this.nt);
         this.aliveHandler = new AliveHandler(this, this.nt, this.myNode, this.ucp_Alive, this.idgen);
+        this.updateHandler = new UpdateHandler(this.ucp_Update, this.myNode, this.nt.ft, this.idgen);
+        this.discoveryHandler = new DiscoveryHandler(this.nt, this.myNode, this.ucp_Discovery, this.idgen);
 
     }
 
@@ -127,6 +132,26 @@ public class NetworkHandler implements Runnable{
         catch (Exception e){
             e.printStackTrace();
             System.out.println("=> ERRO AO CRIAR ALIVEHANDLER");
+        }
+
+        try {
+            t = new Thread(this.updateHandler);
+            t.start();
+            System.out.println("\t=> UPDATEHANDLER CRIADO");
+        }
+        catch (Exception e){
+            e.printStackTrace();
+            System.out.println("=> ERRO AO CRIAR UPDATEHANDLER");
+        }
+
+        try {
+            t = new Thread(this.discoveryHandler);
+            t.start();
+            System.out.println("\t=> DISCOVERYHANDLER CRIADO");
+        }
+        catch (Exception e){
+            e.printStackTrace();
+            System.out.println("=> ERRO AO CRIAR DISCOVERYHANDLER");
         }
 
         t = null;

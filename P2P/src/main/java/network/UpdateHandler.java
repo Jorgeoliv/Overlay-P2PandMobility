@@ -1,3 +1,5 @@
+package network;
+
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import files.FileTables;
@@ -17,15 +19,20 @@ import java.util.concurrent.TimeUnit;
 
 public class UpdateHandler implements Runnable{
 
-    final int port = 6003;
+    private int ucp_Update;
+    private Nodo myNode;
     private FileTables ft;
+    private IDGen idGen;
     private TreeSet<String> updateRequests = new TreeSet<>();
     private ScheduledExecutorService ses = Executors.newSingleThreadScheduledExecutor();
 
     public UpdateHandler(){}
 
-    public UpdateHandler(FileTables ft){
+    public UpdateHandler(int ucp_Update, Nodo myNode, FileTables ft, IDGen idGen) {
+        this.ucp_Update = ucp_Update;
+        this.myNode = myNode;
         this.ft = ft;
+        this.idGen = idGen;
     }
 
     private synchronized boolean containsRequest(String id){
@@ -58,7 +65,7 @@ public class UpdateHandler implements Runnable{
     @Override
     public void run() {
         try {
-            DatagramSocket socket = new DatagramSocket(port, InetAddress.getByName(InetAddress.getLocalHost().getHostAddress()));
+            DatagramSocket socket = new DatagramSocket(ucp_Update, InetAddress.getByName(InetAddress.getLocalHost().getHostAddress()));
             System.out.println("O endereço é: " + InetAddress.getByName(InetAddress.getLocalHost().getHostAddress()));
 
             byte[] buffer = new byte[2048];
@@ -80,10 +87,8 @@ public class UpdateHandler implements Runnable{
 
                 if(header instanceof UpdateTable){
                     UpdateTable ut = (UpdateTable) header;
-                    System.out.println("RECEBI: " + ut.toString());
                     String nodeID = ut.origin.id;
                     String requestID = ut.requestID;
-                    System.out.println("OLHA O MEU IP: " + ut.origin.ip);
                     //Só vai processar senão estiver na lista
                     if(!this.containsRequest(requestID)) {
                         this.addRequest(requestID);
