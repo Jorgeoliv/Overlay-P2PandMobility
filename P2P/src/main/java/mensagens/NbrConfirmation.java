@@ -10,15 +10,28 @@ public class NbrConfirmation extends Header {
     //tem de possuir uma lista sobre a meta-informação dos ficheiros que possui
     public ArrayList<FileInfo> fileInfos;
     public boolean added;
+    public String hash;
 
     public String IDresponse; //para saber qual é o pong a que este nbrconfirmation responde
 
     public NbrConfirmation(){super();};
-    public NbrConfirmation (String requestID, Nodo origin, ArrayList<FileInfo> fi, String idresponse, boolean added) {
+    public NbrConfirmation (String requestID, Nodo origin, ArrayList<FileInfo> fi, String idresponse, boolean added, String hash) {
         super(requestID, origin);
         this.added = added;
         this.IDresponse = idresponse;
         this.fileInfos = fi;
+        this.hash = hash;
     }
 
+    @Override
+    public String toString() {
+        return "NbrConfirmation{" +
+                "fileInfos=" + fileInfos +
+                ", added=" + added +
+                ", hash='" + hash + '\'' +
+                ", IDresponse='" + IDresponse + '\'' +
+                ", requestID='" + requestID + '\'' +
+                ", origin=" + origin +
+                '}';
+    }
 }

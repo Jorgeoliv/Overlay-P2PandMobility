@@ -2,14 +2,14 @@ package files;
 
 import java.util.*;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.stream.Collectors;
 
 import network.*;
 
 public class FileTables {
 
-    private HashMap<String, myFile> myContent = new HashMap<>(); // ficheiros que eu possuio, identificados pelo nome
+    private HashMap<String, MyFile> myContent = new HashMap<>(); // ficheiros que eu possuio, identificados pelo nome
     private ReentrantLock rlMyContent = new ReentrantLock();
+    private String myHash = UUID.randomUUID().toString();
 
     private HashMap<String, HashSet<Nodo>> nbrContent = new HashMap<>(); // ficheiros que os meus vizinhos posuem, identificados pelo nome do ficheiro
     private HashMap<String, String> nbrHash = new HashMap<>(); // para a hash das tabelas dos vizinhos
@@ -17,6 +17,16 @@ public class FileTables {
 
 
     public FileTables(){ }
+
+    public String getMyHash(){
+        System.out.println("A hash atual é: " + myHash);
+        try{
+            rlMyContent.lock();
+            return this.myHash;
+        }finally {
+            rlMyContent.unlock();
+        }
+    }
 
     public boolean itsMyFile(String filename){
         try{
@@ -38,24 +48,28 @@ public class FileTables {
 
 
 
-    public void addMyContent(ArrayList<myFile> files){
+    public String addMyContent(ArrayList<MyFile> files){
 
         rlMyContent.lock();
         try{
-            for(myFile m: files)
+            for(MyFile m: files)
                 myContent.put(m.id, m);
+            this.myHash = UUID.randomUUID().toString();
+            return this.myHash;
         }finally {
             rlMyContent.unlock();
         }
 
     }
 
-    public void rmMyContent(ArrayList<myFile> files){
+    public String rmMyContent(ArrayList<MyFile> files){
 
         rlMyContent.lock();
         try{
-            for(myFile m: files)
+            for(MyFile m: files)
                 myContent.remove(m);
+            this.myHash = UUID.randomUUID().toString();
+            return this.myHash;
         }finally {
             rlMyContent.unlock();
         }
@@ -83,8 +97,9 @@ public class FileTables {
 
     }
 
-    public void addContentForOneNbr(ArrayList<FileInfo> files, Nodo o){
+    public void addContentForOneNbr(ArrayList<FileInfo> files, Nodo o, String hash){
         rlNbrContent.lock();
+        System.out.println("TOU NA FILETABLE E QUERO VER A HASH ANTIGA: " + nbrHash.get(o.id));
         try{
             for(FileInfo fi: files){
                 if(nbrContent.containsKey(fi.id))
@@ -95,6 +110,8 @@ public class FileTables {
                     nbrContent.put(fi.id, aux);
                 }
             }
+            nbrHash.put(o.id, hash);
+            System.out.println("TOU NA FILETABLE E QUERO VER A HASH NOVA: " + nbrHash.get(o.id));
         }finally {
             rlNbrContent.unlock();
         }
@@ -115,13 +132,14 @@ public class FileTables {
 
     }
 
-    public void rmContentForOneNbr(ArrayList<FileInfo> files, Nodo o){
+    public void rmContentForOneNbr(ArrayList<FileInfo> files, Nodo o, String hash){
         rlNbrContent.lock();
         try{
             for(FileInfo fi: files){
                 if(nbrContent.containsKey(fi.id))
                     nbrContent.get(fi.id).remove(o);
             }
+            nbrHash.put(o.id, hash);
         }finally {
             rlNbrContent.unlock();
         }
@@ -178,8 +196,8 @@ public class FileTables {
     
     public ArrayList<FileInfo> getFileInfo(){
         ArrayList<FileInfo> fi = new ArrayList<>();
-        for(myFile mf : this.myContent.values())
-            fi.add(mf.fileInfo);
+        for(MyFile mf : this.myContent.values())
+            fi.add((FileInfo) mf);
 
         return fi;
     }

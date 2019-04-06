@@ -56,6 +56,8 @@ public class NbrConfirmationHandler implements Runnable {
                 System.out.println("NBRCONF => " + nbrc.origin.ip + " VS MYNODE => " + this.myNode.ip + "\n\n");
                 System.out.println("RESULTADO DO EQUALS: " + nbrc.origin.equals(this.myNode));
                 this.nt.addNbrN1(nbrc.origin);
+                //Vou adicionar os ficheiros dos vizinhos bem como a hash da sua tabela
+                this.nh.ft.addContentForOneNbr(nbrc.fileInfos, nbrc.origin, nbrc.hash);
 
                 //falta adicionar o conteudo do vizinho
                 System.out.println("=============================================>New NBR Added");
@@ -117,7 +119,7 @@ public class NbrConfirmationHandler implements Runnable {
     }
 
     private void sendNbrConfirmation(NbrConfirmation nbrc) {
-        NbrConfirmation nc = new NbrConfirmation(nbrc.IDresponse, this.myNode, this.nt.getFileInfo(), nbrc.requestID, true);
+        NbrConfirmation nc = new NbrConfirmation(nbrc.IDresponse, this.myNode, this.nt.getFileInfo(), nbrc.requestID, true, this.nh.ft.getMyHash());
 
         ByteArrayOutputStream bStream = new ByteArrayOutputStream();
         Output output = new Output(bStream);

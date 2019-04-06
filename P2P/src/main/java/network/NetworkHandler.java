@@ -1,7 +1,10 @@
 package network;
 
 
+import files.FileInfo;
 import files.FileTables;
+import files.MyFile;
+import mensagens.UpdateTable;
 
 import java.lang.reflect.Array;
 import java.net.InetAddress;
@@ -39,7 +42,8 @@ public class NetworkHandler implements Runnable{
     private ArrayList<String> validPings;
     private ArrayList<String> validAddNbrs;
 
-    private NetworkTables nt;
+    public NetworkTables nt;
+    public FileTables ft;
     private ReentrantLock nodeLock;
     private ReentrantLock pingLock;
     private ReentrantLock addNbrsLock;
@@ -64,6 +68,7 @@ public class NetworkHandler implements Runnable{
         this.validAddNbrs = new ArrayList<String>();
 
         this.nt = new NetworkTables(ft);
+        this.ft = ft;
         this.nodeLock = new ReentrantLock();
         this.pingLock = new ReentrantLock();
         this.addNbrsLock = new ReentrantLock();
@@ -74,7 +79,7 @@ public class NetworkHandler implements Runnable{
         this.nbrcHandler = new NbrConfirmationHandler(this, this.myNode, this.ucp_NbrConfirmation, this.ucp_Alive, nt);
         this.addNbrHandler = new AddNbrHandler(SOFTCAP, HARDCAP, this.idgen, this, this.myNode, this.ucp_AddNbr, this.ucp_NbrConfirmation, this.nt);
         this.aliveHandler = new AliveHandler(this, this.nt, this.myNode, this.ucp_Alive, this.idgen);
-        this.updateHandler = new UpdateHandler(this.ucp_Update, this.myNode, this.nt.ft, this.idgen);
+        this.updateHandler = new UpdateHandler(this.ucp_Update, this.myNode, this.nt.ft, this.idgen, this);
         this.discoveryHandler = new DiscoveryHandler(this.nt, this.myNode, this.ucp_Discovery, this.idgen);
 
     }
@@ -238,5 +243,16 @@ public class NetworkHandler implements Runnable{
         this.nodeLock.lock();
         this.idNodo.remove(id,node.id);
         this.nodeLock.unlock();
+    }
+
+    public void sendUpdate(ArrayList<MyFile> files) {
+        String oldHash = this.ft.getMyHash();
+        String newHash = this.ft.addMyContent(files);
+
+        ArrayList<FileInfo> sendFiles = new ArrayList<>();
+        sendFiles.addAll(files);
+
+        UpdateTable ut = new UpdateTable(this.idgen.getID(), this.myNode, sendFiles, null, oldHash, newHash);
+        this.updateHandler.sendUpdate(ut);
     }
 }
