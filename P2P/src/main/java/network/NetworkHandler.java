@@ -4,6 +4,7 @@ package network;
 import files.FileInfo;
 import files.FileTables;
 import files.MyFile;
+import mensagens.ContentDiscovery;
 import mensagens.UpdateTable;
 
 import java.lang.reflect.Array;
@@ -254,5 +255,16 @@ public class NetworkHandler implements Runnable{
 
         UpdateTable ut = new UpdateTable(this.idgen.getID(), this.myNode, sendFiles, null, oldHash, newHash);
         this.updateHandler.sendUpdate(ut);
+    }
+
+    public void sendDiscovery(String file) {
+
+        //tenho mesmo de criar assim o arraylist senão vai dar problemas com o kryo
+        ArrayList<String> route = new ArrayList<>();
+        route.add(myNode.id);
+        //Vamos colocar por defeito um ttl de 5
+        ContentDiscovery cd = new ContentDiscovery(this.idgen.getID(), myNode, 5, file, route);
+        this.discoveryHandler.sendDiscovery(cd);
+
     }
 }

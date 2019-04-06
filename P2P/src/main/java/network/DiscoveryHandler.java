@@ -84,6 +84,27 @@ public class DiscoveryHandler implements Runnable{
         }
     }
 
+    public void sendDiscovery(ContentDiscovery cd) {
+
+        addRequest(cd.requestID);
+        HashSet<Nodo> fileInNbr = this.ft.nbrWithFile(cd.fileName);
+
+        if(fileInNbr == null){
+            //Envio para todos os vizinhos
+            ArrayList<Nodo> nodos = nt.getNbrsN1();
+            for(Nodo n: nodos)
+                this.sendDiscovery(cd, n);
+        }else{
+            //Envio apenas para os vizinhos que têm o ficheiro
+            cd.ttl = 1;
+            for(Nodo n: fileInNbr){
+                this.sendDiscovery(cd, n);
+            }
+        }
+        ses.schedule(delete(cd.requestID), 60, TimeUnit.SECONDS);
+
+    }
+
     public void run() {
         try {
             DatagramSocket socket = new DatagramSocket(ucp_Discovery, InetAddress.getByName(InetAddress.getLocalHost().getHostAddress()));
@@ -110,10 +131,12 @@ public class DiscoveryHandler implements Runnable{
                     if(!containsRequest(requestID)){
                         addRequest(requestID);
 
-                        String filename = cd.fileName;
+                        System.out.println("Recebi um content discovery que pede o ficheiro: " + cd.fileName);
 
+                        String filename = cd.fileName;
                         //Primeiro verificar se eu tenho o ficheiro
                         if(this.ft.itsMyFile(filename)){
+                            System.out.println("\tSou eu o Nodo " + this.myNodo + " que tem o ficheiro: " + filename);
                             //VAMOS TER DE VER O QUE FAZEMOS A SEGUIR!
                             //AQUI
                             //AQUI
@@ -123,8 +146,10 @@ public class DiscoveryHandler implements Runnable{
                             HashSet<Nodo> fileInNbr = this.ft.nbrWithFile(filename);
                             //VOu me colocar a mim como antecessor
                             cd.antecessor = myNodo;
+                            cd.route.add(myNodo.id);
                             if(fileInNbr != null){
                                 //Só preciso de enviar o DiscoveryContent para os meus vizinhos do hashset ...
+                                System.out.println("\tO ficheiro está num dos meus vizinhos ...");
                                 cd.ttl = 1;
                                 for(Nodo n: fileInNbr){
                                     this.sendDiscovery(cd, n);
@@ -132,6 +157,7 @@ public class DiscoveryHandler implements Runnable{
                             }else{
                                 //Preciso de enviar o discoveryContent para todos os vizinhos desde que o ttl ainda seja maior do que zero...
                                 cd.ttl--;
+                                System.out.println("Não sei onde é que está o ficheiro ...");
                                 if(cd.ttl != 0){
                                     ArrayList<Nodo> nodos = nt.getNbrsN1();
                                     for(Nodo n: nodos)

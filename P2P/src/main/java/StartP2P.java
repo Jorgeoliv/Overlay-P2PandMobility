@@ -32,12 +32,14 @@ public class StartP2P {
             }
         }
 
+        //Criei um arraylist caso queiramos dar a possibilidade de o utilizador escolher mais do que um ficheiro
         ArrayList<MyFile> files = new ArrayList<>();
         files.add(new MyFile(file));
 
         nh.sendUpdate(files);
 
     }
+
 
     private static void download(BufferedReader inP, NetworkHandler nh){
 
@@ -55,6 +57,9 @@ public class StartP2P {
                 c = false;
             }
         }
+
+        //Neste caso faz sentido só procurar por um ficheiro
+        nh.sendDiscovery(file);
 
         System.out.println("O ficheiro lido foi: " + file);
 
