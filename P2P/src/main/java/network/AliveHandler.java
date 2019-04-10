@@ -38,9 +38,11 @@ public class AliveHandler implements Runnable {
         if(this.aliveTray.size() > 0){
             for(Alive alive : this.aliveTray) {
                 //printAlive(alive);
+                System.out.println("Vou fazer um reset aos valores para o: " + alive.origin.ip);
                 this.nt.reset(alive.origin.id);
                 this.nt.updateNbrN2(alive.origin.id, alive.nbrN1, this.myNode);
             }
+            this.aliveTray.clear();
         }
     };
 

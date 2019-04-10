@@ -252,6 +252,7 @@ public class UpdateHandler implements Runnable{
                         ses.schedule(delete(requestID), 180, TimeUnit.SECONDS);
                     }else{
                         //Se chega aqui indica que já recebemos o update table no entanto o nodo não recebeu o nosso ack, temos de enviá-lo de novo ...
+                        //Depois podemos pôr algo a enviar uma sequência de acks espaçados no tempo só para ter a certeza
                         Ack ack = new Ack(this.idGen.getID(), this.myNode, ut.requestID);
                         sendAck(ack, ut.origin);
                     }
