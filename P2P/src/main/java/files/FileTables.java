@@ -40,6 +40,18 @@ public class FileTables {
         }
     }
 
+    public FileInfo getMyFile(String filename){
+        try{
+            rlMyContent.lock();
+            System.out.println("Sera que é igual o nome do ficheiro?: " + this.myContent.containsKey(filename));
+            System.out.println("O ficheiro recebido é: " + filename);
+            System.out.println("Os ficheiros que tenho são: " + this.myContent.toString());
+            return this.myContent.get(filename);
+        }finally {
+            rlMyContent.unlock();
+        }
+    }
+
     public HashSet<Nodo> nbrWithFile(String filename){
         try{
             rlNbrContent.lock();

@@ -105,6 +105,31 @@ public class DiscoveryHandler implements Runnable{
 
     }
 
+    private void sendOwner(ContentOwner co, Nodo dest) {
+
+        try {
+            DatagramSocket socket = new DatagramSocket();
+            ByteArrayOutputStream bStream = new ByteArrayOutputStream();
+            Output output = new Output(bStream);
+            Kryo kryo = new Kryo();
+            kryo.writeClassAndObject(output, co);
+            output.close();
+
+            byte[] serializedMessage = bStream.toByteArray();
+
+            DatagramPacket packet = new DatagramPacket(serializedMessage, serializedMessage.length, InetAddress.getByName(dest.ip), this.ucp_Discovery);
+            socket.send(packet);
+
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        } catch (SocketException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+    }
+
     public void run() {
         try {
             DatagramSocket socket = new DatagramSocket(ucp_Discovery, InetAddress.getByName(InetAddress.getLocalHost().getHostAddress()));
@@ -134,9 +159,12 @@ public class DiscoveryHandler implements Runnable{
                         System.out.println("Recebi um content discovery que pede o ficheiro: " + cd.fileName);
 
                         String filename = cd.fileName;
-                        //Primeiro verificar se eu tenho o ficheiro
+                        //Primeiro verificar se eu tenho o ficheiro <- Depois podemos sacar o ficheiro logo e verificar se é null
                         if(this.ft.itsMyFile(filename)){
                             System.out.println("\tSou eu o Nodo " + this.myNodo + " que tem o ficheiro: " + filename);
+                            FileInfo fileToSend = this.ft.getMyFile(filename);
+                            ContentOwner co = new ContentOwner(this.idGen.getID(), this.myNodo, fileToSend);
+                            this.sendOwner(co, cd.origin);
                             //VAMOS TER DE VER O QUE FAZEMOS A SEGUIR!
                             //AQUI
                             //AQUI
@@ -169,6 +197,10 @@ public class DiscoveryHandler implements Runnable{
                         ses.schedule(delete(requestID), 60, TimeUnit.SECONDS);
                     }
 
+                }else {
+                    if(header instanceof ContentOwner){
+                        System.out.println("RECEBI UM CONTENT OWNER FROM: " + header.origin.ip);
+                    }
                 }
             }
         } catch (UnknownHostException e) {
