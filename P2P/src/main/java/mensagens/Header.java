@@ -3,6 +3,7 @@ package mensagens;
 import network.*;
 
 import java.io.Serializable;
+import java.util.Objects;
 
 public class Header /*implements Serializable*/ {
 
@@ -42,5 +43,18 @@ public class Header /*implements Serializable*/ {
         this.requestID = requestID;
         this.origin = origin;
         this.antecessor = origin; //Quando não indica o antecessor assumimos que é o nodo origem
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Header header = (Header) o;
+        return requestID.equals(header.requestID);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(requestID);
     }
 }

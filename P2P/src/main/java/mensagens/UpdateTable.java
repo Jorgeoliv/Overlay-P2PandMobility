@@ -37,4 +37,8 @@ public class UpdateTable extends Header{
                 ", origin=" + origin +
                 '}';
     }
+
+    public boolean equals(Object o){
+        return super.equals(o);
+    }
 }
