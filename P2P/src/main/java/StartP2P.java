@@ -1,19 +1,9 @@
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectOutput;
-import java.io.ObjectOutputStream;
+import java.io.*;
 import java.net.*;
 import java.util.ArrayList;
 
-import com.esotericsoftware.kryo.Kryo;
-import com.esotericsoftware.kryo.io.Output;
 import files.*;
-import jdk.nashorn.internal.parser.JSONParser;
-import mensagens.*;
 import network.*;
-import org.boon.json.JsonSerializer;
-import org.boon.json.JsonSerializerFactory;
-import org.boon.json.ObjectMapper;
 
 public class StartP2P {
 
@@ -25,6 +15,56 @@ public class StartP2P {
     final static int SOFTCAP = 3;
     final static int HARDCAP = 6;
 
+    private static void upload(BufferedReader inP, NetworkHandler nh){
+
+        System.out.print("1 - Insira o nome do ficheiro: ");
+        boolean c = false;
+        String file = null;
+
+        while(!c) {
+            try {
+                file = inP.readLine();
+                c = true;
+            } catch (IOException e) {
+                e.printStackTrace();
+                System.out.print("\nTente novamente: ");
+                c = false;
+            }
+        }
+
+        //Criei um arraylist caso queiramos dar a possibilidade de o utilizador escolher mais do que um ficheiro
+        ArrayList<MyFile> files = new ArrayList<>();
+        files.add(new MyFile(file));
+
+        nh.sendUpdate(files);
+
+    }
+
+
+    private static void download(BufferedReader inP, NetworkHandler nh){
+
+        System.out.print("1 - Insira o nome do ficheiro: ");
+        boolean c = false;
+        String file = null;
+
+        while(!c) {
+            try {
+                file = inP.readLine();
+                c = true;
+            } catch (IOException e) {
+                e.printStackTrace();
+                System.out.print("\nTente novamente: ");
+                c = false;
+            }
+        }
+
+        //Neste caso faz sentido só procurar por um ficheiro
+        nh.sendDiscovery(file);
+
+        System.out.println("O ficheiro lido foi: " + file);
+
+    }
+
     public static void main(String[] args) throws UnknownHostException {
 
         //Vai ter de começar a iniciar o multicast com o Ping
@@ -35,6 +75,42 @@ public class StartP2P {
         Thread t = new Thread(nh);
         t.start();
         System.out.println("NETWORKHANDLER CRIADO");
+
+        BufferedReader inP = new BufferedReader(new InputStreamReader(System.in));
+        boolean sair = false;
+        int opcao = 0;
+
+        while(!sair){
+
+            System.out.println("***** MENU *****");
+            System.out.println("1 - Upload Ficheiro");
+            System.out.println("2 - Download Ficheiro");
+            System.out.println("Outro para sair");
+
+            System.out.print("Opção: ");
+
+            boolean c = false;
+
+            while(!c) {
+                try {
+                    opcao = Integer.parseInt(inP.readLine());
+                    c = true;
+                } catch (Exception e) {
+                    System.out.println(e);
+                    System.out.print("\nTente novamente: ");
+                    c = false;
+                }
+            }
+
+            switch (opcao){
+                case 1: upload(inP, nh); break;
+                case 2: download(inP, nh); break;
+                default: sair = true;
+            }
+
+        }
+
+
 
     }
 

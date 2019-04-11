@@ -163,6 +163,7 @@ public class NetworkTables{
     public void inc(){
         rlUp.lock();
         try{
+            ArrayList<String> toRemove = new ArrayList<>();
             for(Map.Entry<String, Integer> a: this.nbrUp.entrySet()){
                 int value = a.getValue();
                 value++;
@@ -179,12 +180,13 @@ public class NetworkTables{
                     nbrN2.remove(id);
                     rlN2.unlock();
 
-                    nbrUp.remove(id);
+                    toRemove.add(id);
 
                     ft.rmNbr(id);
                 }else
                     this.nbrUp.put(a.getKey(), value);
             }
+            toRemove.stream().map(a -> nbrUp.remove(a));
         }finally {
             rlUp.unlock();
         }

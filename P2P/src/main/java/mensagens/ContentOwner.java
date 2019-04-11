@@ -12,6 +12,8 @@ public class ContentOwner extends Header{
      * -> Aqui vamos assumir que quem envia o "contentOwner" então indica que tem o ficheiro
      */
 
+    public ContentOwner(){}
+
     public ContentOwner(String requestID, Nodo origin, FileInfo fileInfo) {
         super(requestID, origin);
         this.fileInfo = fileInfo;

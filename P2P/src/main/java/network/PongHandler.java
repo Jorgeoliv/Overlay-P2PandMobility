@@ -160,8 +160,7 @@ public class PongHandler implements Runnable {
     }
 
     private void sendNbrConfirmation(Pong pong) {
-
-        NbrConfirmation nc = new NbrConfirmation(pong.pingID, this.myNode, this.nt.getFileInfo(), pong.requestID, false);
+        NbrConfirmation nc = new NbrConfirmation(pong.pingID, this.myNode, this.nt.getFileInfo(), pong.requestID, false,  this.nh.ft.getMyHash());
 
         this.nh.registerNode(pong.requestID, pong.origin);
 

@@ -1,7 +1,11 @@
 package network;
 
 
+import files.FileInfo;
 import files.FileTables;
+import files.MyFile;
+import mensagens.ContentDiscovery;
+import mensagens.UpdateTable;
 
 import java.lang.reflect.Array;
 import java.net.InetAddress;
@@ -42,7 +46,8 @@ public class NetworkHandler implements Runnable{
     private ArrayList<String> validPings;
     private ArrayList<String> validAddNbrs;
 
-    private NetworkTables nt;
+    public NetworkTables nt;
+    public FileTables ft;
     private ReentrantLock nodeLock;
     private ReentrantLock pingLock;
     private ReentrantLock addNbrsLock;
@@ -70,6 +75,7 @@ public class NetworkHandler implements Runnable{
         this.validAddNbrs = new ArrayList<String>();
 
         this.nt = new NetworkTables(ft);
+        this.ft = ft;
         this.nodeLock = new ReentrantLock();
         this.pingLock = new ReentrantLock();
         this.addNbrsLock = new ReentrantLock();
@@ -82,7 +88,7 @@ public class NetworkHandler implements Runnable{
         this.nbrcHandler = new NbrConfirmationHandler(this, this.myNode, this.ucp_NbrConfirmation, this.ucp_Alive, nt);
         this.addNbrHandler = new AddNbrHandler(SOFTCAP, HARDCAP, this.idgen, this, this.myNode, this.ucp_AddNbr, this.ucp_NbrConfirmation, this.nt);
         this.aliveHandler = new AliveHandler(this, this.nt, this.myNode, this.ucp_Alive, this.idgen);
-        this.updateHandler = new UpdateHandler(this.ucp_Update, this.myNode, this.nt.ft, this.idgen);
+        this.updateHandler = new UpdateHandler(this.ucp_Update, this.myNode, this.nt.ft, this.idgen, this);
         this.discoveryHandler = new DiscoveryHandler(this.nt, this.myNode, this.ucp_Discovery, this.idgen);
         this.quitHandler = new QuitHandler(this, this.nt, this.ucp_Quit, this.idgen, this.myNode);
 
@@ -292,5 +298,27 @@ public class NetworkHandler implements Runnable{
         }
         if(toRemove != null)
             this.quitHandler.sendQuit(toRemove);
+    }
+    
+    public void sendUpdate(ArrayList<MyFile> files) {
+        String oldHash = this.ft.getMyHash();
+        String newHash = this.ft.addMyContent(files);
+
+        ArrayList<FileInfo> sendFiles = new ArrayList<>();
+        sendFiles.addAll(files);
+
+        UpdateTable ut = new UpdateTable(this.idgen.getID(), this.myNode, sendFiles, null, oldHash, newHash);
+        this.updateHandler.sendUpdate(ut);
+    }
+
+    public void sendDiscovery(String file) {
+
+        //tenho mesmo de criar assim o arraylist senão vai dar problemas com o kryo
+        ArrayList<String> route = new ArrayList<>();
+        route.add(myNode.id);
+        //Vamos colocar por defeito um ttl de 5
+        ContentDiscovery cd = new ContentDiscovery(this.idgen.getID(), myNode, 5, file, route);
+        this.discoveryHandler.sendDiscovery(cd);
+
     }
 }

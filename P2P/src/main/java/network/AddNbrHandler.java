@@ -73,7 +73,7 @@ public class AddNbrHandler implements Runnable{
 
     private void sendNbrConfirmation(AddNbr addNbr) {
 
-        NbrConfirmation nc = new NbrConfirmation(this.idGen.getID(), this.myNode, this.nt.getFileInfo(), addNbr.requestID, false);
+        NbrConfirmation nc = new NbrConfirmation(this.idGen.getID(), this.myNode, this.nt.getFileInfo(), addNbr.requestID, false,  this.nh.ft.getMyHash());
 
         this.nh.registerNode(addNbr.requestID, addNbr.origin);
 

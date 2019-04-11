@@ -4,7 +4,9 @@ import network.*;
 
 public class Ack extends Header {
 
-    String responseID;
+    public String responseID;
+
+    public Ack(){}
 
     public Ack(String requestID, Nodo origin, String responseID) {
         super(requestID, origin);
