@@ -56,6 +56,7 @@ public class NbrConfirmationHandler implements Runnable {
                 System.out.println("NBRCONF => " + nbrc.origin.ip + " VS MYNODE => " + this.myNode.ip + "\n\n");
                 System.out.println("RESULTADO DO EQUALS: " + nbrc.origin.equals(this.myNode));
                 this.nt.addNbrN1(nbrc.origin);
+                this.nh.decInConv();
 
                 //falta adicionar o conteudo do vizinho
                 System.out.println("=============================================>New NBR Added");

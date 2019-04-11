@@ -94,6 +94,7 @@ public class PongHandler implements Runnable {
                     //printPong(pong);
                     if(this.nh.isPingValid(pong.pingID)) {
                         //Enviar NBRConfirmation
+                        this.nh.incInConv();
                         sendNbrConfirmation(pong);
                         System.out.println("ENVIOU NBRCONFIRMATION");
                     }

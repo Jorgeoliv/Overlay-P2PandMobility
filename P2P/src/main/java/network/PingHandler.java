@@ -112,7 +112,7 @@ public class PingHandler implements Runnable{
         Kryo kryo = new Kryo();
 
         this.trayLock.lock();
-        int num = 0;
+
         for(DatagramPacket dp : this.pingTray){
 
             buf = dp.getData();
@@ -124,8 +124,8 @@ public class PingHandler implements Runnable{
             if(header instanceof Ping){
                 Ping ping = (Ping) header;
                 //printPing(ping);
-                if (analisePing(ping, num)) {
-                    num++;
+                if (analisePing(ping)) {
+                    this.nh.incInConv();
                     sendPong(ping);
                     this.nh.registerNode(ping.requestID, ping.origin);
                 }
@@ -178,18 +178,20 @@ public class PingHandler implements Runnable{
         }
     }
 
-    private boolean analisePing(Ping ping, int num) {
+    private boolean analisePing(Ping ping) {
         boolean decision = false;
-
+        int myNN1 = this.nt.getNumVN1() + this.nh.getInConv();
 
         // condição 1 VIZINHOS DIRETOS OU EM PROCESSO DE SER
         if((!ping.nbrN1.contains(this.myNode)) && (!this.nt.nbrN1Contains(ping.origin) && (!this.nh.contains(ping.origin)))){
             // condição 2 FALTA DE VIZINHOS??
-            if((ping.nbrN1.size() + ping.nbrN2.size()) < this.softcap || (this.nt.getNumVN1() + this.nt.getNumVN2() + num) < this.softcap)
+            if((ping.nbrN1.size() < this.softcap) || (myNN1 < this.softcap)){
                 decision = true;
+            }
             else{
                 // condição 3 SOU VIZINHO DE N2?
                 if(!ping.nbrN2.contains(this.myNode)){
+
                     ArrayList <Nodo> myNbrs = new ArrayList<>(this.myN1Nbrs);
                     myNbrs.addAll(this.myN2Nbrs);
                     ArrayList <Nodo> pingNbrs = new ArrayList<>(ping.nbrN1);
@@ -208,6 +210,10 @@ public class PingHandler implements Runnable{
         else
             System.out.println("JÁ É MEU VIZINHO");
 
+        if(decision && myNN1+1 > this.softcap){
+            this.nh.sendQuit();
+            System.out.println("MENOS UM!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+        }
         return decision;
     }
 

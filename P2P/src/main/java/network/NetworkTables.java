@@ -48,6 +48,14 @@ public class NetworkTables{
 
     }
 
+    HashMap<String, TreeSet<Nodo>> getNbrN2(){
+        this.rlN2.lock();
+        HashMap<String, TreeSet<Nodo>> res = this.nbrN2;
+        this.rlN2.unlock();
+
+        return res;
+    }
+
     public void addNbrN1(Nodo nodo){
 
         this.rlN1.lock();
@@ -71,12 +79,11 @@ public class NetworkTables{
 
     }
 
-    public void rmNbrN1(ArrayList<Nodo> nodos){
+    public void rmNbrN1(Nodo node){
 
         rlN1.lock();
         try{
-            for(Nodo n: nodos)
-                nbrN1.remove(n);
+            nbrN1.remove(node);
         }finally {
             rlN1.unlock();
         }
@@ -108,14 +115,10 @@ public class NetworkTables{
 
     }
 
-    public void rmNbrN2(String id, ArrayList<Nodo> nodos){
+    public void rmNbrN2(Nodo node){
         rlN2.lock();
         try{
-            TreeSet<Nodo> aux = nbrN2.get(id);
-            if(aux == null)
-                aux = new TreeSet<>();
-            aux.removeAll(nodos);
-            nbrN2.put(id, aux);
+            nbrN2.remove(node.id);
         }finally {
             rlN2.unlock();
         }

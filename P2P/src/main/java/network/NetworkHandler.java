@@ -8,6 +8,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.TreeSet;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -24,10 +25,12 @@ public class NetworkHandler implements Runnable{
     private int ucp_Alive = 6001;
     private int ucp_Update = 6003;
     private int ucp_Discovery = 6004;
+    private int ucp_Quit = 6005;
 
     //Caps
     private int SOFTCAP = 3;
     private int HARDCAP = 6;
+    private int inConv = 0;
 
     //Estruturas de dados externas
     private IDGen idgen;
@@ -43,6 +46,8 @@ public class NetworkHandler implements Runnable{
     private ReentrantLock nodeLock;
     private ReentrantLock pingLock;
     private ReentrantLock addNbrsLock;
+    private ReentrantLock inConvLock;
+
     private ScheduledExecutorService ses;
 
     //Handlers
@@ -53,6 +58,7 @@ public class NetworkHandler implements Runnable{
     private AliveHandler aliveHandler;
     private UpdateHandler updateHandler;
     private DiscoveryHandler discoveryHandler;
+    private QuitHandler quitHandler;
 
 
     public NetworkHandler(FileTables ft) throws UnknownHostException {
@@ -67,6 +73,8 @@ public class NetworkHandler implements Runnable{
         this.nodeLock = new ReentrantLock();
         this.pingLock = new ReentrantLock();
         this.addNbrsLock = new ReentrantLock();
+        this.inConvLock = new ReentrantLock();
+
         this.ses = Executors.newSingleThreadScheduledExecutor();
 
         this.pingHandler = new PingHandler(SOFTCAP, HARDCAP, this, this.idgen, this.myNode, InetAddress.getByName("224.0.2.14"), mcp, ucp_Pong, 1, this.nt);
@@ -76,6 +84,7 @@ public class NetworkHandler implements Runnable{
         this.aliveHandler = new AliveHandler(this, this.nt, this.myNode, this.ucp_Alive, this.idgen);
         this.updateHandler = new UpdateHandler(this.ucp_Update, this.myNode, this.nt.ft, this.idgen);
         this.discoveryHandler = new DiscoveryHandler(this.nt, this.myNode, this.ucp_Discovery, this.idgen);
+        this.quitHandler = new QuitHandler(this, this.nt, this.ucp_Quit, this.idgen, this.myNode);
 
     }
 
@@ -152,6 +161,16 @@ public class NetworkHandler implements Runnable{
         catch (Exception e){
             e.printStackTrace();
             System.out.println("=> ERRO AO CRIAR DISCOVERYHANDLER");
+        }
+
+        try {
+            t = new Thread(this.quitHandler);
+            t.start();
+            System.out.println("\t=> QUITHANDLER CRIADO");
+        }
+        catch (Exception e){
+            e.printStackTrace();
+            System.out.println("=> ERRO AO CRIAR QUITHANDLER");
         }
 
         t = null;
@@ -238,5 +257,40 @@ public class NetworkHandler implements Runnable{
         this.nodeLock.lock();
         this.idNodo.remove(id,node.id);
         this.nodeLock.unlock();
+    }
+
+    public void incInConv(){
+        this.inConvLock.lock();
+        this.inConv++;
+        this.inConvLock.unlock();
+    }
+
+    public void decInConv(){
+        this.inConvLock.lock();
+        this.inConv--;
+        this.inConvLock.unlock();
+    }
+
+    public int getInConv(){
+        this.inConvLock.lock();
+        int res = this.inConv--;
+        this.inConvLock.unlock();
+
+        return res;
+    }
+
+    public void sendQuit() {
+        ArrayList<Nodo> nbrN1 = this.nt.getNbrsN1();
+        HashMap <String, TreeSet <Nodo>> nbrN2 = this.nt.getNbrN2();
+
+        int max_Nbr = -1;
+        Nodo toRemove = null;
+
+        for (Nodo n : nbrN1) {
+            if (nbrN2.get(n.id).size() > max_Nbr)
+                toRemove = n;
+        }
+        if(toRemove != null)
+            this.quitHandler.sendQuit(toRemove);
     }
 }

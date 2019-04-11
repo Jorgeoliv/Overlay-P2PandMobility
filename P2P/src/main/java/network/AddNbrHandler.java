@@ -60,7 +60,7 @@ public class AddNbrHandler implements Runnable{
             printAddNbr(addNbr);
 
             if (this.nt.getNbrsN1().contains(addNbr.intermediary)){
-                //Confirmar se o nodo intermediário tem o nodo originário desta msg como vizinho?? PROBLEMAS??
+                this.nh.incInConv();
                 sendNbrConfirmation(addNbr);
             }
             else{
@@ -124,6 +124,7 @@ public class AddNbrHandler implements Runnable{
                         AddNbr addNbr = new AddNbr(id, this.myNode, nN1);
 
                         this.nh.registerAddNbr(id);
+                        this.nh.incInConv();
 
                         ByteArrayOutputStream bStream = new ByteArrayOutputStream();
                         Output output = new Output(bStream);
