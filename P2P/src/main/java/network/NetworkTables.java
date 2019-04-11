@@ -79,11 +79,11 @@ public class NetworkTables{
 
     }
 
-    public void rmNbrN1(Nodo node){
+    public void rmNbrN1(String id){
 
         rlN1.lock();
         try{
-            nbrN1.remove(node);
+            nbrN1.remove(id);
         }finally {
             rlN1.unlock();
         }
@@ -115,10 +115,10 @@ public class NetworkTables{
 
     }
 
-    public void rmNbrN2(Nodo node){
+    public void rmNbrN2(String id){
         rlN2.lock();
         try{
-            nbrN2.remove(node.id);
+            nbrN2.remove(id);
         }finally {
             rlN2.unlock();
         }

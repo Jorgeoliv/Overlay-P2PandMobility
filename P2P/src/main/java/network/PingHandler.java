@@ -180,7 +180,7 @@ public class PingHandler implements Runnable{
 
     private boolean analisePing(Ping ping) {
         boolean decision = false;
-        int myNN1 = this.nt.getNumVN1() + this.nh.getInConv();
+        int myNN1 = this.nt.getNumVN1(); // FALTA POR A CONTAR OS VIZINHOS DIREITO!!!!!!!!!!!!!!!
 
         // condição 1 VIZINHOS DIRETOS OU EM PROCESSO DE SER
         if((!ping.nbrN1.contains(this.myNode)) && (!this.nt.nbrN1Contains(ping.origin) && (!this.nh.contains(ping.origin)))){
@@ -200,8 +200,10 @@ public class PingHandler implements Runnable{
                     boolean interception = false;
                     // condição 4 INTERCEÇAO ENTRE OS VIZINHOS DE N1 e N2? MESMA REDE? É PRECISO MANDAR ALGUM QUIT??
                     for (Nodo n : myNbrs)
-                        if (pingNbrs.contains(n))
+                        if (pingNbrs.contains(n)) {
                             interception = true;
+                            break;
+                        }
 
                         decision = !interception;
                 }
@@ -210,10 +212,9 @@ public class PingHandler implements Runnable{
         else
             System.out.println("JÁ É MEU VIZINHO");
 
-        if(decision && myNN1+1 > this.softcap){
+        if(decision && myNN1+1 > this.hardcap)
             this.nh.sendQuit();
-            System.out.println("MENOS UM!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-        }
+
         return decision;
     }
 

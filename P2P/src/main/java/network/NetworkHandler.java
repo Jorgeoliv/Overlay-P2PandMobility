@@ -32,8 +32,8 @@ public class NetworkHandler implements Runnable{
     private int ucp_Quit = 6005;
 
     //Caps
-    private int SOFTCAP = 3;
-    private int HARDCAP = 6;
+    private int SOFTCAP = 4;
+    private int HARDCAP = 10;
     private int inConv = 0;
 
     //Estruturas de dados externas
@@ -292,10 +292,15 @@ public class NetworkHandler implements Runnable{
         int max_Nbr = -1;
         Nodo toRemove = null;
 
+
         for (Nodo n : nbrN1) {
-            if (nbrN2.get(n.id).size() > max_Nbr)
+            if (nbrN2.get(n.id).size() > max_Nbr) {
+                max_Nbr = nbrN2.get(n.id).size();
                 toRemove = n;
+            }
         }
+
+
         if(toRemove != null)
             this.quitHandler.sendQuit(toRemove);
     }

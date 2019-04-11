@@ -41,11 +41,11 @@ public class QuitHandler implements Runnable {
     public void sendQuit(Nodo node){
 
         //Remover vizinho
-        this.nt.rmNbrN1(node);
+        this.nt.rmNbrN1(node.id);
         //Remover Vizinhos N2
-        this.nt.rmNbrN2(node);
+        this.nt.rmNbrN2(node.id);
         //Remover conteúdos
-        //?????????????????????????????????????????????????
+        this.nh.ft.rmNbr(node.id);
 
         Quit quit = new Quit(this.idGen.getID(), this.myNode);
         ByteArrayOutputStream bStream = new ByteArrayOutputStream();
@@ -84,12 +84,11 @@ public class QuitHandler implements Runnable {
 
             if(this.nt.nbrN1Contains(quit.origin)){
                //Remover vizinho
-                this.nt.rmNbrN1(quit.origin);
+                this.nt.rmNbrN1(quit.origin.id);
                //Remover Vizinhos N2
-                this.nt.rmNbrN2(quit.origin);
+                this.nt.rmNbrN2(quit.origin.id);
                //Remover conteúdos
-                //?????????????????????????????????????????????????
-
+                this.nh.ft.rmNbr(quit.origin.id);
             }
             else
                 System.out.println("COMBINAÇÃO ID NODO INEXISTENTE");
