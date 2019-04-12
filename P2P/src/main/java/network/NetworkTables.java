@@ -18,12 +18,30 @@ public class NetworkTables{
 
     public FileTables ft;
 
+    private Nodo myNode;
 
-    NetworkTables(FileTables ft){
+    NetworkTables(Nodo myNode, FileTables ft){
         this.ft = ft;
+        this.myNode = myNode;
     }
 
-    ArrayList<Nodo> getNbrsN1(){
+    public HashMap<String, Nodo> getNbrN1(){
+        return this.nbrN1;
+    }
+
+    public ReentrantLock getRlN1(){
+        return this.rlN1;
+    }
+
+    public ReentrantLock getRlN2(){
+        return this.rlN2;
+    }
+
+    public Nodo getMyNode(){
+        return this.myNode;
+    }
+
+    public ArrayList<Nodo> getNbrsN1(){
         rlN1.lock();
         try{
             return (new ArrayList<Nodo>(nbrN1.values()));
@@ -32,7 +50,7 @@ public class NetworkTables{
         }
     }
 
-    ArrayList<Nodo> getNbrsN2(){
+    public ArrayList<Nodo> getNbrsN2(){
 
         this.rlN2.lock();
         TreeSet<Nodo> res = new TreeSet<Nodo>();
@@ -48,7 +66,7 @@ public class NetworkTables{
 
     }
 
-    HashMap<String, TreeSet<Nodo>> getNbrN2(){
+    public HashMap<String, TreeSet<Nodo>> getNbrN2(){
         this.rlN2.lock();
         HashMap<String, TreeSet<Nodo>> res = this.nbrN2;
         this.rlN2.unlock();

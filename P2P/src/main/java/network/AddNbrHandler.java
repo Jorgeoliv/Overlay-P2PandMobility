@@ -60,7 +60,7 @@ public class AddNbrHandler implements Runnable{
             printAddNbr(addNbr);
 
             if (this.nt.getNbrsN1().contains(addNbr.intermediary)){
-                this.nh.incInConv();
+                this.nh.addInConv(addNbr.origin);
                 sendNbrConfirmation(addNbr);
             }
             else{
@@ -124,7 +124,7 @@ public class AddNbrHandler implements Runnable{
                         AddNbr addNbr = new AddNbr(id, this.myNode, nN1);
 
                         this.nh.registerAddNbr(id);
-                        this.nh.incInConv();
+                        this.nh.addInConv(nN2);
 
                         ByteArrayOutputStream bStream = new ByteArrayOutputStream();
                         Output output = new Output(bStream);

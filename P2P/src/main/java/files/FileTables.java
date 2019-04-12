@@ -5,9 +5,12 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import network.*;
 
-public class FileTables {
 
-    private HashMap<String, MyFile> myContent = new HashMap<>(); // ficheiros que eu possuio, identificados pelo nome
+public class FileTables {
+    private final int FileChunkSize = 1300;
+
+    private HashMap<String, FileInfo> myContent = new HashMap<>(); // informação dos ficheiros que eu possuio, identificados pelo nome
+    private HashMap<String, Ficheiro> myFiles = new HashMap<>(); // ficheiros que eu possuio, identificados pelo nome
     private ReentrantLock rlMyContent = new ReentrantLock();
     private String myHash = UUID.randomUUID().toString();
 
@@ -63,11 +66,11 @@ public class FileTables {
 
 
 
-    public String addMyContent(ArrayList<MyFile> files){
+    public String addMyContent(ArrayList<FileInfo> files){
 
         rlMyContent.lock();
         try{
-            for(MyFile m: files)
+            for(FileInfo m: files)
                 myContent.put(m.id, m);
             this.myHash = UUID.randomUUID().toString();
             return this.myHash;
@@ -77,11 +80,11 @@ public class FileTables {
 
     }
 
-    public String rmMyContent(ArrayList<MyFile> files){
+    public String rmMyContent(ArrayList<FileInfo> files){
 
         rlMyContent.lock();
         try{
-            for(MyFile m: files)
+            for(FileInfo m: files)
                 myContent.remove(m);
             this.myHash = UUID.randomUUID().toString();
             return this.myHash;
@@ -114,7 +117,7 @@ public class FileTables {
 
     public void addContentForOneNbr(ArrayList<FileInfo> files, Nodo o, String hash){
         rlNbrContent.lock();
-        System.out.println("TOU NA FILETABLE E QUERO VER A HASH ANTIGA: " + nbrHash.get(o.id));
+        //System.out.println("TOU NA FILETABLE E QUERO VER A HASH ANTIGA: " + nbrHash.get(o.id));
         try{
             for(FileInfo fi: files){
                 if(nbrContent.containsKey(fi.id))
@@ -126,7 +129,7 @@ public class FileTables {
                 }
             }
             nbrHash.put(o.id, hash);
-            System.out.println("TOU NA FILETABLE E QUERO VER A HASH NOVA: " + nbrHash.get(o.id));
+            //System.out.println("TOU NA FILETABLE E QUERO VER A HASH NOVA: " + nbrHash.get(o.id));
         }finally {
             rlNbrContent.unlock();
         }
@@ -211,10 +214,22 @@ public class FileTables {
     
     public ArrayList<FileInfo> getFileInfo(){
         ArrayList<FileInfo> fi = new ArrayList<>();
-        for(MyFile mf : this.myContent.values())
-            fi.add((FileInfo) mf);
+        for(FileInfo mf : this.myContent.values())
+            fi.add(mf);
 
         return fi;
     }
 
+    public ArrayList<FileInfo> newFicheiro (ArrayList<String> path) {
+        ArrayList<FileInfo> fi = new ArrayList<FileInfo>();
+        FileInfo aux;
+        for (String p : path) {
+            Ficheiro f = new Ficheiro(p, FileChunkSize);
+            this.myFiles.put(p, f);
+            aux = new FileInfo(p, f.getFileSize());
+            fi.add(aux);
+            this.myContent.put(p, aux);
+        }
+        return fi;
+    }
 }

@@ -1,22 +1,20 @@
-package network;
+package files;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
-import files.FileTables;
 import mensagens.*;
-import files.*;
-import sun.reflect.generics.tree.Tree;
+import network.IDGen;
+import network.NetworkHandler;
+import network.Nodo;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.*;
-import java.sql.SQLOutput;
 import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 class SupportUpdate{
@@ -211,7 +209,6 @@ public class UpdateHandler implements Runnable{
     public void run() {
         try {
             DatagramSocket socket = new DatagramSocket(ucp_Update, InetAddress.getByName(InetAddress.getLocalHost().getHostAddress()));
-            System.out.println("O endereço é: " + InetAddress.getByName(InetAddress.getLocalHost().getHostAddress()));
 
             byte[] buffer = new byte[2048];
             DatagramPacket packet = new DatagramPacket(buffer, buffer.length);

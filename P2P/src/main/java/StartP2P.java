@@ -15,7 +15,7 @@ public class StartP2P {
     final static int SOFTCAP = 3;
     final static int HARDCAP = 6;
 
-    private static void upload(BufferedReader inP, NetworkHandler nh){
+    private static void upload(BufferedReader inP, NetworkHandler nh, FileTables ft){
 
         System.out.print("1 - Insira o nome do ficheiro: ");
         boolean c = false;
@@ -33,15 +33,15 @@ public class StartP2P {
         }
 
         //Criei um arraylist caso queiramos dar a possibilidade de o utilizador escolher mais do que um ficheiro
-        ArrayList<MyFile> files = new ArrayList<>();
-        files.add(new MyFile(file));
+        ArrayList<String> files = new ArrayList<>();
+        files.add(file);
 
-        nh.sendUpdate(files);
+        ArrayList<FileInfo> fi = ft.newFicheiro(files);
+        nh.sendUpdate(fi);
 
     }
 
-
-    private static void download(BufferedReader inP, NetworkHandler nh){
+    private static void download(BufferedReader inP, FileHandler fh){
 
         System.out.print("1 - Insira o nome do ficheiro: ");
         boolean c = false;
@@ -59,7 +59,7 @@ public class StartP2P {
         }
 
         //Neste caso faz sentido só procurar por um ficheiro
-        nh.sendDiscovery(file);
+        fh.sendDiscovery(file);
 
         System.out.println("O ficheiro lido foi: " + file);
 
@@ -67,14 +67,20 @@ public class StartP2P {
 
     public static void main(String[] args) throws UnknownHostException {
 
-        //Vai ter de começar a iniciar o multicast com o Ping
-        FileTables ft = new FileTables();
+        FileHandler fh = new FileHandler();
 
-        NetworkHandler nh = new NetworkHandler(ft);
+        NetworkHandler nh = new NetworkHandler(fh.getFileTables());
+
+        fh.updateVars(nh.getNetworkTables());
 
         Thread t = new Thread(nh);
         t.start();
         System.out.println("NETWORKHANDLER CRIADO");
+
+        t = new Thread(fh);
+        t.start();
+        System.out.println("FILEHANDLER CRIADO");
+
 
         BufferedReader inP = new BufferedReader(new InputStreamReader(System.in));
         boolean sair = false;
@@ -103,8 +109,8 @@ public class StartP2P {
             }
 
             switch (opcao){
-                case 1: upload(inP, nh); break;
-                case 2: download(inP, nh); break;
+                case 1: upload(inP, nh, fh.getFileTables()); break;
+                case 2: download(inP, fh); break;
                 default: sair = true;
             }
 

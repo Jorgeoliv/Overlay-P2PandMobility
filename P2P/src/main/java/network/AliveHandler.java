@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class AliveHandler implements Runnable {
 
@@ -21,6 +22,8 @@ public class AliveHandler implements Runnable {
     private IDGen idGen;
 
     private ArrayList <Alive> aliveTray;
+    private ReentrantLock aliveTrayLock;
+
 
     public AliveHandler(NetworkHandler nh, NetworkTables nt, Nodo id, int ucp_Alive, IDGen idGen) {
         this.nh = nh;
@@ -32,17 +35,22 @@ public class AliveHandler implements Runnable {
         this.idGen = idGen;
 
         this.aliveTray = new ArrayList<Alive>();
+        this.aliveTrayLock = new ReentrantLock();
     }
 
     private Runnable emptyAliveTray = () ->{
-        if(this.aliveTray.size() > 0){
-            for(Alive alive : this.aliveTray) {
+        this.aliveTrayLock.lock();
+        ArrayList<Alive> auxAlive = (ArrayList<Alive>) this.aliveTray.clone();
+        this.aliveTray.clear();
+        this.aliveTrayLock.unlock();
+
+        if(auxAlive.size() > 0){
+            for(Alive alive : auxAlive) {
                 //printAlive(alive);
                 System.out.println("Vou fazer um reset aos valores para o: " + alive.origin.ip);
                 this.nt.reset(alive.origin.id);
                 this.nt.updateNbrN2(alive.origin.id, alive.nbrN1, this.myNode);
             }
-            this.aliveTray.clear();
         }
     };
 
@@ -194,8 +202,11 @@ public class AliveHandler implements Runnable {
                 Header header = (Header) kryo.readClassAndObject(input);
                 input.close();
 
-                if (header instanceof Alive)
+                if (header instanceof Alive) {
+                    this.aliveTrayLock.lock();
                     this.aliveTray.add((Alive) header);
+                    this.aliveTrayLock.unlock();
+                }
                 else
                     if(header instanceof EmergencyAlive) {
                         processEmergencyAlive((EmergencyAlive) header);

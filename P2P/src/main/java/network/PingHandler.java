@@ -112,8 +112,11 @@ public class PingHandler implements Runnable{
         Kryo kryo = new Kryo();
 
         this.trayLock.lock();
+        ArrayList <DatagramPacket> auxPing = (ArrayList<DatagramPacket>) this.pingTray.clone();
+        this.pingTray.clear();
+        this.trayLock.unlock();
 
-        for(DatagramPacket dp : this.pingTray){
+        for(DatagramPacket dp : auxPing){
 
             buf = dp.getData();
             ByteArrayInputStream bStream = new ByteArrayInputStream(buf);
@@ -125,7 +128,7 @@ public class PingHandler implements Runnable{
                 Ping ping = (Ping) header;
                 //printPing(ping);
                 if (analisePing(ping)) {
-                    this.nh.incInConv();
+                    this.nh.addInConv(ping.origin);
                     sendPong(ping);
                     this.nh.registerNode(ping.requestID, ping.origin);
                 }
@@ -136,8 +139,7 @@ public class PingHandler implements Runnable{
                 System.out.println("ERRO NO PARSE DO DATAGRAMPACKET (PINGHANDLER)");
 
         }
-        this.pingTray.clear();
-        this.trayLock.unlock();
+
     };
 
     private void printPing(Ping ping) {
@@ -180,7 +182,7 @@ public class PingHandler implements Runnable{
 
     private boolean analisePing(Ping ping) {
         boolean decision = false;
-        int myNN1 = this.nt.getNumVN1(); // FALTA POR A CONTAR OS VIZINHOS DIREITO!!!!!!!!!!!!!!!
+        int myNN1 = this.nt.getNumVN1() + this.nh.getInPingConvSize() ;
 
         // condição 1 VIZINHOS DIRETOS OU EM PROCESSO DE SER
         if((!ping.nbrN1.contains(this.myNode)) && (!this.nt.nbrN1Contains(ping.origin) && (!this.nh.contains(ping.origin)))){

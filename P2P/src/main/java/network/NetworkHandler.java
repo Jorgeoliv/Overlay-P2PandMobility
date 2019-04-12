@@ -1,13 +1,13 @@
 package network;
 
 
+import files.ContentDiscoveryHandler;
 import files.FileInfo;
 import files.FileTables;
-import files.MyFile;
+import files.UpdateHandler;
 import mensagens.ContentDiscovery;
 import mensagens.UpdateTable;
 
-import java.lang.reflect.Array;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
@@ -22,19 +22,19 @@ public class NetworkHandler implements Runnable{
 
     //Portas
     private int port = 6000;
-    private int mcp = 6789;
-    private int ucp_Pong = 9876;
-    private int ucp_NbrConfirmation = 9877;
-    private int ucp_AddNbr = 7789;
-    private int ucp_Alive = 6001;
-    private int ucp_Update = 6003;
-    private int ucp_Discovery = 6004;
-    private int ucp_Quit = 6005;
+    private int mcp = 6001;
+    private int ucp_Pong = 6002;
+    private int ucp_NbrConfirmation = 6003;
+    private int ucp_AddNbr = 6004;
+    private int ucp_Alive = 6005;
+    private int ucp_Update = 6006;
+    private int ucp_Discovery = 6007;
+    private int ucp_Quit = 6008;
 
     //Caps
     private int SOFTCAP = 4;
     private int HARDCAP = 10;
-    private int inConv = 0;
+    private TreeSet<Nodo> inPingConv;
 
     //Estruturas de dados externas
     private IDGen idgen;
@@ -51,7 +51,7 @@ public class NetworkHandler implements Runnable{
     private ReentrantLock nodeLock;
     private ReentrantLock pingLock;
     private ReentrantLock addNbrsLock;
-    private ReentrantLock inConvLock;
+    private ReentrantLock inPingConvLock;
 
     private ScheduledExecutorService ses;
 
@@ -62,7 +62,7 @@ public class NetworkHandler implements Runnable{
     private AddNbrHandler addNbrHandler;
     private AliveHandler aliveHandler;
     private UpdateHandler updateHandler;
-    private DiscoveryHandler discoveryHandler;
+    private ContentDiscoveryHandler discoveryHandler;
     private QuitHandler quitHandler;
 
 
@@ -74,12 +74,14 @@ public class NetworkHandler implements Runnable{
         this.validPings = new ArrayList<String>();
         this.validAddNbrs = new ArrayList<String>();
 
-        this.nt = new NetworkTables(ft);
+        this.nt = new NetworkTables(this.myNode, ft);
         this.ft = ft;
         this.nodeLock = new ReentrantLock();
         this.pingLock = new ReentrantLock();
         this.addNbrsLock = new ReentrantLock();
-        this.inConvLock = new ReentrantLock();
+        this.inPingConvLock = new ReentrantLock();
+
+        this.inPingConv = new TreeSet<Nodo>();
 
         this.ses = Executors.newSingleThreadScheduledExecutor();
 
@@ -89,7 +91,7 @@ public class NetworkHandler implements Runnable{
         this.addNbrHandler = new AddNbrHandler(SOFTCAP, HARDCAP, this.idgen, this, this.myNode, this.ucp_AddNbr, this.ucp_NbrConfirmation, this.nt);
         this.aliveHandler = new AliveHandler(this, this.nt, this.myNode, this.ucp_Alive, this.idgen);
         this.updateHandler = new UpdateHandler(this.ucp_Update, this.myNode, this.nt.ft, this.idgen, this);
-        this.discoveryHandler = new DiscoveryHandler(this.nt, this.myNode, this.ucp_Discovery, this.idgen);
+        this.discoveryHandler = new ContentDiscoveryHandler(this.nt, this.myNode, this.ucp_Discovery, this.idgen);
         this.quitHandler = new QuitHandler(this, this.nt, this.ucp_Quit, this.idgen, this.myNode);
 
     }
@@ -150,26 +152,6 @@ public class NetworkHandler implements Runnable{
         }
 
         try {
-            t = new Thread(this.updateHandler);
-            t.start();
-            System.out.println("\t=> UPDATEHANDLER CRIADO");
-        }
-        catch (Exception e){
-            e.printStackTrace();
-            System.out.println("=> ERRO AO CRIAR UPDATEHANDLER");
-        }
-
-        try {
-            t = new Thread(this.discoveryHandler);
-            t.start();
-            System.out.println("\t=> DISCOVERYHANDLER CRIADO");
-        }
-        catch (Exception e){
-            e.printStackTrace();
-            System.out.println("=> ERRO AO CRIAR DISCOVERYHANDLER");
-        }
-
-        try {
             t = new Thread(this.quitHandler);
             t.start();
             System.out.println("\t=> QUITHANDLER CRIADO");
@@ -183,6 +165,15 @@ public class NetworkHandler implements Runnable{
         System.out.println("\n--------------------------------------------\n");
 
     }
+
+    public NetworkTables getNetworkTables(){
+        return this.nt;
+    }
+
+    public HashMap<String, TreeSet<Nodo>> getNbrN2(){
+        return this.nt.getNbrN2();
+    }
+
     private Runnable invalidatePing = () ->{
         this.pingLock.lock();
         this.validPings.remove(0);
@@ -265,22 +256,22 @@ public class NetworkHandler implements Runnable{
         this.nodeLock.unlock();
     }
 
-    public void incInConv(){
-        this.inConvLock.lock();
-        this.inConv++;
-        this.inConvLock.unlock();
+    public void addInConv(Nodo node){
+        this.inPingConvLock.lock();
+        this.inPingConv.add(node);
+        this.inPingConvLock.unlock();
     }
 
-    public void decInConv(){
-        this.inConvLock.lock();
-        this.inConv--;
-        this.inConvLock.unlock();
+    public void remInConv(Nodo node){
+        this.inPingConvLock.lock();
+        this.inPingConv.remove(node);
+        this.inPingConvLock.unlock();
     }
 
-    public int getInConv(){
-        this.inConvLock.lock();
-        int res = this.inConv--;
-        this.inConvLock.unlock();
+    public int getInPingConvSize(){
+        this.inPingConvLock.lock();
+        int res = this.inPingConv.size();
+        this.inPingConvLock.unlock();
 
         return res;
     }
@@ -305,25 +296,11 @@ public class NetworkHandler implements Runnable{
             this.quitHandler.sendQuit(toRemove);
     }
     
-    public void sendUpdate(ArrayList<MyFile> files) {
+    public void sendUpdate(ArrayList<FileInfo> files) {
         String oldHash = this.ft.getMyHash();
         String newHash = this.ft.addMyContent(files);
 
-        ArrayList<FileInfo> sendFiles = new ArrayList<>();
-        sendFiles.addAll(files);
-
-        UpdateTable ut = new UpdateTable(this.idgen.getID(), this.myNode, sendFiles, null, oldHash, newHash);
+        UpdateTable ut = new UpdateTable(this.idgen.getID(), this.myNode, files, null, oldHash, newHash);
         this.updateHandler.sendUpdate(ut);
-    }
-
-    public void sendDiscovery(String file) {
-
-        //tenho mesmo de criar assim o arraylist senão vai dar problemas com o kryo
-        ArrayList<String> route = new ArrayList<>();
-        route.add(myNode.id);
-        //Vamos colocar por defeito um ttl de 5
-        ContentDiscovery cd = new ContentDiscovery(this.idgen.getID(), myNode, 5, file, route);
-        this.discoveryHandler.sendDiscovery(cd);
-
     }
 }

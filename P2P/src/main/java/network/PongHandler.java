@@ -3,7 +3,6 @@ package network;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
-import mensagens.AddNbr;
 import mensagens.Header;
 import mensagens.NbrConfirmation;
 import mensagens.Pong;
@@ -15,7 +14,6 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
-import java.time.format.DecimalStyle;
 import java.util.ArrayList;
 import java.util.Random;
 import java.util.concurrent.Executors;
@@ -72,16 +70,20 @@ public class PongHandler implements Runnable {
 
 
         this.trayLock.lock();
-
+        ArrayList<DatagramPacket> auxPong = (ArrayList<DatagramPacket>) this.pongTray.clone();
         int n_pongs = this.pongTray.size();
         int nNbrs = this.nt.getNumVN1();
         int vagas = this.softcap - nNbrs;
+        this.pongTray.clear();
+        this.trayLock.unlock();
+
+
 
         if(n_pongs <= vagas) {
             //System.out.println("PRIMEIRA ESCOLHA n_pongs " + n_pongs + " vagas " + vagas);
             //Verificar se o numero de pongs no tray é menor que o número de lugares restantes para vizinhos
             //Se FOR, enviar NBRConfirmations a todos
-            for(DatagramPacket dp : this.pongTray){
+            for(DatagramPacket dp : auxPong){
 
                 buf = dp.getData();
                 ByteArrayInputStream bStream = new ByteArrayInputStream(buf);
@@ -94,7 +96,7 @@ public class PongHandler implements Runnable {
                     //printPong(pong);
                     if(this.nh.isPingValid(pong.pingID)) {
                         //Enviar NBRConfirmation
-                        this.nh.incInConv();
+                        this.nh.addInConv(pong.origin);
                         sendNbrConfirmation(pong);
                         System.out.println("ENVIOU NBRCONFIRMATION");
                     }
@@ -114,8 +116,8 @@ public class PongHandler implements Runnable {
             Random random = new Random();
             for(int i = 0; i < vagas; i++){
                 System.out.println("ESCOLHA DE UM VIZINHO Nº " + i + "/" + vagas);
-                DatagramPacket dp = this.pongTray.get(random.nextInt(this.pongTray.size()));
-                this.pongTray.remove(dp);
+                DatagramPacket dp = auxPong.get(random.nextInt(auxPong.size()));
+                auxPong.remove(dp);
 
                 buf = dp.getData();
                 ByteArrayInputStream bStream = new ByteArrayInputStream(buf);
@@ -138,9 +140,6 @@ public class PongHandler implements Runnable {
                     System.out.println("ERRO NO PARSE DO DATAGRAMPACKET (PONGHANDLER)");
             }
         }
-
-        this.pongTray.clear();
-        this.trayLock.unlock();
     };
 
     private void printPong(Pong pong) {
