@@ -71,7 +71,7 @@ public class FileTables {
         rlMyContent.lock();
         try{
             for(FileInfo m: files)
-                myContent.put(m.id, m);
+                myContent.put(m.hash, m);
             this.myHash = UUID.randomUUID().toString();
             return this.myHash;
         }finally {
@@ -120,12 +120,12 @@ public class FileTables {
         //System.out.println("TOU NA FILETABLE E QUERO VER A HASH ANTIGA: " + nbrHash.get(o.id));
         try{
             for(FileInfo fi: files){
-                if(nbrContent.containsKey(fi.id))
-                    nbrContent.get(fi.id).add(o);
+                if(nbrContent.containsKey(fi.hash))
+                    nbrContent.get(fi.hash).add(o);
                 else{
                     HashSet<Nodo> aux = new HashSet<>();
                     aux.add(o);
-                    nbrContent.put(fi.id, aux);
+                    nbrContent.put(fi.hash, aux);
                 }
             }
             nbrHash.put(o.id, hash);
@@ -154,8 +154,8 @@ public class FileTables {
         rlNbrContent.lock();
         try{
             for(FileInfo fi: files){
-                if(nbrContent.containsKey(fi.id))
-                    nbrContent.get(fi.id).remove(o);
+                if(nbrContent.containsKey(fi.hash))
+                    nbrContent.get(fi.hash).remove(o);
             }
             nbrHash.put(o.id, hash);
         }finally {
@@ -224,9 +224,11 @@ public class FileTables {
         ArrayList<FileInfo> fi = new ArrayList<FileInfo>();
         FileInfo aux;
         for (String p : path) {
+            String[] auxSplit = p.split("/");
+            String name = auxSplit[auxSplit.length-1];
             Ficheiro f = new Ficheiro(p, FileChunkSize);
             this.myFiles.put(p, f);
-            aux = new FileInfo(p, f.getFileSize());
+            aux = new FileInfo(name, UUID.randomUUID().toString(), f.getNumberOfChunks(), f.getFileSize());
             fi.add(aux);
             this.myContent.put(p, aux);
         }

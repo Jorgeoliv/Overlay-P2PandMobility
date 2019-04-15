@@ -27,8 +27,6 @@ public class NetworkHandler implements Runnable{
     private int ucp_NbrConfirmation = 6003;
     private int ucp_AddNbr = 6004;
     private int ucp_Alive = 6005;
-    private int ucp_Update = 6006;
-    private int ucp_Discovery = 6007;
     private int ucp_Quit = 6008;
 
     //Caps
@@ -61,8 +59,6 @@ public class NetworkHandler implements Runnable{
     private NbrConfirmationHandler nbrcHandler;
     private AddNbrHandler addNbrHandler;
     private AliveHandler aliveHandler;
-    private UpdateHandler updateHandler;
-    private ContentDiscoveryHandler discoveryHandler;
     private QuitHandler quitHandler;
 
 
@@ -90,8 +86,6 @@ public class NetworkHandler implements Runnable{
         this.nbrcHandler = new NbrConfirmationHandler(this, this.myNode, this.ucp_NbrConfirmation, this.ucp_Alive, nt);
         this.addNbrHandler = new AddNbrHandler(SOFTCAP, HARDCAP, this.idgen, this, this.myNode, this.ucp_AddNbr, this.ucp_NbrConfirmation, this.nt);
         this.aliveHandler = new AliveHandler(this, this.nt, this.myNode, this.ucp_Alive, this.idgen);
-        this.updateHandler = new UpdateHandler(this.ucp_Update, this.myNode, this.nt.ft, this.idgen, this);
-        this.discoveryHandler = new ContentDiscoveryHandler(this.nt, this.myNode, this.ucp_Discovery, this.idgen);
         this.quitHandler = new QuitHandler(this, this.nt, this.ucp_Quit, this.idgen, this.myNode);
 
     }
@@ -294,13 +288,5 @@ public class NetworkHandler implements Runnable{
 
         if(toRemove != null)
             this.quitHandler.sendQuit(toRemove);
-    }
-    
-    public void sendUpdate(ArrayList<FileInfo> files) {
-        String oldHash = this.ft.getMyHash();
-        String newHash = this.ft.addMyContent(files);
-
-        UpdateTable ut = new UpdateTable(this.idgen.getID(), this.myNode, files, null, oldHash, newHash);
-        this.updateHandler.sendUpdate(ut);
     }
 }

@@ -1,9 +1,11 @@
 package files;
 import java.io.File;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Objects;
 
 
 public class Ficheiro {
@@ -28,9 +30,16 @@ public class Ficheiro {
 
     public Ficheiro (String path, long datagramMaxSize){
         this.file = new File(path);
+        String p = this.file.getAbsolutePath();
+        System.out.println("HERE   " + p);
+        if(this.file.exists())
+            System.out.println("NICE!!!!!!!!!!!!!!!!!!!!!!!!!");
+        else
+            System.out.println("FUCK!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
         this.fileSize = this.file.length();
         this.fileAsBytes = new byte[(int) this.fileSize];
         try{
+            System.out.println("VAMOS VER O CAMIHO: " +  Paths.get(path));
             this.fileAsBytes = Files.readAllBytes(Paths.get(path));
         }
         catch(Exception e){e.printStackTrace();}
@@ -125,4 +134,5 @@ public class Ficheiro {
             this.fileAsBytes = c;
         }
     }
+
 }

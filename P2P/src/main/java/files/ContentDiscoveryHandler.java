@@ -22,20 +22,24 @@ import java.util.concurrent.TimeUnit;
 public class ContentDiscoveryHandler implements Runnable{
 
     private int ucp_Discovery;
+    private int ucp_ContentOwner;
     private FileTables ft;
     private NetworkTables nt;
     private Nodo myNodo;
+    private FileHandler fi;
     private IDGen idGen;
     private TreeSet<String> discoveryRequest = new TreeSet<>();
     private ScheduledExecutorService ses = Executors.newSingleThreadScheduledExecutor();
 
     public ContentDiscoveryHandler(){}
 
-    public ContentDiscoveryHandler(NetworkTables nt, Nodo myNodo, int ucp_Discovery, IDGen idGen){
+    public ContentDiscoveryHandler(FileHandler fi, NetworkTables nt, Nodo myNodo, int ucp_Discovery, int ucp_ContentOwner, IDGen idGen){
+        this.fi = fi;
         this.nt = nt;
         this.ft = this.nt.ft;
         this.myNodo = myNodo;
         this.ucp_Discovery = ucp_Discovery;
+        this.ucp_ContentOwner = ucp_ContentOwner;
         this.idGen = idGen;
     }
 
@@ -117,7 +121,7 @@ public class ContentDiscoveryHandler implements Runnable{
 
             byte[] serializedMessage = bStream.toByteArray();
 
-            DatagramPacket packet = new DatagramPacket(serializedMessage, serializedMessage.length, InetAddress.getByName(dest.ip), this.ucp_Discovery);
+            DatagramPacket packet = new DatagramPacket(serializedMessage, serializedMessage.length, InetAddress.getByName(dest.ip), this.ucp_ContentOwner);
             socket.send(packet);
 
         }
@@ -163,7 +167,7 @@ public class ContentDiscoveryHandler implements Runnable{
                             System.out.println("\tSou eu o Nodo " + this.myNodo + " que tem o ficheiro: " + filename);
                             FileInfo fileToSend = this.ft.getMyFile(filename);
                             ContentOwner co = new ContentOwner(this.idGen.getID(), this.myNodo, fileToSend);
-                            this.sendOwner(co, cd.origin);
+                            this.sendOwner(co, cd.requester);
                         }
                         else{
                             //Depois vou verificar se algum dos meus vizinhos tem o ficheiro
@@ -195,12 +199,6 @@ public class ContentDiscoveryHandler implements Runnable{
                         ses.schedule(delete(requestID), 60, TimeUnit.SECONDS);
                     }
 
-                }
-                else {
-                    if(header instanceof ContentOwner){
-                        System.out.println("RECEBI UM CONTENT OWNER FROM: " + header.origin.ip);
-
-                    }
                 }
             }
         }

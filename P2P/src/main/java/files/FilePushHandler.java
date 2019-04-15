@@ -59,12 +59,12 @@ public class FilePushHandler implements Runnable {
 
             if(header instanceof FilePush) {
                 FilePush fp = (FilePush) header;
-                if(this.ficheiros.containsKey(fp.name) && !this.ficheirosReady.get(fp.name)){
-                    fich = this.ficheiros.get(fp.name);
+                if(this.ficheiros.containsKey(fp.hash) && !this.ficheirosReady.get(fp.hash)){
+                    fich = this.ficheiros.get(fp.hash);
                     done = fich.addFileChunk(fp.fc);
-                    this.ficheiros.put(fp.name, fich);
+                    this.ficheiros.put(fp.hash, fich);
                     if(done){
-                        ficheirosReady.put(fp.name, true);
+                        ficheirosReady.put(fp.hash, true);
                     }
                 }
                 else{

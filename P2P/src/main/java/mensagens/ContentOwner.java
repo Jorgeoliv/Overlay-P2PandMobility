@@ -5,7 +5,8 @@ import files.*;
 
 public class ContentOwner extends Header{
 
-    FileInfo fileInfo; //informação sobre o ficheiro
+    public FileInfo fileInfo; //informação sobre o ficheiro
+    public String cdRequestID;
 
     /**
      * IMPORTANTE:

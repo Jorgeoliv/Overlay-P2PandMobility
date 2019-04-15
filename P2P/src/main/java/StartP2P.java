@@ -15,7 +15,7 @@ public class StartP2P {
     final static int SOFTCAP = 3;
     final static int HARDCAP = 6;
 
-    private static void upload(BufferedReader inP, NetworkHandler nh, FileTables ft){
+    private static void upload(BufferedReader inP, FileHandler fh, FileTables ft){
 
         System.out.print("1 - Insira o nome do ficheiro: ");
         boolean c = false;
@@ -37,7 +37,7 @@ public class StartP2P {
         files.add(file);
 
         ArrayList<FileInfo> fi = ft.newFicheiro(files);
-        nh.sendUpdate(fi);
+        fh.sendUpdate(fi);
 
     }
 
@@ -109,7 +109,7 @@ public class StartP2P {
             }
 
             switch (opcao){
-                case 1: upload(inP, nh, fh.getFileTables()); break;
+                case 1: upload(inP, fh, fh.getFileTables()); break;
                 case 2: download(inP, fh); break;
                 default: sair = true;
             }

@@ -6,6 +6,7 @@ import com.esotericsoftware.kryo.io.Output;
 import mensagens.*;
 import network.IDGen;
 import network.NetworkHandler;
+import network.NetworkTables;
 import network.Nodo;
 
 import java.io.ByteArrayInputStream;
@@ -53,19 +54,19 @@ public class UpdateHandler implements Runnable{
     private IDGen idGen;
     private TreeSet<String> updateRequests = new TreeSet<>();
     private ScheduledExecutorService ses = Executors.newSingleThreadScheduledExecutor();
-    private NetworkHandler nh;
+    private NetworkTables nt;
 
     //Para tratar dos updates tables que possam não chegar
     private ArrayList<SupportUpdate> updateSent = new ArrayList<>();
 
     public UpdateHandler(){}
 
-    public UpdateHandler(int ucp_Update, Nodo myNode, FileTables ft, IDGen idGen, NetworkHandler nh) {
+    public UpdateHandler(int ucp_Update, Nodo myNode, FileTables ft, IDGen idGen, NetworkTables nt) {
         this.ucp_Update = ucp_Update;
         this.myNode = myNode;
         this.ft = ft;
         this.idGen = idGen;
-        this.nh = nh;
+        this.nt = nt;
     }
 
     private synchronized boolean containsRequest(String id){
@@ -172,7 +173,7 @@ public class UpdateHandler implements Runnable{
 
     public boolean sendUpdate(UpdateTable ut){
 
-        ArrayList<Nodo> myNbrs = nh.nt.getNbrsN1();
+        ArrayList<Nodo> myNbrs = this.nt.getNbrsN1();
 
         Kryo kryo = new Kryo();
 
