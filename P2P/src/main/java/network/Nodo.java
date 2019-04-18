@@ -33,13 +33,6 @@ public class Nodo implements Comparable {
         return Objects.hash(id);
     }
 
-    @Override
-    public String toString() {
-        return "Nodo{" +
-                ", ip='" + ip + '\'' +
-                "}\t";
-    }
-
     public int compareTo(Object o){
 
         Nodo n = (Nodo) o;

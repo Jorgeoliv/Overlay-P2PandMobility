@@ -2,21 +2,18 @@ package files;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
+import mensagens.FilePull;
 import mensagens.FilePush;
 import mensagens.Header;
 import network.IDGen;
 
 import java.io.ByteArrayInputStream;
 import java.net.DatagramPacket;
-import java.net.DatagramSocket;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 
-public class FilePushHandler implements Runnable {
+public class FilePushHandler {
 
     private int ucp_File;
     private IDGen idGen;
@@ -26,6 +23,8 @@ public class FilePushHandler implements Runnable {
     private HashMap<String, Ficheiro> ficheiros;
     private HashMap<String, Boolean> ficheirosReady;
 
+    private HashMap<String, ArrayList <FileReceiver>> fileReceivers;
+    private HashMap<String, ArrayList <Thread>> fileReceiversThreads;
 
     public FilePushHandler(){}
     public FilePushHandler(int ucp_File, IDGen idGen){
@@ -74,27 +73,13 @@ public class FilePushHandler implements Runnable {
         }
     };
 
+
+    public void sendFile(FilePull header) {
+    }
+
     //setReceiveBufferSize
-    public void run() {
 
-        try{
-            DatagramSocket ds = new DatagramSocket(this.ucp_File);
-            byte[] buf = new byte[1500];
-            DatagramPacket file;
-            ScheduledExecutorService ses = Executors.newSingleThreadScheduledExecutor();
+    public void getPorts(String id) {
 
-            ses.scheduleWithFixedDelay(emptyFilePushTray, 0, 5, TimeUnit.SECONDS);
-
-            while(true){
-                file = new DatagramPacket(buf, 1500);
-                ds.receive(file);
-
-                this.filePushTray.add(file);
-            }
-
-        }
-        catch (Exception e){
-            e.printStackTrace();
-        }
     }
 }

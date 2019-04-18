@@ -183,6 +183,7 @@ public class UpdateHandler implements Runnable{
         SupportUpdate su = new SupportUpdate(myNbrs, ut, System.currentTimeMillis());
         //Vou adicionar à lista dos updates enviados
         updateSent.add(su);
+        System.out.println("Vou enviar um update para os meus vizinhos: " + myNbrs.size());
 
         for(Nodo n: myNbrs){
             try {
@@ -227,6 +228,7 @@ public class UpdateHandler implements Runnable{
                 input.close();
 
                 if(header instanceof UpdateTable){
+                    System.out.println("Recebi um update table");
                     UpdateTable ut = (UpdateTable) header;
                     String nodeID = ut.origin.id;
                     String requestID = ut.requestID;
@@ -257,6 +259,7 @@ public class UpdateHandler implements Runnable{
                 }else{
                     System.out.println("Recebi um ack!!!");
                     if(header instanceof Ack){
+                        System.out.println("Recebi efetivamente um ack!!!");
                         Ack ack = (Ack) header;
                         for(int i=0; i<this.updateSent.size(); i++){
                             SupportUpdate su = this.updateSent.get(i);

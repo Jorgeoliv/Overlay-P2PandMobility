@@ -1,0 +1,15 @@
+Verificar o filereceiver
+
+Criar 10 FileReceivers por send file
+	Guardar os objectos para depois obter os filechunks recebidos
+	Guardar as Threads para poder termina-las
+
+Arranjar maneira de enviar uma mensagem de confirmação de filechunks recebidos
+	Timeout (Obrigatorio)
+	Percentagem??
+	Nº Pacotes??
+	...
+
+Recolher os fileChunks dos Filereceivers e criar um ficheiro
+
+Guardar informação das confirmações de Filechunks recebidos

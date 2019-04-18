@@ -19,7 +19,7 @@ public class Alive extends Header /*implements Serializable*/ {
         this.nbrN2 = nbrN2;
     }
 
-    public String toString() {
+/*    public String toString() {
         return "Alive{" +
                 "nbrN1=" + nbrN1 +
                 ", nbrN2=" + nbrN2 +
@@ -28,5 +28,5 @@ public class Alive extends Header /*implements Serializable*/ {
                 ", antecessor=" + antecessor +
                 ", ttl=" + ttl +
                 '}';
-    }
+    }*/
 }

@@ -13,9 +13,9 @@ public class UpdateTable extends Header{
 
     public UpdateTable(){ super(); }
 
-    public UpdateTable(String requestID, Nodo origin) {
+    /*public UpdateTable(String requestID, Nodo origin) {
         super(requestID, origin);
-    }
+    }*/
 
 
     public UpdateTable(String requestID, Nodo origin, ArrayList<FileInfo> toAdd, ArrayList<FileInfo> toRemove, String oldHash, String newHash) {
@@ -26,7 +26,7 @@ public class UpdateTable extends Header{
         this.newHash = newHash;
     }
 
-    @Override
+/*    @Override
     public String toString() {
         return "UpdateTable{" +
                 "toAdd=" + toAdd +
@@ -36,7 +36,7 @@ public class UpdateTable extends Header{
                 ", requestID='" + requestID + '\'' +
                 ", origin=" + origin +
                 '}';
-    }
+    }*/
 
     public boolean equals(Object o){
         return super.equals(o);

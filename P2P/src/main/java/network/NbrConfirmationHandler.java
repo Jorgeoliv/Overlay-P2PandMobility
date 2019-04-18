@@ -53,8 +53,8 @@ public class NbrConfirmationHandler implements Runnable {
             //printNbrConfirmation(nbrc);
 
             if(this.nh.isNodeValid(nbrc.requestID, nbrc.origin) || (valid = this.nh.isAddNbrValid(nbrc.IDresponse))){
-                System.out.println("NBRCONF => " + nbrc.origin.ip + " VS MYNODE => " + this.myNode.ip + "\n\n");
-                System.out.println("RESULTADO DO EQUALS: " + nbrc.origin.equals(this.myNode));
+                //System.out.println("NBRCONF => " + nbrc.origin.ip + " VS MYNODE => " + this.myNode.ip + "\n\n");
+                //System.out.println("RESULTADO DO EQUALS: " + nbrc.origin.equals(this.myNode));
                 this.nt.addNbrN1(nbrc.origin);
                 this.nh.remInConv(nbrc.origin);
                 
@@ -71,7 +71,7 @@ public class NbrConfirmationHandler implements Runnable {
                 }
 
                 if(valid) {
-                    System.out.println("VOU REGISTAR O ADDNBR E REMOVER DA LISTA DE NBR VÁLIDOS");
+                    //System.out.println("VOU REGISTAR O ADDNBR E REMOVER DA LISTA DE NBR VÁLIDOS");
                     this.nh.registerNode(nbrc.requestID, nbrc.origin);
                     this.nh.removeAddNbr(nbrc.IDresponse);
                 }
@@ -113,7 +113,7 @@ public class NbrConfirmationHandler implements Runnable {
 
             DatagramPacket packet = new DatagramPacket(serializedMessage, serializedMessage.length, InetAddress.getByName(nbrc.origin.ip), this.ucp_Alive);
             (new DatagramSocket()).send(packet);
-            System.out.println("EMERGENCY ALIVE ENVIADO\n");
+            //System.out.println("EMERGENCY ALIVE ENVIADO\n");
         }
         catch (IOException e) {
             e.printStackTrace();
@@ -135,7 +135,7 @@ public class NbrConfirmationHandler implements Runnable {
         try {
             DatagramPacket packet = new DatagramPacket(serializedNbrConfirmation, serializedNbrConfirmation.length, InetAddress.getByName(nbrc.origin.ip), this.ucp_NbrConfirmation);
             (new DatagramSocket()).send(packet);
-            System.out.println("NBRCONFIRMATION RESPONSE ENVIADO\n");
+            //System.out.println("NBRCONFIRMATION RESPONSE ENVIADO\n");
         } catch (IOException e) {
             e.printStackTrace();
         }

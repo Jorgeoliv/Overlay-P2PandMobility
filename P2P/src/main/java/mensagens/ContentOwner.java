@@ -15,8 +15,9 @@ public class ContentOwner extends Header{
 
     public ContentOwner(){}
 
-    public ContentOwner(String requestID, Nodo origin, FileInfo fileInfo) {
+    public ContentOwner(String requestID, Nodo origin, FileInfo fileInfo, String cdResquestID) {
         super(requestID, origin);
         this.fileInfo = fileInfo;
+        this.cdRequestID = cdResquestID;
     }
 }

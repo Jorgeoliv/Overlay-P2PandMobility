@@ -134,5 +134,4 @@ public class Ficheiro {
             this.fileAsBytes = c;
         }
     }
-
 }

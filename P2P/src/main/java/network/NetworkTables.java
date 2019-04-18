@@ -117,14 +117,14 @@ public class NetworkTables{
             this.rlN1.unlock();
             if(aux == null)
                 aux = new TreeSet<Nodo>();
-            System.out.println("Os nodos de nivel 2 que vou adicionar são: ");
-            System.out.println(nodos);
+            //System.out.println("Os nodos de nivel 2 que vou adicionar são: ");
+            //System.out.println(nodos);
             nodos.remove(myNode);
             nodos.removeAll(n1);
-            System.out.println("Os meus vizinhos de nivel 1 são: ");
-            System.out.println(n1);
-            System.out.println("Os nodos de nivel 2 que vou efetivamente adicionar são: ");
-            System.out.println(nodos);
+            //System.out.println("Os meus vizinhos de nivel 1 são: ");
+            //System.out.println(n1);
+            //System.out.println("Os nodos de nivel 2 que vou efetivamente adicionar são: ");
+            //System.out.println(nodos);
             aux.addAll(nodos);
             nbrN2.put(id, aux);
         }finally {
@@ -187,7 +187,7 @@ public class NetworkTables{
                 value++;
                 if(value == 3){
                     //Temos de eliminar o vizinho ...
-                    System.out.println("VAMOS LA ELIMINAR UM GAJO DE UM VIZNHO!!!! " + a.getKey());
+                    //System.out.println("VAMOS LA ELIMINAR UM GAJO DE UM VIZNHO!!!! " + a.getKey());
                     String id = a.getKey();
 
                     rlN1.lock();
@@ -209,7 +209,7 @@ public class NetworkTables{
             rlUp.unlock();
         }
 
-        System.out.println("O valor é: " + nbrUp.toString());
+        //System.out.println("O valor é: " + nbrUp.toString());
     }
 
     public ArrayList<FileInfo> getFileInfo(){

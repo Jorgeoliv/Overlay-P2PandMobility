@@ -49,7 +49,7 @@ public class AddNbrHandler implements Runnable{
         Kryo kryo = new Kryo();
         byte[] buf = addnbr.getData();
 
-        System.out.println("RECEBI UM ADDNBR!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+        //System.out.println("RECEBI UM ADDNBR!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
         ByteArrayInputStream bStream = new ByteArrayInputStream(buf);
         Input input = new Input(bStream);
         Header header = (Header) kryo.readClassAndObject(input);
@@ -90,7 +90,7 @@ public class AddNbrHandler implements Runnable{
         try {
             DatagramPacket packet = new DatagramPacket(serializedNbrConfirmation, serializedNbrConfirmation.length, InetAddress.getByName(addNbr.origin.ip), this.ucp_NbrConfirmation);
             (new DatagramSocket()).send(packet);
-            System.out.println("NBRCONFIRMATION ENVIADO\n");
+            //System.out.println("NBRCONFIRMATION ENVIADO\n");
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -118,7 +118,7 @@ public class AddNbrHandler implements Runnable{
                 Nodo nN1 = this.nt.getRandomNN1();
                 if (nN1 != null) {
                     Nodo nN2 = this.nt.getRandomNN2(nN1);
-                    System.out.println("QUEM É QUE ESCOLHI!!!!!!\n" + "\t" + nN2 + "\n\t" + nN2.equals(this.myNode));
+                    //System.out.println("QUEM É QUE ESCOLHI!!!!!!\n" + "\t" + nN2 + "\n\t" + nN2.equals(this.myNode));
                     if (!this.nh.isNodePresent(nN2)) {
                         String id = this.idGen.getID();
                         AddNbr addNbr = new AddNbr(id, this.myNode, nN1);
@@ -137,7 +137,7 @@ public class AddNbrHandler implements Runnable{
                         try {
                             DatagramPacket packet = new DatagramPacket(serializedAddNbr, serializedAddNbr.length, InetAddress.getByName(nN2.ip), this.ucp_AddNbr);
                             (new DatagramSocket()).send(packet);
-                            System.out.println("ADDNBR ENVIADO PARA " + nN2.ip + "\n");
+                            //System.out.println("ADDNBR ENVIADO PARA " + nN2.ip + "\n");
                         } catch (IOException e) {
                             e.printStackTrace();
                         }

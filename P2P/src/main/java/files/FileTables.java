@@ -22,7 +22,7 @@ public class FileTables {
     public FileTables(){ }
 
     public String getMyHash(){
-        System.out.println("A hash atual é: " + myHash);
+        //System.out.println("A hash atual é: " + myHash);
         try{
             rlMyContent.lock();
             return this.myHash;

@@ -3,15 +3,11 @@ package files;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import mensagens.ContentOwner;
-import mensagens.FilePush;
 import mensagens.Header;
 
 import java.io.ByteArrayInputStream;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 public class ContentOwnerHandler implements Runnable{
     private FileHandler fileHandler;

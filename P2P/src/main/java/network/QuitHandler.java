@@ -62,7 +62,7 @@ public class QuitHandler implements Runnable {
         try {
             DatagramPacket packet = new DatagramPacket(serializedPing, serializedPing.length, InetAddress.getByName(node.ip), this.ucp_Quit);
             new DatagramSocket().send(packet);
-            System.out.println("QUIT ENVIADO PARA "+ node.ip + " ENVIADO\n");
+            //System.out.println("QUIT ENVIADO PARA "+ node.ip + " ENVIADO\n");
         } catch (Exception e) {
             e.printStackTrace();
         }

@@ -98,7 +98,7 @@ public class PongHandler implements Runnable {
                         //Enviar NBRConfirmation
                         this.nh.addInConv(pong.origin);
                         sendNbrConfirmation(pong);
-                        System.out.println("ENVIOU NBRCONFIRMATION");
+                        //System.out.println("ENVIOU NBRCONFIRMATION");
                     }
                     else
                         System.out.println("PING INVÁLIDO");
@@ -115,7 +115,7 @@ public class PongHandler implements Runnable {
 
             Random random = new Random();
             for(int i = 0; i < vagas; i++){
-                System.out.println("ESCOLHA DE UM VIZINHO Nº " + i + "/" + vagas);
+                //System.out.println("ESCOLHA DE UM VIZINHO Nº " + i + "/" + vagas);
                 DatagramPacket dp = auxPong.get(random.nextInt(auxPong.size()));
                 auxPong.remove(dp);
 
@@ -176,7 +176,7 @@ public class PongHandler implements Runnable {
         try {
             DatagramPacket packet = new DatagramPacket(serializedNbrConfirmation, serializedNbrConfirmation.length, InetAddress.getByName(pong.origin.ip), this.ucp_NbrConfirmation);
             this.ucs.send(packet);
-            System.out.println("NBRCNFIRMATION ENVIADO\n");
+            //System.out.println("NBRCNFIRMATION ENVIADO\n");
         } catch (IOException e) {
             e.printStackTrace();
         }

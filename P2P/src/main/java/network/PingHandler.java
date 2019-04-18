@@ -101,7 +101,7 @@ public class PingHandler implements Runnable{
 
         try {
             new MulticastSocket().send(packet);
-            System.out.println("PING "+ id + " ENVIADO\n");
+            //System.out.println("PING "+ id + " ENVIADO\n");
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -132,8 +132,6 @@ public class PingHandler implements Runnable{
                     sendPong(ping);
                     this.nh.registerNode(ping.requestID, ping.origin);
                 }
-                else
-                    System.out.println("NÃO PRECISO DE ENVIAR PONG");
             }
             else
                 System.out.println("ERRO NO PARSE DO DATAGRAMPACKET (PINGHANDLER)");
@@ -174,7 +172,7 @@ public class PingHandler implements Runnable{
         try {
             DatagramPacket packet = new DatagramPacket(serializedPong, serializedPong.length, InetAddress.getByName(ping.origin.ip), this.ucport);
             this.ucs.send(packet);
-            System.out.println("PONG ENVIADO\n");
+            //System.out.println("PONG ENVIADO\n");
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -212,7 +210,7 @@ public class PingHandler implements Runnable{
             }
         }
         else
-            System.out.println("JÁ É MEU VIZINHO");
+            //System.out.println("JÁ É MEU VIZINHO");
 
         if(decision && myNN1+1 > this.hardcap)
             this.nh.sendQuit();

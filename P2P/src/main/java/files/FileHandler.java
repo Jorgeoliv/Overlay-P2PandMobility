@@ -6,10 +6,11 @@ import network.IDGen;
 import network.NetworkTables;
 import network.Nodo;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Objects;
-import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -78,15 +79,53 @@ public class FileHandler implements Runnable {
     public FileHandler(){
         this.fileTables = new FileTables();
         this.idGen = new IDGen(8);
+        this.cdResponses = new HashMap<String, ArrayList<PairNodoFileInfo>>();
+    }
+
+
+    private PairNodoFileInfo fileChoice(int max, ArrayList<PairNodoFileInfo> aux){
+        BufferedReader inP = new BufferedReader(new InputStreamReader(System.in));
+
+        boolean sair = false;
+        int opcao = 0;
+
+
+
+        System.out.println("***** Escolha a fonte *****");
+        System.out.print("Opção: ");
+
+        boolean c = false;
+
+        while (!c) {
+            try {
+                opcao = Integer.parseInt(inP.readLine());
+                if(opcao >= 1 && opcao < max)
+                    c = true;
+                else
+                    System.out.println("\nTente novamente: ");
+            } catch (Exception e) {
+                System.out.println(e);
+                System.out.print("\nTente novamente: ");
+                c = false;
+            }
+        }
+
+        return aux.get(opcao-1);
+
     }
 
     private void analisaCD(String id){
+        System.out.println("A SUA PESQUISA POR " + id + " RETORNOU OS SEGUINTES RESOLTADOS:\n");
         int i = 1;
         ArrayList<PairNodoFileInfo> aux = cdResponses.get(id);
         for(PairNodoFileInfo pnfi: aux)
-            System.out.println(i + ": " + pnfi.toString());
+            System.out.println("\t" + i++ + ") " + pnfi.toString());
+
+        PairNodoFileInfo choice = aux.get(0);//fileChoice(i, aux);
 
         this.cdResponses.remove(id);
+        this.filePullHandler.send(choice);
+        System.out.println("Escolheu o: " + choice.nodo.ip);
     }
 
     private Runnable analyseAndDelete(final String id){
@@ -135,6 +174,16 @@ public class FileHandler implements Runnable {
             System.out.println("=> ERRO AO CRIAR O UPDATEHANDLER");
         }
 
+        try {
+            t = new Thread(this.contentOwnerHandler);
+            t.start();
+            System.out.println("\t=> CONTENTOWNER CRIADO");
+        }
+        catch (Exception e){
+            e.printStackTrace();
+            System.out.println("=> ERRO AO CRIAR O CONTENTOWNER");
+        }
+
         t = null;
     }
 
@@ -159,6 +208,8 @@ public class FileHandler implements Runnable {
             aux.add(new PairNodoFileInfo(fi, node));
             this.cdResponses.put(cdID, aux);
         }
+        else
+            System.out.println("AUX É NULL!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
     }
 
     public void sendUpdate(ArrayList<FileInfo> files) {

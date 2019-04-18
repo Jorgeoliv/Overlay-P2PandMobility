@@ -10,7 +10,6 @@ import network.Nodo;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.net.*;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -110,7 +109,6 @@ public class ContentDiscoveryHandler implements Runnable{
     }
 
     private void sendOwner(ContentOwner co, Nodo dest) {
-
         try {
             DatagramSocket socket = new DatagramSocket();
             ByteArrayOutputStream bStream = new ByteArrayOutputStream();
@@ -128,7 +126,6 @@ public class ContentDiscoveryHandler implements Runnable{
         catch (Exception e) {
             e.printStackTrace();
         }
-
     }
 
     public void run() {
@@ -166,7 +163,7 @@ public class ContentDiscoveryHandler implements Runnable{
                         if(this.ft.itsMyFile(filename)){
                             System.out.println("\tSou eu o Nodo " + this.myNodo + " que tem o ficheiro: " + filename);
                             FileInfo fileToSend = this.ft.getMyFile(filename);
-                            ContentOwner co = new ContentOwner(this.idGen.getID(), this.myNodo, fileToSend);
+                            ContentOwner co = new ContentOwner(this.idGen.getID(), this.myNodo, fileToSend, cd.requestID);
                             this.sendOwner(co, cd.requester);
                         }
                         else{

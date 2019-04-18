@@ -23,7 +23,7 @@ public class NbrConfirmation extends Header {
         this.hash = hash;
     }
 
-    @Override
+/*    @Override
     public String toString() {
         return "NbrConfirmation{" +
                 "fileInfos=" + fileInfos +
@@ -33,5 +33,5 @@ public class NbrConfirmation extends Header {
                 ", requestID='" + requestID + '\'' +
                 ", origin=" + origin +
                 '}';
-    }
+    }*/
 }

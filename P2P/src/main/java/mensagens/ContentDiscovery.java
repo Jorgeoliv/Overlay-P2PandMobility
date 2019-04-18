@@ -14,19 +14,19 @@ public class ContentDiscovery extends Header{
         super();
     }
 
-    public ContentDiscovery(String requestID, Nodo origin, Nodo antecessor, long ttl, String fileName, ArrayList<String> route, Nodo requester) {
+/*    public ContentDiscovery(String requestID, Nodo origin, Nodo antecessor, long ttl, String fileName, ArrayList<String> route, Nodo requester) {
         super(requestID, origin, antecessor, ttl);
         this.fileName = fileName;
         this.route = route;
         this.requester = requester;
-    }
+    }*/
 
-    public ContentDiscovery(String requestID, Nodo origin, Nodo antecessor, String fileName, ArrayList<String> route, Nodo requester) {
+/*    public ContentDiscovery(String requestID, Nodo origin, Nodo antecessor, String fileName, ArrayList<String> route, Nodo requester) {
         super(requestID, origin, antecessor);
         this.fileName = fileName;
         this.route = route;
         this.requester = requester;
-    }
+    }*/
 
     public ContentDiscovery(String requestID, Nodo origin, long ttl, String fileName, ArrayList<String> route, Nodo requester) {
         super(requestID, origin, ttl);
@@ -35,10 +35,10 @@ public class ContentDiscovery extends Header{
         this.requester = requester;
     }
 
-    public ContentDiscovery(String requestID, Nodo origin, String fileName, ArrayList<String> route, Nodo requester) {
+/*    public ContentDiscovery(String requestID, Nodo origin, String fileName, ArrayList<String> route, Nodo requester) {
         super(requestID, origin);
         this.fileName = fileName;
         this.route = route;
         this.requester = requester;
-    }
+    }*/
 }

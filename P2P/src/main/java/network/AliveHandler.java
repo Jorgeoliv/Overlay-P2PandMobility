@@ -47,7 +47,7 @@ public class AliveHandler implements Runnable {
         if(auxAlive.size() > 0){
             for(Alive alive : auxAlive) {
                 //printAlive(alive);
-                System.out.println("Vou fazer um reset aos valores para o: " + alive.origin.ip);
+                //System.out.println("Vou fazer um reset aos valores para o: " + alive.origin.ip);
                 this.nt.reset(alive.origin.id);
                 this.nt.updateNbrN2(alive.origin.id, alive.nbrN1, this.myNode);
             }
@@ -74,11 +74,11 @@ public class AliveHandler implements Runnable {
         ArrayList<Nodo> myNbrs = nt.getNbrsN1();
         ArrayList<Nodo> myNbrsN2 = nt.getNbrsN2();
 
-        System.out.println("Vou enviar as coisas para " + myNbrs.size() + " vizinhos!!!");
-        System.out.println("Os meus vizinhos de nivel 1 são: ");
-        System.out.println("\t " + myNbrs.toString());
-        System.out.println("Os meus vizinhos de nivel 2 são: ");
-        System.out.println("\t " + myNbrsN2.toString());
+        //System.out.println("Vou enviar as coisas para " + myNbrs.size() + " vizinhos!!!");
+        //System.out.println("Os meus vizinhos de nivel 1 são: ");
+        //System.out.println("\t " + myNbrs.toString());
+        //System.out.println("Os meus vizinhos de nivel 2 são: ");
+        //System.out.println("\t " + myNbrsN2.toString());
         /**
          * ISTO DEPPIS VAI PARA O CREATE PACKET!!!
          */
@@ -106,7 +106,7 @@ public class AliveHandler implements Runnable {
     };
 
     private Runnable upAll = () -> {
-        System.out.println("Vou incrementar tudo!!!");
+        //System.out.println("Vou incrementar tudo!!!");
         this.nt.inc();
     };
 
@@ -168,7 +168,7 @@ public class AliveHandler implements Runnable {
 
             DatagramPacket packet = new DatagramPacket(serializedMessage, serializedMessage.length, InetAddress.getByName(ea.origin.ip), this.ucp_Alive);
             (new DatagramSocket()).send(packet);
-            System.out.println("EMERGENCY ALIVE ENVIADO\n");
+            //System.out.println("EMERGENCY ALIVE ENVIADO\n");
         }
         catch (IOException e) {
             e.printStackTrace();
