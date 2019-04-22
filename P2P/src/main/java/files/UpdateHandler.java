@@ -98,6 +98,7 @@ public class UpdateHandler implements Runnable{
         return ret;
     }
 
+    //Necessario para limpar os acks que já estão terminados ou então para reenviar os updates
     private Runnable inspectAck = () -> {
         long atualTime = System.currentTimeMillis();
         ArrayList<SupportUpdate> toRemove = new ArrayList<>();
@@ -136,17 +137,24 @@ public class UpdateHandler implements Runnable{
     };
 
     //Quando deixo de ter um vizinho preciso de eliminar daqui também
-    public void deleteNbr(Nodo node){
+    //Unica forma de fazer, já que a network table nao tem acesso a isto ...
+    private Runnable deleteNbrs = () ->{
+
+        ArrayList<Nodo> myNbrs = this.nt.getNbrsN1();
+        System.out.println("Vamos la ver se tenho de eliminar alguem! " + myNbrs.size());
+
         try {
             lockUpdate.lock();
             for (int i = 0; i < this.updateSent.size(); i++) {
                 SupportUpdate su = this.updateSent.get(i);
-                su.nbrs.remove(node);
+                System.out.println("O su antes: " + su.nbrs.size());
+                su.nbrs.removeIf(n -> !myNbrs.contains(n));
+                System.out.println("O su depois: " + su.nbrs.size());
             }
         }finally {
             lockUpdate.unlock();
         }
-    }
+    };
 
     private void sendAck(Ack ack, Nodo dest){
         Kryo kryo = new Kryo();
@@ -237,6 +245,7 @@ public class UpdateHandler implements Runnable{
             DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
 
             ses.scheduleWithFixedDelay(inspectAck, 60, 60, TimeUnit.SECONDS);
+            ses.scheduleWithFixedDelay(deleteNbrs, 30, 30, TimeUnit.SECONDS);
 
             Kryo kryo = new Kryo();
 
@@ -270,7 +279,7 @@ public class UpdateHandler implements Runnable{
                             System.out.println("\t Falta um pacote do UpdateHandler para o nodo: " + myNode.ip);
                         }
                         //Para dar tempo no caso de recebermos repetidos ..
-                        ses.schedule(delete(requestID), 180, TimeUnit.SECONDS);
+                        ses.schedule(delete(requestID), 300, TimeUnit.SECONDS);
                     }else{
                         //Se chega aqui indica que já recebemos o update table no entanto o nodo não recebeu o nosso ack, temos de enviá-lo de novo ...
                         //Depois podemos pôr algo a enviar uma sequência de acks espaçados no tempo só para ter a certeza
