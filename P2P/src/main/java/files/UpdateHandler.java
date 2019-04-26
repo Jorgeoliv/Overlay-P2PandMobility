@@ -17,6 +17,7 @@ import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantLock;
 
 class SupportUpdate{
 
@@ -58,6 +59,7 @@ public class UpdateHandler implements Runnable{
 
     //Para tratar dos updates tables que possam não chegar
     private ArrayList<SupportUpdate> updateSent = new ArrayList<>();
+    private ReentrantLock lockUpdate = new ReentrantLock();
 
     public UpdateHandler(){}
 
@@ -96,37 +98,62 @@ public class UpdateHandler implements Runnable{
         return ret;
     }
 
+    //Necessario para limpar os acks que já estão terminados ou então para reenviar os updates
     private Runnable inspectAck = () -> {
         long atualTime = System.currentTimeMillis();
         ArrayList<SupportUpdate> toRemove = new ArrayList<>();
         ArrayList<SupportUpdate> toRemoveAndAdd = new ArrayList<>();
 
         System.out.println("VOU ANALISR OS UPDATES!!! " + atualTime);
-
-        for(SupportUpdate su: this.updateSent){
-            System.out.println("Deixa só ver o tempo do su: " + su.time);
-            System.out.println("Resultado: " + (atualTime - su.time));
-            if(su.nbrs.size() != 0){
-                if((atualTime - su.time) > 60000){
-                    //Quer dizer que já passou mais de um minuto e que nem todos receberam os acks
-                    System.out.println("Vou ter de enviar novamente o update: " + su.ut);
-                    System.out.println("Para os vizinhos: " + su.nbrs);
-                    sendUpdate(su.ut, su.nbrs);
-                    su.time = System.currentTimeMillis();
-                    toRemoveAndAdd.add(su);
-                }else{
-                    //Quer dizer que daqui para a frente todos vão ter tempos menores do que um minuto pelo que não é preciso continuar a procurar
-                    break;
+        try {
+            lockUpdate.lock();
+            for (SupportUpdate su : this.updateSent) {
+                System.out.println("Deixa só ver o tempo do su: " + su.time);
+                System.out.println("Resultado: " + (atualTime - su.time));
+                if (su.nbrs.size() != 0) {
+                    if ((atualTime - su.time) > 60000) {
+                        //Quer dizer que já passou mais de um minuto e que nem todos receberam os acks
+                        System.out.println("Vou ter de enviar novamente o update: " + su.ut);
+                        System.out.println("Para os vizinhos: " + su.nbrs);
+                        sendUpdate(su.ut, su.nbrs);
+                        su.time = System.currentTimeMillis();
+                        toRemoveAndAdd.add(su);
+                    } else {
+                        //Quer dizer que daqui para a frente todos vão ter tempos menores do que um minuto pelo que não é preciso continuar a procurar
+                        break;
+                    }
+                } else {
+                    System.out.println("Todos os acks recebidos para: " + su.ut);
+                    toRemove.add(su);
                 }
-            }else{
-                System.out.println("Todos os acks recebidos para: " + su.ut);
-                toRemove.add(su);
             }
-        }
 
-        this.updateSent.removeAll(toRemove);
-        this.updateSent.removeAll(toRemoveAndAdd);
-        this.updateSent.addAll(toRemoveAndAdd);
+            this.updateSent.removeAll(toRemove);
+            this.updateSent.removeAll(toRemoveAndAdd);
+            this.updateSent.addAll(toRemoveAndAdd);
+        }finally {
+            lockUpdate.unlock();
+        }
+    };
+
+    //Quando deixo de ter um vizinho preciso de eliminar daqui também
+    //Unica forma de fazer, já que a network table nao tem acesso a isto ...
+    private Runnable deleteNbrs = () ->{
+
+        ArrayList<Nodo> myNbrs = this.nt.getNbrsN1();
+        System.out.println("Vamos la ver se tenho de eliminar alguem! " + myNbrs.size());
+
+        try {
+            lockUpdate.lock();
+            for (int i = 0; i < this.updateSent.size(); i++) {
+                SupportUpdate su = this.updateSent.get(i);
+                System.out.println("O su antes: " + su.nbrs.size());
+                su.nbrs.removeIf(n -> !myNbrs.contains(n));
+                System.out.println("O su depois: " + su.nbrs.size());
+            }
+        }finally {
+            lockUpdate.unlock();
+        }
     };
 
     private void sendAck(Ack ack, Nodo dest){
@@ -182,7 +209,9 @@ public class UpdateHandler implements Runnable{
 
         SupportUpdate su = new SupportUpdate(myNbrs, ut, System.currentTimeMillis());
         //Vou adicionar à lista dos updates enviados
+        lockUpdate.lock();
         updateSent.add(su);
+        lockUpdate.unlock();
         System.out.println("Vou enviar um update para os meus vizinhos: " + myNbrs.size());
 
         for(Nodo n: myNbrs){
@@ -216,6 +245,7 @@ public class UpdateHandler implements Runnable{
             DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
 
             ses.scheduleWithFixedDelay(inspectAck, 60, 60, TimeUnit.SECONDS);
+            ses.scheduleWithFixedDelay(deleteNbrs, 30, 30, TimeUnit.SECONDS);
 
             Kryo kryo = new Kryo();
 
@@ -249,7 +279,7 @@ public class UpdateHandler implements Runnable{
                             System.out.println("\t Falta um pacote do UpdateHandler para o nodo: " + myNode.ip);
                         }
                         //Para dar tempo no caso de recebermos repetidos ..
-                        ses.schedule(delete(requestID), 180, TimeUnit.SECONDS);
+                        ses.schedule(delete(requestID), 300, TimeUnit.SECONDS);
                     }else{
                         //Se chega aqui indica que já recebemos o update table no entanto o nodo não recebeu o nosso ack, temos de enviá-lo de novo ...
                         //Depois podemos pôr algo a enviar uma sequência de acks espaçados no tempo só para ter a certeza
@@ -261,14 +291,19 @@ public class UpdateHandler implements Runnable{
                     if(header instanceof Ack){
                         System.out.println("Recebi efetivamente um ack!!!");
                         Ack ack = (Ack) header;
-                        for(int i=0; i<this.updateSent.size(); i++){
-                            SupportUpdate su = this.updateSent.get(i);
-                            if(ack.responseID.equals(su.ut.requestID)) {
-                                System.out.println("Antes de eliminar da lista: " + su.nbrs);
-                                su.nbrs.remove(ack.origin);
-                                System.out.println("La se foi o ack e o gajo correspondete: " + su.nbrs);
-                                break;
+                        try {
+                            lockUpdate.lock();
+                            for (int i = 0; i < this.updateSent.size(); i++) {
+                                SupportUpdate su = this.updateSent.get(i);
+                                if (ack.responseID.equals(su.ut.requestID)) {
+                                    System.out.println("Antes de eliminar da lista: " + su.nbrs);
+                                    su.nbrs.remove(ack.origin);
+                                    System.out.println("La se foi o ack e o gajo correspondete: " + su.nbrs);
+                                    break;
+                                }
                             }
+                        }finally {
+                            lockUpdate.unlock();
                         }
                     }
                 }
