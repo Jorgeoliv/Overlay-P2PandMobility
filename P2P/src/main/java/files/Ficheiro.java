@@ -6,6 +6,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Objects;
+import java.util.concurrent.locks.ReentrantLock;
 
 
 public class Ficheiro {
@@ -20,26 +21,24 @@ public class Ficheiro {
 
     private boolean full;
 
+    private ReentrantLock fileLock;
+
     public Ficheiro (int numberOfChunks){
         this.numberOfChunks = numberOfChunks;
         this.numberOfChunksInArray = 0;
         this.fileChunks = new FileChunk[numberOfChunks];
         this.fileSize = 0;
         this.full = false;
+        this.fileLock = new ReentrantLock();
     }
 
     public Ficheiro (String path, long datagramMaxSize){
         this.file = new File(path);
         String p = this.file.getAbsolutePath();
-        System.out.println("HERE   " + p);
-        if(this.file.exists())
-            System.out.println("NICE!!!!!!!!!!!!!!!!!!!!!!!!!");
-        else
-            System.out.println("FUCK!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+
         this.fileSize = this.file.length();
         this.fileAsBytes = new byte[(int) this.fileSize];
         try{
-            System.out.println("VAMOS VER O CAMIHO: " +  Paths.get(path));
             this.fileAsBytes = Files.readAllBytes(Paths.get(path));
         }
         catch(Exception e){e.printStackTrace();}
@@ -50,13 +49,19 @@ public class Ficheiro {
         this.full = true;
     }
 
-    public boolean addFileChunk (FileChunk fc){
-        this.fileChunks[fc.getPlace()] = fc;
-        this.numberOfChunksInArray++;
-        this.fileSize += fc.getFileChunk().length;
+    public boolean addFileChunks (ArrayList<FileChunk> fcs){
+        this.fileLock.lock();
+
+        for(FileChunk fc: fcs) {
+            this.fileChunks[fc.getPlace()] = fc;
+            this.numberOfChunksInArray++;
+            this.fileSize += fc.getFileChunk().length;
+        }
         if(this.numberOfChunksInArray == this.numberOfChunks)
             this.full = true;
         fileReconstructor(new ArrayList<FileChunk>(Arrays.asList(this.fileChunks)));
+
+        this.fileLock.unlock();
 
         return this.full;
     }
@@ -133,5 +138,13 @@ public class Ficheiro {
             System.arraycopy(fc.get(i).getFileChunk(), 0, c, fileAsBytes_tam, fileChunks_tam);
             this.fileAsBytes = c;
         }
+    }
+
+    public boolean getFull(){
+        return this.full;
+    }
+
+    public void print(){
+        System.out.println(new String(this.fileAsBytes));
     }
 }

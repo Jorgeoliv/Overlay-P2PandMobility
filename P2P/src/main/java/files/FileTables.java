@@ -64,8 +64,6 @@ public class FileTables {
         }
     }
 
-
-
     public String addMyContent(ArrayList<FileInfo> files){
 
         rlMyContent.lock();
@@ -165,7 +163,6 @@ public class FileTables {
         System.out.println("REMOVER: " + nbrContent);
     }
 
-
     public void rmNbr(String id){
         Nodo n = new Nodo(id, null);
         rlNbrContent.lock();
@@ -190,7 +187,6 @@ public class FileTables {
 
         System.out.println("Conteudo depois de eliminar o vizinho: " + nbrContent.toString());
     }
-
 
     //retorna a hash da tabela de um nodo
     public String getHash(String id){
@@ -233,5 +229,14 @@ public class FileTables {
             this.myContent.put(p, aux);
         }
         return fi;
+    }
+
+    public Ficheiro getFicheiro(String name){
+        Ficheiro f = null;
+
+        if(this.myFiles.containsKey(name))
+            f = this.myFiles.get(name);
+
+        return f;
     }
 }

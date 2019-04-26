@@ -79,6 +79,7 @@ public class ContentDiscoveryHandler implements Runnable{
 
             DatagramPacket packet = new DatagramPacket(serializedMessage, serializedMessage.length, InetAddress.getByName(n.ip), this.ucp_Discovery);
             new DatagramSocket().send(packet);
+            System.out.println("ENVIEI UM FOCUS DISCOVERY");
 
         }
         catch (Exception e) {
@@ -110,7 +111,6 @@ public class ContentDiscoveryHandler implements Runnable{
 
     private void sendOwner(ContentOwner co, Nodo dest) {
         try {
-            DatagramSocket socket = new DatagramSocket();
             ByteArrayOutputStream bStream = new ByteArrayOutputStream();
             Output output = new Output(bStream);
             Kryo kryo = new Kryo();
@@ -120,7 +120,8 @@ public class ContentDiscoveryHandler implements Runnable{
             byte[] serializedMessage = bStream.toByteArray();
 
             DatagramPacket packet = new DatagramPacket(serializedMessage, serializedMessage.length, InetAddress.getByName(dest.ip), this.ucp_ContentOwner);
-            socket.send(packet);
+            (new DatagramSocket()).send(packet);
+            System.out.println("ENVIEI UM OWNER");
 
         }
         catch (Exception e) {

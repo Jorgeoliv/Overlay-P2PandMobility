@@ -29,6 +29,7 @@ public class ContentOwnerHandler implements Runnable{
 
         if(header instanceof ContentOwner) {
             ContentOwner co = (ContentOwner) header;
+            System.out.println("RECEBI UM CONTENT OWNER DE " + co.fileInfo.name);
 
             this.fileHandler.registerPair(co.cdRequestID, co.origin, co.fileInfo);
 

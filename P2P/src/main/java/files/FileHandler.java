@@ -124,6 +124,7 @@ public class FileHandler implements Runnable {
         PairNodoFileInfo choice = aux.get(0);//fileChoice(i, aux);
 
         this.cdResponses.remove(id);
+        System.out.println("ANTES: " + choice.nodo.ip);
         this.filePullHandler.send(choice);
         System.out.println("Escolheu o: " + choice.nodo.ip);
     }
@@ -145,6 +146,8 @@ public class FileHandler implements Runnable {
         this.contentDiscoveryHandler = new ContentDiscoveryHandler(this, this.networkTables, this.myNode,this.ucp_ContentDiscovery, this.ucp_ContentOwner, this.idGen);
         this.updateHandler = new UpdateHandler(this.ucp_Update, this.myNode, this.fileTables, this.idGen, this.networkTables);
         this.contentOwnerHandler = new ContentOwnerHandler(this, this.ucp_ContentOwner);
+        this.filePushHandler = new FilePushHandler(this.ucp_filePushHandler, this.fileTables, this.idGen, this.myNode);
+        this.filePullHandler = new FilePullHandler(this.ucp_filePullHandler, this.filePushHandler, this.idGen, this.myNode);
     }
 
     public FileTables getFileTables() {
@@ -182,6 +185,26 @@ public class FileHandler implements Runnable {
         catch (Exception e){
             e.printStackTrace();
             System.out.println("=> ERRO AO CRIAR O CONTENTOWNER");
+        }
+
+        try {
+            t = new Thread(this.filePushHandler);
+            t.start();
+            System.out.println("\t=> FILEPUSHHANDLER CRIADO");
+        }
+        catch (Exception e){
+            e.printStackTrace();
+            System.out.println("=> ERRO AO CRIAR O FILEPUSHHANDLER");
+        }
+
+        try {
+            t = new Thread(this.filePullHandler);
+            t.start();
+            System.out.println("\t=> FILEPULLHANDLER CRIADO");
+        }
+        catch (Exception e){
+            e.printStackTrace();
+            System.out.println("=> ERRO AO CRIAR O FILEPULLHANDLER");
         }
 
         t = null;

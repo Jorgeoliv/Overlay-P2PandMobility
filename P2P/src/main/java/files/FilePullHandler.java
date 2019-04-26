@@ -2,21 +2,32 @@ package files;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
+import com.esotericsoftware.kryo.io.Output;
 import mensagens.FilePull;
 import mensagens.Header;
 import network.IDGen;
+import network.Nodo;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.InetAddress;
+import java.util.ArrayList;
+import java.util.HashMap;
 
 public class FilePullHandler implements Runnable{
+    private Nodo myNode;
 
-    private final FilePushHandler fph;
-    private final IDGen idGen;
+    private FilePushHandler fph;
+    private IDGen idGen;
     private int ucp_FilePull;
 
-    public FilePullHandler(int ucp_FilePull, FilePushHandler fph, IDGen idGen){
+    private int pps = 1;
+
+    public FilePullHandler(int ucp_FilePull, FilePushHandler fph, IDGen idGen, Nodo myNode){
+        this.myNode = myNode;
+
         this.ucp_FilePull = ucp_FilePull;
         this.fph = fph;
         this.idGen = idGen;
@@ -34,14 +45,49 @@ public class FilePullHandler implements Runnable{
 
         if(header instanceof FilePull) {
             //VER SE TEMOS O FICHEIRO
-            this.fph.sendFile((FilePull) header);
+            FilePull fp = (FilePull) header;
+            System.out.println("RECEBI O FILEPULL " + "\n\t" + fp.fi.name + "\n\t" + fp.fi.hash);
+            this.fph.sendFile(fp);
         }
     }
 
     public void send(PairNodoFileInfo choice) {
         String id = idGen.getID();
+        int i;
 
-        this.fph.getPorts(id);
+        this.fph.registerFile(choice.fileInfo, choice.nodo);
+
+        ArrayList<Integer> ports = this.fph.getPorts(choice.fileInfo.hash);
+
+        HashMap <Integer, Integer> ppps = new HashMap<Integer, Integer>();
+        ArrayList<Integer> mfc = new ArrayList<Integer>();
+
+        for(int p : ports)
+            ppps.put(p,this.pps);
+
+        for(i = 0; i < choice.fileInfo.numOfFileChunks; i++);
+            mfc.add(i);
+
+        FilePull fp = new FilePull(this.idGen.getID(), this.myNode, choice.fileInfo, ppps);
+
+        ByteArrayOutputStream bStream = new ByteArrayOutputStream();
+        Output output = new Output(bStream);
+
+        Kryo kryo = new Kryo();
+        kryo.writeClassAndObject(output, fp);
+        output.close();
+
+        byte[] serializedPing = bStream.toByteArray();
+
+        try {
+            DatagramPacket packet = new DatagramPacket(serializedPing, serializedPing.length, InetAddress.getByName(choice.nodo.ip), this.ucp_FilePull);
+            (new DatagramSocket()).send(packet);
+            System.out.println("ENVIEI O FILEPULL " + "\n\t" + choice.fileInfo.name + "\n\t" + choice.fileInfo.hash);
+            this.fph.startReceivers(choice.fileInfo.hash);
+        }
+        catch (Exception e){
+            e.printStackTrace();
+        }
     }
 
     public void run() {
