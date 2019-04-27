@@ -131,8 +131,9 @@ public class FilePushHandler implements Runnable{
         Ficheiro filePointer;
         ArrayList<FileReceiver> fRPointer;
         ArrayList<FileChunk> fCPointer;
+        ArrayList<String> toRemove = new ArrayList<String>();
 
-        int packets = 0, to;
+        int packets = 0, to, i, tam;
 
         while(true){
             try {
@@ -155,10 +156,9 @@ public class FilePushHandler implements Runnable{
                     else {
                         if (filePointer.getFull()) {
                             System.out.println("FICHEIRO COMPLETO!!!!!!!!!!!!!!!!!!\n");
-                            //É PRECISO GUARDAR O FICHEIRO
-                            System.out.println("\n");
-                            clean(h);
-                        } else
+                            toRemove.add(h);
+                        }
+                        else
                             this.timeouts.put(h, 0);
                     }
 
@@ -177,6 +177,11 @@ public class FilePushHandler implements Runnable{
 
                     packets = 0;
                 }
+                tam = toRemove.size();
+                for(i = 0; i < tam; i++)
+                    clean(toRemove.get(i));
+
+                toRemove.clear();
                 Thread.sleep(this.timeoutTime);
             }
             catch (Exception e){
