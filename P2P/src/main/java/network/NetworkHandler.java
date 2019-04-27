@@ -160,6 +160,10 @@ public class NetworkHandler implements Runnable{
 
     }
 
+    public String getID(){
+        return this.myNode.id;
+    }
+
     public NetworkTables getNetworkTables(){
         return this.nt;
     }

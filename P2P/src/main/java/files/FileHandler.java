@@ -74,7 +74,9 @@ public class FileHandler implements Runnable {
 
     private HashMap <String, ArrayList<PairNodoFileInfo>> cdResponses;
 
-    ScheduledExecutorService ses = Executors.newSingleThreadScheduledExecutor();
+    private ScheduledExecutorService ses = Executors.newSingleThreadScheduledExecutor();
+
+    private boolean drawMenu = true;
 
     public FileHandler(){
         this.fileTables = new FileTables();
@@ -121,7 +123,7 @@ public class FileHandler implements Runnable {
         for(PairNodoFileInfo pnfi: aux)
             System.out.println("\t" + i++ + ") " + pnfi.toString());
 
-        PairNodoFileInfo choice = aux.get(0);//fileChoice(i, aux);
+        PairNodoFileInfo choice = fileChoice(i, aux);
 
         this.cdResponses.remove(id);
         System.out.println("ANTES: " + choice.nodo.ip);
@@ -134,6 +136,7 @@ public class FileHandler implements Runnable {
             @Override
             public void run() {
                 analisaCD(id);
+                drawMenu = true;
             }
         };
 
@@ -212,6 +215,8 @@ public class FileHandler implements Runnable {
 
     public void sendDiscovery(String file) {
 
+        this.drawMenu = false;
+
         //tenho mesmo de criar assim o arraylist senão vai dar problemas com o kryo
         ArrayList<String> route = new ArrayList<>();
         route.add(myNode.id);
@@ -243,4 +248,7 @@ public class FileHandler implements Runnable {
         this.updateHandler.sendUpdate(ut);
     }
 
+    public boolean getDrawMenu(){
+        return this.drawMenu;
+    }
 }

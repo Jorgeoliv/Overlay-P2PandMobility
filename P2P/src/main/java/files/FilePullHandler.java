@@ -23,7 +23,7 @@ public class FilePullHandler implements Runnable{
     private IDGen idGen;
     private int ucp_FilePull;
 
-    private int pps = 1;
+    private int pps = 500;
 
     public FilePullHandler(int ucp_FilePull, FilePushHandler fph, IDGen idGen, Nodo myNode){
         this.myNode = myNode;

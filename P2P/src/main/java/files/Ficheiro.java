@@ -1,17 +1,20 @@
 package files;
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Objects;
 import java.util.concurrent.locks.ReentrantLock;
 
 
 public class Ficheiro {
 
     private File file;
+    private String nodeID;
+    private String fileName;
+
     private byte [] fileAsBytes;
     private FileChunk [] fileChunks;
 
@@ -23,7 +26,10 @@ public class Ficheiro {
 
     private ReentrantLock fileLock;
 
-    public Ficheiro (int numberOfChunks){
+    public Ficheiro (int numberOfChunks, String id, String name){
+        this.nodeID = id;
+        this.fileName = name;
+
         this.numberOfChunks = numberOfChunks;
         this.numberOfChunksInArray = 0;
         this.fileChunks = new FileChunk[numberOfChunks];
@@ -32,9 +38,10 @@ public class Ficheiro {
         this.fileLock = new ReentrantLock();
     }
 
-    public Ficheiro (String path, long datagramMaxSize){
+    public Ficheiro (String path, String id, String name, long datagramMaxSize){
         this.file = new File(path);
-        String p = this.file.getAbsolutePath();
+        this.nodeID = id;
+        this.fileName = name;
 
         this.fileSize = this.file.length();
         this.fileAsBytes = new byte[(int) this.fileSize];
@@ -46,9 +53,57 @@ public class Ficheiro {
 
         byte [][] fileAsBytesChunks = separate(numberOfChunks, datagramMaxSize);
         this.fileChunks = createFileChunks(numberOfChunks, fileAsBytesChunks);
+
+        try {
+            writeFileChunksToFolder("uploads", this.fileChunks, this.numberOfChunks);
+            cleanSpace();
+        }
+        catch (Exception e){
+            e.printStackTrace();
+        }
+
         this.full = true;
     }
 
+    private void cleanSpace(){
+        this.fileAsBytes = null;
+        this.fileChunks = null;
+    }
+
+    private void writeFileChunksToFolder(String folder, FileChunk[] fcs, int size){
+        int i;
+        String uploadPath = "NODE_" + this.nodeID + "/" + folder + "/" + this.fileName;
+        File ficheiro = new File(uploadPath);
+
+        if(!ficheiro.exists() && !ficheiro.isDirectory()){
+            ficheiro.mkdir();
+        }
+
+        Path file;
+        for(i = 0; i < size; i++){
+            try {
+                FileChunk fc = fcs[i];
+                file = Paths.get(uploadPath + "/" + fc.getPlace() + ".filechunk");
+                Files.write(file, fc.getFileChunk());
+            }
+                catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private void writeFileToFolder(String folder){
+        String folderPath = "NODE_" + this.nodeID + "/" + folder;
+        File ficheiro = new File(folderPath);
+
+        try {
+            Path file = Paths.get(folderPath + "/" + this.fileName);
+            Files.write(file, this.fileAsBytes);
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
     public boolean addFileChunks (ArrayList<FileChunk> fcs){
         this.fileLock.lock();
 
@@ -57,11 +112,18 @@ public class Ficheiro {
             this.numberOfChunksInArray++;
             this.fileSize += fc.getFileChunk().length;
         }
-        if(this.numberOfChunksInArray == this.numberOfChunks)
-            this.full = true;
-        fileReconstructor(new ArrayList<FileChunk>(Arrays.asList(this.fileChunks)));
 
+        if(this.numberOfChunksInArray == this.numberOfChunks) {
+            this.full = true;
+            fileReconstructor(new ArrayList<FileChunk>(Arrays.asList(this.fileChunks)));
+            writeFileToFolder("files");
+            cleanSpace();
+        }
         this.fileLock.unlock();
+
+        FileChunk[] aux = fcs.toArray(new FileChunk[0]);
+
+        writeFileChunksToFolder("/downloads/", aux, fcs.size());
 
         return this.full;
     }
@@ -70,7 +132,7 @@ public class Ficheiro {
         FileChunk[] res = new FileChunk[noc];
 
         for (int i = 0; i < noc; i++)
-            res [i] = new FileChunk(fileAsBytesChunks[i], i);
+            res[i] = new FileChunk(fileAsBytesChunks[i], i);
 
         return res;
     }
@@ -79,12 +141,29 @@ public class Ficheiro {
         return this.fileSize;
     }
 
-    public File getFile(){
-        return this.file;
-    }
-
     public FileChunk[] getFileChunks(){
-        return this.fileChunks;
+        // IR BUSCAR AO FOLDER UPLOAD
+        String uploadFolder = "NODE_" + this.nodeID + "/uploads/" + this.fileName;
+
+        File ficheiro = new File (uploadFolder);
+        FileChunk [] fChunks = null;
+
+        try {
+            if(ficheiro.exists() && ficheiro.isDirectory()){
+                fChunks = new FileChunk[this.numberOfChunks];
+                int i;
+
+                for(i = 0; i < this.numberOfChunks; i++){
+                    fChunks[i] = new FileChunk(Files.readAllBytes(Paths.get(uploadFolder + "/" + i + ".filechunk")), i);
+                }
+
+            }
+        }
+        catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return fChunks;
     }
 
     public int getNumberOfChunks(){
@@ -115,36 +194,21 @@ public class Ficheiro {
         return res;
     }
 
-    public boolean isFull(){
-        return this.full;
-    }
-
     private void fileReconstructor(ArrayList<FileChunk> fc){
 
-        int i, tam = fc.size();
-        int fileChunks_tam, fileAsBytes_tam;
-        byte [] c;
+        int i, tam = fc.size(), auxTam = 0;
+        this.fileAsBytes = new byte[Math.toIntExact(fileSize)];
+        byte [] arrayPointer;
 
         for (i = 0; i < tam; i++){
-            fileChunks_tam = fc.get(i).getFileChunk().length;
-            if (i == 0)
-                fileAsBytes_tam = 0;
-            else
-                fileAsBytes_tam = this.fileAsBytes.length;
 
-            c = new byte[fileChunks_tam + fileAsBytes_tam];
-            if (i != 0)
-                System.arraycopy(this.fileAsBytes, 0, c, 0, fileAsBytes_tam);
-            System.arraycopy(fc.get(i).getFileChunk(), 0, c, fileAsBytes_tam, fileChunks_tam);
-            this.fileAsBytes = c;
+            arrayPointer = fc.get(i).getFileChunk();
+            System.arraycopy(arrayPointer, 0, this.fileAsBytes, auxTam , arrayPointer.length);
+            auxTam += arrayPointer.length;
         }
     }
 
     public boolean getFull(){
         return this.full;
-    }
-
-    public void print(){
-        System.out.println(new String(this.fileAsBytes));
     }
 }

@@ -1,5 +1,6 @@
 package network;
 
+import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.Random;
@@ -32,6 +33,24 @@ public class IDGen {
 
         while(id == null)
             id = this.newID();
+
+        try {
+            File idFolder = new File("NODE_" + id);
+            File upload = new File("NODE_" + id + "/uploads");
+            File download = new File("NODE_" + id + "/downloads");
+            File files = new File("NODE_" + id + "/files");
+
+            while (!idFolder.exists() || !idFolder.isDirectory()) {
+                idFolder.mkdir();
+                while(upload.mkdir());
+                while(download.mkdir());
+                while(files.mkdir());
+            }
+        }
+        catch (Exception e){
+            e.printStackTrace();
+        }
+
         /*try {
             String macAddress = null;
             Enumeration<NetworkInterface> nI = NetworkInterface.getNetworkInterfaces();
@@ -84,8 +103,6 @@ public class IDGen {
             String id = this.getID();
             String date = "" + System.currentTimeMillis();
             String nounce = "" + rand.nextInt();
-
-            System.out.println(id + " " + date + " " + nounce);
 
             String toHash = id + date + nounce;
 

@@ -28,7 +28,7 @@ public class FilePushHandler implements Runnable{
     public FilePushHandler(int ucp_FilePushHandler, FileTables ft, IDGen idGen, Nodo myNode){
         this.myNode = myNode;
 
-        this.numOfReceivers = 1;
+        this.numOfReceivers = 20;
 
         this.ucp_FilePushHandler = ucp_FilePushHandler;
         this.idGen = idGen;
@@ -47,7 +47,7 @@ public class FilePushHandler implements Runnable{
         String id = this.idGen.getID();
 
         Ficheiro f = this.ft.getFicheiro(fp.fi.name);
-        System.out.println("OLA1");
+        System.out.println("NUMERO DE FILECHUNKS " + f.getNumberOfChunks() + "\n\n");
 
         FileChunk[] fc = f.getFileChunks();
         ArrayList<ArrayList<FileChunk>> fileChunks = new ArrayList<ArrayList<FileChunk>>();
@@ -59,26 +59,20 @@ public class FilePushHandler implements Runnable{
 
         for(i = 0; i < nfc; i++)
             fileChunks.add(new ArrayList<FileChunk>());
-        System.out.println("OLA2");
 
         for(i = 0; i < f.getNumberOfChunks(); i++)
             fileChunks.get(i%nfc).add(fc[i]);
-        System.out.println("OLA3");
 
         i = 0;
         for(int port : fp.ports_packetPerSecond.keySet()){
-            System.out.println("OLA4.1 " + i);
-            fsPointer = new FileSender(port, fileChunks.get(i++),1000/(fp.ports_packetPerSecond.get(port)),id, fp.fi.hash,this.myNode, fp.origin.ip, this.ucp_FilePushHandler);
-            System.out.println("OLA4.2" + i);
+            fsPointer = new FileSender(port, fileChunks.get(i++),fp.ports_packetPerSecond.get(port),id, fp.fi.hash,this.myNode, fp.origin.ip, this.ucp_FilePushHandler);
             t = new Thread(fsPointer);
             t.start();
         }
-        System.out.println("OLAFINAL");
-
     }
 
     public void registerFile(FileInfo fi, Nodo node){
-        Ficheiro f = new Ficheiro(fi.numOfFileChunks);
+        Ficheiro f = new Ficheiro(fi.numOfFileChunks, this.myNode.id, fi.name);
         this.ficheiros.put(fi.hash, f);
         this.fileOwners.put(fi.hash, node);
         this.timeouts.put(fi.hash, 0);
@@ -138,7 +132,7 @@ public class FilePushHandler implements Runnable{
         ArrayList<FileReceiver> fRPointer;
         ArrayList<FileChunk> fCPointer;
 
-        int packets = 0, to= 0;
+        int packets = 0, to;
 
         while(true){
             try {
@@ -157,37 +151,36 @@ public class FilePushHandler implements Runnable{
                         to = this.timeouts.get(h) + 1;
                         this.timeouts.put(h, to);
                         System.out.println("TIMEOUT");
-                    } else {
+                    }
+                    else {
                         if (filePointer.getFull()) {
                             System.out.println("FICHEIRO COMPLETO!!!!!!!!!!!!!!!!!!\n");
-                            filePointer.print();
+                            //É PRECISO GUARDAR O FICHEIRO
                             System.out.println("\n");
+                            clean(h);
                         } else
                             this.timeouts.put(h, 0);
                     }
 
-                    to = this.timeouts.get(h);
-                    if (to == 5) {
-                        System.out.println("ENVIAR MENSAGEM DE TIMEOUT");
-                        sendTimeoutPacket(h);
-                    }
-                    else
-                        if (to >= 10) {
-                            System.out.println("TRANSFERENCIA FALHADA");
-                            clean(h);
+                    if(this.timeouts.containsKey(h)) {
+                        to = this.timeouts.get(h);
+                        if (to == 5) {
+                            System.out.println("ENVIAR MENSAGEM DE TIMEOUT");
+                            sendTimeoutPacket(h);
+                        } else {
+                            if (to >= 10) {
+                                System.out.println("TRANSFERENCIA FALHADA");
+                                clean(h);
+                            }
                         }
+                    }
+
                     packets = 0;
                 }
-                System.out.println("TO SLEEP");
                 Thread.sleep(this.timeoutTime);
             }
             catch (Exception e){
                 e.printStackTrace();
-                try {
-                    Thread.sleep(10000000);
-                } catch (InterruptedException ex) {
-                    ex.printStackTrace();
-                }
             }
         }
     }

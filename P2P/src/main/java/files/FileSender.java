@@ -15,7 +15,7 @@ public class FileSender implements Runnable{
 
     private Nodo myNode;
 
-    private int timeToSleep;
+    private int pps;
     private int portToSend;
     private ArrayList<FileChunk> fcToSend;
 
@@ -26,8 +26,8 @@ public class FileSender implements Runnable{
     private InetAddress ipToSend;
     private int ucp_FilePushHandler;
 
-    public FileSender(int portToSend, ArrayList<FileChunk> fc, int timeToSleep, String id, String hash, Nodo myNode, String ip, int ucp_FilePushHandler){
-        this.timeToSleep = timeToSleep;
+    public FileSender(int portToSend, ArrayList<FileChunk> fc, int pps, String id, String hash, Nodo myNode, String ip, int ucp_FilePushHandler){
+        this.pps = pps;
 
         this.portToSend = portToSend;
         this.fcToSend = fc;
@@ -48,7 +48,6 @@ public class FileSender implements Runnable{
 
     private void sendFileChunk(FileChunk fileChunk) {
         FilePush fp = new FilePush(this.id, this.myNode, fileChunk, this.hash);
-        System.out.println("1");
 
         ByteArrayOutputStream bStream = new ByteArrayOutputStream();
         Output output = new Output(bStream);
@@ -61,10 +60,8 @@ public class FileSender implements Runnable{
         byte[] serializedPing = bStream.toByteArray();
         try{
             DatagramPacket packet = new DatagramPacket(serializedPing, serializedPing.length, this.ipToSend, this.portToSend);
-            System.out.println("2");
 
             this.ds.send(packet);
-            System.out.println("Enviei");
         }
         catch (Exception e){
             e.printStackTrace();
@@ -73,11 +70,13 @@ public class FileSender implements Runnable{
 
     public void run() {
         int i;
+        int tam = this.fcToSend.size();
         try {
-            for (i = 0; i < this.fcToSend.size(); i++) {
+            for (i = 0; i < tam; i++) {
                 sendFileChunk(this.fcToSend.get(i));
+                System.out.println("Enviei " + (i+1) + " / " + tam);
 
-                Thread.sleep(this.timeToSleep);
+                Thread.sleep(1000/this.pps);
             }
         }
         catch (Exception e){

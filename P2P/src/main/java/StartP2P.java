@@ -15,7 +15,7 @@ public class StartP2P {
     final static int SOFTCAP = 3;
     final static int HARDCAP = 6;
 
-    private static void upload(BufferedReader inP, FileHandler fh, FileTables ft){
+    private static void upload(BufferedReader inP, FileHandler fh, FileTables ft, String NodeId){
 
         System.out.print("1 - Insira o nome do ficheiro: ");
         boolean c = false;
@@ -36,7 +36,7 @@ public class StartP2P {
         ArrayList<String> files = new ArrayList<>();
         files.add(file);
 
-        ArrayList<FileInfo> fi = ft.newFicheiro(files);
+        ArrayList<FileInfo> fi = ft.newFicheiro(files, NodeId);
         fh.sendUpdate(fi);
 
     }
@@ -59,8 +59,8 @@ public class StartP2P {
         }
 
         //Neste caso faz sentido só procurar por um ficheiro
-        fh.sendDiscovery(file);
 
+        fh.sendDiscovery(file);
         System.out.println("O ficheiro lido foi: " + file);
 
     }
@@ -88,11 +88,18 @@ public class StartP2P {
 
         while(!sair){
 
-            System.out.println("***** MENU *****");
-            System.out.println("1 - Upload Ficheiro");
-            System.out.println("2 - Download Ficheiro");
-            System.out.println("Outro para sair");
-
+            while(!fh.getDrawMenu()) {
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+            System.out.println("*********** MENU ************");
+            System.out.println("*    1 - Upload Ficheiro    *");
+            System.out.println("*    2 - Download Ficheiro  *");
+            System.out.println("*    Outro para sair        *");
+            System.out.println("*****************************");
             System.out.print("Opção: ");
 
             boolean c = false;
@@ -109,15 +116,10 @@ public class StartP2P {
             }
 
             switch (opcao){
-                case 1: upload(inP, fh, fh.getFileTables()); break;
+                case 1: upload(inP, fh, fh.getFileTables(), nh.getID()); break;
                 case 2: download(inP, fh); break;
                 default: sair = true;
             }
-
         }
-
-
-
     }
-
 }

@@ -216,13 +216,13 @@ public class FileTables {
         return fi;
     }
 
-    public ArrayList<FileInfo> newFicheiro (ArrayList<String> path) {
+    public ArrayList<FileInfo> newFicheiro (ArrayList<String> path, String NodeId) {
         ArrayList<FileInfo> fi = new ArrayList<FileInfo>();
         FileInfo aux;
         for (String p : path) {
             String[] auxSplit = p.split("/");
             String name = auxSplit[auxSplit.length-1];
-            Ficheiro f = new Ficheiro(p, FileChunkSize);
+            Ficheiro f = new Ficheiro(p, NodeId, name, FileChunkSize);
             this.myFiles.put(p, f);
             aux = new FileInfo(name, UUID.randomUUID().toString(), f.getNumberOfChunks(), f.getFileSize());
             fi.add(aux);
