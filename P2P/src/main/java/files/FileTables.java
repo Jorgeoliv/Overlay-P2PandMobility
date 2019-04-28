@@ -225,10 +225,10 @@ public class FileTables {
             String[] auxSplit = p.split("/");
             String name = auxSplit[auxSplit.length-1];
             Ficheiro f = new Ficheiro(p, NodeId, name, FileChunkSize);
-            this.myFiles.put(p, f);
+            this.myFiles.put(name, f);
             aux = new FileInfo(name, UUID.randomUUID().toString(), f.getNumberOfChunks(), f.getFileSize());
             fi.add(aux);
-            this.myContent.put(p, aux);
+            this.myContent.put(name, aux);
         }
         return fi;
     }

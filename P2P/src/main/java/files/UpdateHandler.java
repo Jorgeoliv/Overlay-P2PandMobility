@@ -98,6 +98,7 @@ public class UpdateHandler implements Runnable{
         return ret;
     }
 
+
     //Necessario para limpar os acks que já estão terminados ou então para reenviar os updates
     private Runnable inspectAck = () -> {
         long atualTime = System.currentTimeMillis();
@@ -235,6 +236,67 @@ public class UpdateHandler implements Runnable{
         return true;
     }
 
+    private void sendAgainUpdateTable(Nodo n){
+        lockUpdate.lock();
+        ArrayList<SupportUpdate> auxUpdate = (ArrayList<SupportUpdate> ) this.updateSent.clone();
+        lockUpdate.unlock();
+
+        for(SupportUpdate su: auxUpdate){
+            if(su.nbrs.contains(n)){
+                //se continver quer dizer que não recebeu o ack, logo poderá ser o pacote que falta receber ...
+                try {
+                    Kryo kryo = new Kryo();
+                    DatagramSocket socket = new DatagramSocket();
+                    ByteArrayOutputStream bStream = new ByteArrayOutputStream();
+                    Output output = new Output(bStream);
+                    kryo.writeClassAndObject(output, su.ut);
+                    output.close();
+
+                    byte[] serializedMessage = bStream.toByteArray();
+
+                    System.out.println("A mandar um EMERGENCYUPDATE para o nodo: " + n.ip);
+                    DatagramPacket packet = new DatagramPacket(serializedMessage, serializedMessage.length, InetAddress.getByName(n.ip), this.ucp_Update);
+                    socket.send(packet);
+
+                    //Para "garantir" que vai por ordem ...
+                    Thread.sleep(200);
+                } catch (UnknownHostException e) {
+                    e.printStackTrace();
+                } catch (SocketException e) {
+                    e.printStackTrace();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    private void sendEmergencyUpdate(UpdateTable ut){
+
+        EmergencyUpdate eu = new EmergencyUpdate(this.idGen.getID(), myNode);
+
+        try {
+            Kryo kryo = new Kryo();
+            DatagramSocket socket = new DatagramSocket();
+            ByteArrayOutputStream bStream = new ByteArrayOutputStream();
+            Output output = new Output(bStream);
+            kryo.writeClassAndObject(output, eu);
+            output.close();
+
+            byte[] serializedMessage = bStream.toByteArray();
+
+            DatagramPacket packet = new DatagramPacket(serializedMessage, serializedMessage.length, InetAddress.getByName(ut.origin.ip), this.ucp_Update);
+            socket.send(packet);
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        } catch (SocketException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
     @Override
     public void run() {
@@ -277,6 +339,7 @@ public class UpdateHandler implements Runnable{
                         }else{
                             System.out.println("ATENÇÃO ATENÇÃO ATENÇÃO");
                             System.out.println("\t Falta um pacote do UpdateHandler para o nodo: " + myNode.ip);
+                            this.sendEmergencyUpdate(ut);
                         }
                         //Para dar tempo no caso de recebermos repetidos ..
                         ses.schedule(delete(requestID), 300, TimeUnit.SECONDS);
@@ -305,6 +368,12 @@ public class UpdateHandler implements Runnable{
                         }finally {
                             lockUpdate.unlock();
                         }
+                    }else{
+                       if(header instanceof EmergencyUpdate){
+                           System.out.println("RECEBI UM EMERGENCY UPDATE!!");
+                           EmergencyUpdate eu = (EmergencyUpdate) header;
+                           this.sendAgainUpdateTable(eu.origin);
+                       }
                     }
                 }
 
