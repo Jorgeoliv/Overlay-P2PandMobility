@@ -20,6 +20,7 @@ public class Ficheiro {
 
     private int numberOfChunks;
     private int numberOfChunksInArray;
+    private ArrayList<Integer> missingFileChunks;
     private long fileSize;
 
     private boolean full;
@@ -32,6 +33,10 @@ public class Ficheiro {
 
         this.numberOfChunks = numberOfChunks;
         this.numberOfChunksInArray = 0;
+        this.missingFileChunks = new ArrayList<Integer>();
+        for(int i = 0; i < this.numberOfChunks; i++)
+            this.missingFileChunks.add(i);
+
         this.fileChunks = new FileChunk[numberOfChunks];
         this.fileSize = 0;
         this.full = false;
@@ -109,6 +114,7 @@ public class Ficheiro {
 
         for(FileChunk fc: fcs) {
             this.fileChunks[fc.getPlace()] = fc;
+            this.missingFileChunks.remove(new Integer(fc.getPlace()));
             this.numberOfChunksInArray++;
             this.fileSize += fc.getFileChunk().length;
         }
@@ -208,7 +214,39 @@ public class Ficheiro {
         }
     }
 
+    public ArrayList<Integer> getMissingFileChunks(){
+        return this.missingFileChunks;
+    }
+
+    public FileChunk[] getMissingFileChunks(ArrayList<Integer> mfc){
+
+        String uploadFolder = "NODE_" + this.nodeID + "/uploads/" + this.fileName;
+
+        File ficheiro = new File (uploadFolder);
+        FileChunk[] res = null;
+
+        try {
+            if(ficheiro.exists() && ficheiro.isDirectory()){
+                int tam = mfc.size();
+                res = new FileChunk[tam];
+                int j = 0;
+                for(Integer i : mfc){
+                    res[j++] = new FileChunk(Files.readAllBytes(Paths.get(uploadFolder + "/" + i + ".filechunk")), i);
+                }
+
+            }
+        }
+        catch (IOException e) {
+            e.printStackTrace();
+        }
+        return res;
+    }
+
     public boolean getFull(){
         return this.full;
+    }
+
+    public String getFileName(){
+        return this.fileName;
     }
 }

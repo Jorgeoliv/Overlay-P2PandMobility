@@ -21,14 +21,14 @@ public class FilePullHandler implements Runnable{
 
     private FilePushHandler fph;
     private IDGen idGen;
-    private int ucp_FilePull;
+    private int ucp_FilePullHandler;
 
     private int pps = 500;
 
     public FilePullHandler(int ucp_FilePull, FilePushHandler fph, IDGen idGen, Nodo myNode){
         this.myNode = myNode;
 
-        this.ucp_FilePull = ucp_FilePull;
+        this.ucp_FilePullHandler = ucp_FilePull;
         this.fph = fph;
         this.idGen = idGen;
 
@@ -44,7 +44,6 @@ public class FilePullHandler implements Runnable{
         input.close();
 
         if(header instanceof FilePull) {
-            //VER SE TEMOS O FICHEIRO
             FilePull fp = (FilePull) header;
             System.out.println("RECEBI O FILEPULL " + "\n\t" + fp.fi.name + "\n\t" + fp.fi.hash);
             this.fph.sendFile(fp);
@@ -52,23 +51,16 @@ public class FilePullHandler implements Runnable{
     }
 
     public void send(PairNodoFileInfo choice) {
-        String id = idGen.getID();
-        int i;
-
         this.fph.registerFile(choice.fileInfo, choice.nodo);
 
         ArrayList<Integer> ports = this.fph.getPorts(choice.fileInfo.hash);
 
         HashMap <Integer, Integer> ppps = new HashMap<Integer, Integer>();
-        ArrayList<Integer> mfc = new ArrayList<Integer>();
 
         for(int p : ports)
             ppps.put(p,this.pps);
 
-        for(i = 0; i < choice.fileInfo.numOfFileChunks; i++);
-            mfc.add(i);
-
-        FilePull fp = new FilePull(this.idGen.getID(), this.myNode, choice.fileInfo, ppps);
+        FilePull fp = new FilePull(this.idGen.getID(), this.myNode, choice.fileInfo, ppps, null);
 
         ByteArrayOutputStream bStream = new ByteArrayOutputStream();
         Output output = new Output(bStream);
@@ -80,7 +72,7 @@ public class FilePullHandler implements Runnable{
         byte[] serializedPing = bStream.toByteArray();
 
         try {
-            DatagramPacket packet = new DatagramPacket(serializedPing, serializedPing.length, InetAddress.getByName(choice.nodo.ip), this.ucp_FilePull);
+            DatagramPacket packet = new DatagramPacket(serializedPing, serializedPing.length, InetAddress.getByName(choice.nodo.ip), this.ucp_FilePullHandler);
             (new DatagramSocket()).send(packet);
             System.out.println("ENVIEI O FILEPULL " + "\n\t" + choice.fileInfo.name + "\n\t" + choice.fileInfo.hash);
             this.fph.startReceivers(choice.fileInfo.hash);
@@ -97,7 +89,7 @@ public class FilePullHandler implements Runnable{
             byte[] buf;
             DatagramPacket filepull;
 
-            DatagramSocket ds = new DatagramSocket(this.ucp_FilePull);
+            DatagramSocket ds = new DatagramSocket(this.ucp_FilePullHandler);
 
             while(true){
                 buf = new byte[1500];

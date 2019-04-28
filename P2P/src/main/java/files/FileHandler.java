@@ -149,7 +149,7 @@ public class FileHandler implements Runnable {
         this.contentDiscoveryHandler = new ContentDiscoveryHandler(this, this.networkTables, this.myNode,this.ucp_ContentDiscovery, this.ucp_ContentOwner, this.idGen);
         this.updateHandler = new UpdateHandler(this.ucp_Update, this.myNode, this.fileTables, this.idGen, this.networkTables);
         this.contentOwnerHandler = new ContentOwnerHandler(this, this.ucp_ContentOwner);
-        this.filePushHandler = new FilePushHandler(this.ucp_filePushHandler, this.fileTables, this.idGen, this.myNode);
+        this.filePushHandler = new FilePushHandler(this.ucp_filePushHandler, this.ucp_filePullHandler, this.fileTables, this.idGen, this.myNode);
         this.filePullHandler = new FilePullHandler(this.ucp_filePullHandler, this.filePushHandler, this.idGen, this.myNode);
     }
 

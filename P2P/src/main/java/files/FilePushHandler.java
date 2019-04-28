@@ -1,9 +1,15 @@
 package files;
 
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.io.Output;
 import mensagens.FilePull;
 import network.IDGen;
 import network.Nodo;
 
+import java.io.ByteArrayOutputStream;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.HashMap;
 //setReceiveBufferSize
@@ -15,26 +21,34 @@ public class FilePushHandler implements Runnable{
     private int timeoutTime = 10000;
 
     private int ucp_FilePushHandler;
+    private int ucp_FilePullHandler;
     private IDGen idGen;
 
     private HashMap<String, Nodo> fileOwners;
     private HashMap<String, Ficheiro> ficheiros;
+    private HashMap<String, FileInfo> fileInfos;
 
     private HashMap<String, ArrayList <FileReceiver>> fileReceivers;
     private HashMap<String, ArrayList <Thread>> fileReceiversThreads;
     private HashMap<String, Integer> timeouts;
 
+    private int TimeOutpps = 300;
+
     private FileTables ft;
-    public FilePushHandler(int ucp_FilePushHandler, FileTables ft, IDGen idGen, Nodo myNode){
+
+    public FilePushHandler(int ucp_FilePushHandler, int ucp_FilePullHandler, FileTables ft, IDGen idGen, Nodo myNode){
         this.myNode = myNode;
 
         this.numOfReceivers = 20;
 
         this.ucp_FilePushHandler = ucp_FilePushHandler;
+        this.ucp_FilePullHandler = ucp_FilePullHandler;
         this.idGen = idGen;
 
         this.fileOwners = new HashMap<String, Nodo>();
         this.ficheiros = new HashMap<String, Ficheiro>();
+        this.fileInfos = new HashMap<String, FileInfo>();
+
 
         this.fileReceivers = new HashMap<String, ArrayList<FileReceiver>>();
         this.fileReceiversThreads = new HashMap<String, ArrayList<Thread>>();
@@ -44,12 +58,18 @@ public class FilePushHandler implements Runnable{
     }
 
     public void sendFile(FilePull fp) {
+
         String id = this.idGen.getID();
 
         Ficheiro f = this.ft.getFicheiro(fp.fi.name);
         System.out.println("NUMERO DE FILECHUNKS " + f.getNumberOfChunks() + "\n\n");
 
-        FileChunk[] fc = f.getFileChunks();
+        FileChunk[] fc;
+        if(fp.missingFileChunks == null)
+            fc = f.getFileChunks();
+        else
+            fc = f.getMissingFileChunks(fp.missingFileChunks);
+
         ArrayList<ArrayList<FileChunk>> fileChunks = new ArrayList<ArrayList<FileChunk>>();
 
         FileSender fsPointer;
@@ -74,9 +94,9 @@ public class FilePushHandler implements Runnable{
     public void registerFile(FileInfo fi, Nodo node){
         Ficheiro f = new Ficheiro(fi.numOfFileChunks, this.myNode.id, fi.name);
         this.ficheiros.put(fi.hash, f);
+        this.fileInfos.put(fi.hash, fi);
         this.fileOwners.put(fi.hash, node);
         this.timeouts.put(fi.hash, 0);
-
     }
 
     public ArrayList<Integer> getPorts(String id) {
@@ -122,9 +142,38 @@ public class FilePushHandler implements Runnable{
         this.fileReceiversThreads.remove(h);
         this.timeouts.remove(h);
         this.ficheiros.remove(h);
+        this.fileInfos.remove(h);
     }
 
     private void sendTimeoutPacket(String h) {
+
+        ArrayList<Integer> mfc = this.ficheiros.get(h).getMissingFileChunks();
+
+        HashMap<Integer, Integer> ppps = new HashMap<Integer, Integer>();
+
+        for(FileReceiver fr : this.fileReceivers.get(h)){
+            ppps.put(fr.port, this.TimeOutpps);
+        }
+
+        FilePull fp = new FilePull(this.idGen.getID(), this.myNode, this.fileInfos.get(h), ppps, mfc);
+
+        ByteArrayOutputStream bStream = new ByteArrayOutputStream();
+        Output output = new Output(bStream);
+
+        Kryo kryo = new Kryo();
+        kryo.writeClassAndObject(output, fp);
+        output.close();
+
+        byte[] serializedPing = bStream.toByteArray();
+
+        try {
+            DatagramPacket packet = new DatagramPacket(serializedPing, serializedPing.length, InetAddress.getByName(this.fileOwners.get(h).ip), this.ucp_FilePullHandler);
+            (new DatagramSocket()).send(packet);
+            System.out.println("ENVIEI O TIMEOUTPACKET " + "\n\t" + this.fileOwners.get(h).ip + "\n\t" + this.fileInfos.get(h).hash);
+        }
+        catch (Exception e){
+            e.printStackTrace();
+        }
     }
 
     public void run(){
@@ -151,11 +200,11 @@ public class FilePushHandler implements Runnable{
                     if (packets == 0 && !filePointer.getFull()) {
                         to = this.timeouts.get(h) + 1;
                         this.timeouts.put(h, to);
-                        System.out.println("TIMEOUT");
+                        System.out.println("TIMEOUT NA TRANSFERÊNCIA DE " + filePointer.getFileName());
                     }
                     else {
                         if (filePointer.getFull()) {
-                            System.out.println("FICHEIRO COMPLETO!!!!!!!!!!!!!!!!!!\n");
+                            System.out.println("TRANSFERÊNCIA DE " + filePointer.getFileName() + " CONCLUIDA\n");
                             toRemove.add(h);
                         }
                         else
@@ -164,19 +213,20 @@ public class FilePushHandler implements Runnable{
 
                     if(this.timeouts.containsKey(h)) {
                         to = this.timeouts.get(h);
-                        if (to == 5) {
+                        if (to >= 3) {
                             System.out.println("ENVIAR MENSAGEM DE TIMEOUT");
                             sendTimeoutPacket(h);
-                        } else {
-                            if (to >= 10) {
-                                System.out.println("TRANSFERENCIA FALHADA");
-                                clean(h);
-                            }
+                        }
+
+                        if (to >= 10) {
+                            System.out.println("TRANSFERÊNCIA FALHADA");
+                            toRemove.add(h);
                         }
                     }
 
                     packets = 0;
                 }
+
                 tam = toRemove.size();
                 for(i = 0; i < tam; i++)
                     clean(toRemove.get(i));
