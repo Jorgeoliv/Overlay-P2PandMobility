@@ -74,10 +74,10 @@ public class FileSender implements Runnable{
         try {
             for (i = 0; i < tam; i++) {
                 sendFileChunk(this.fcToSend.get(i));
-                System.out.println("Enviei " + (i+1) + " / " + tam);
 
                 Thread.sleep(1000/this.pps);
             }
+            System.out.println("Enviei " + tam + " FILECHUNKS");
         }
         catch (Exception e){
             e.printStackTrace();

@@ -34,7 +34,7 @@ public class FileTables {
     public boolean itsMyFile(String filename){
         try{
             rlMyContent.lock();
-            System.out.println("Sera que é igual o nome do ficheiro?: " + this.myContent.containsKey(filename));
+            System.out.println("Sera que é igual o nome do ficheiro?1: " + this.myContent.containsKey(filename));
             System.out.println("O ficheiro recebido é: " + filename);
             System.out.println("Os ficheiros que tenho são: " + this.myContent.toString());
             return this.myContent.containsKey(filename);
@@ -46,7 +46,7 @@ public class FileTables {
     public FileInfo getMyFile(String filename){
         try{
             rlMyContent.lock();
-            System.out.println("Sera que é igual o nome do ficheiro?: " + this.myContent.containsKey(filename));
+            System.out.println("Sera que é igual o nome do ficheiro?2: " + this.myContent.containsKey(filename));
             System.out.println("O ficheiro recebido é: " + filename);
             System.out.println("Os ficheiros que tenho são: " + this.myContent.toString());
             return this.myContent.get(filename);
@@ -68,8 +68,10 @@ public class FileTables {
 
         rlMyContent.lock();
         try{
-            for(FileInfo m: files)
+            for(FileInfo m: files) {
                 myContent.put(m.hash, m);
+                System.out.println("AQUIIIIIIIIIIIIIIIIIIIIIII =================> " + m.name);
+            }
             this.myHash = UUID.randomUUID().toString();
             return this.myHash;
         }finally {

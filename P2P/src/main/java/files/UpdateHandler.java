@@ -265,7 +265,7 @@ public class UpdateHandler implements Runnable{
                     //Só vai processar senão estiver na lista
                     if(!this.containsRequest(requestID)) {
                         this.addRequest(requestID);
-                        if (ft.getHash(nodeID).equals(ut.oldHash)) {
+                        if (ft.getHash(nodeID).equals(ut.oldHash)) { // DEU UMA EXCEPÇÃO AQUI!?!?!?!?!?!?
                             if (ut.toAdd != null)
                                 ft.addContentForOneNbr(ut.toAdd, ut.origin, ut.newHash);
                             if (ut.toRemove != null)

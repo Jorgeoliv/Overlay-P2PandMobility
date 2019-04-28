@@ -36,16 +36,13 @@ public class IDGen {
 
         try {
             File idFolder = new File("NODE_" + id);
-            File upload = new File("NODE_" + id + "/uploads");
-            File download = new File("NODE_" + id + "/downloads");
+            File tmp = new File("NODE_" + id + "/tmp");
             File files = new File("NODE_" + id + "/files");
 
-            while (!idFolder.exists() || !idFolder.isDirectory()) {
-                idFolder.mkdir();
-                while(upload.mkdir());
-                while(download.mkdir());
-                while(files.mkdir());
-            }
+            while ((!idFolder.exists() || !idFolder.isDirectory()) && !idFolder.mkdir());
+
+            while((!tmp.exists() || !tmp.isDirectory()) && !tmp.mkdir());
+            while((!files.exists() || !files.isDirectory()) && !files.mkdir());
         }
         catch (Exception e){
             e.printStackTrace();

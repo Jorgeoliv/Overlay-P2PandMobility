@@ -23,7 +23,7 @@ public class FilePullHandler implements Runnable{
     private IDGen idGen;
     private int ucp_FilePullHandler;
 
-    private int pps = 500;
+    private int pps = 100;
 
     public FilePullHandler(int ucp_FilePull, FilePushHandler fph, IDGen idGen, Nodo myNode){
         this.myNode = myNode;
@@ -40,12 +40,13 @@ public class FilePullHandler implements Runnable{
         buf = dp.getData();
         ByteArrayInputStream bStream = new ByteArrayInputStream(buf);
         Input input = new Input(bStream);
-        Header header = (Header) kryo.readClassAndObject(input);
+        Header header = (Header) kryo.readClassAndObject(input);// DEU EXCEPÇÃO AQUI !?!?!?!?!?!?!?!?
         input.close();
 
         if(header instanceof FilePull) {
             FilePull fp = (FilePull) header;
             System.out.println("RECEBI O FILEPULL " + "\n\t" + fp.fi.name + "\n\t" + fp.fi.hash);
+            System.out.println("O MISSING FILECHUNKS ARRAY É " + fp.missingFileChunks);
             this.fph.sendFile(fp);
         }
     }
@@ -74,7 +75,7 @@ public class FilePullHandler implements Runnable{
         try {
             DatagramPacket packet = new DatagramPacket(serializedPing, serializedPing.length, InetAddress.getByName(choice.nodo.ip), this.ucp_FilePullHandler);
             (new DatagramSocket()).send(packet);
-            System.out.println("ENVIEI O FILEPULL " + "\n\t" + choice.fileInfo.name + "\n\t" + choice.fileInfo.hash);
+            System.out.println("ENVIEI O FILEPULL " + "\n\t" + choice.nodo.ip + "\n\t" + this.ucp_FilePullHandler + "\n\t" + choice.fileInfo.hash);
             this.fph.startReceivers(choice.fileInfo.hash);
         }
         catch (Exception e){
@@ -96,7 +97,7 @@ public class FilePullHandler implements Runnable{
                 filepull = new DatagramPacket(buf, buf.length);
 
                 ds.receive(filepull);
-
+                System.out.println("AQUIAQUIAQUIAQUIAQUIAQUIAQUIAQUIAQUIAQUIAQUIAQUIAQUIAQUIAQUIAQUIAQUIAQUIAQUIAQUIAQUIAQUIAQUIAQUIAQUIAQUIAQUIAQUIAQUIAQUIAQUIAQUIAQUIAQUI");
                 processFPH(filepull);
             }
         }

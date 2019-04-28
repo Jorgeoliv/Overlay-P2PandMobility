@@ -12,7 +12,6 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.HashMap;
-//setReceiveBufferSize
 
 public class FilePushHandler implements Runnable{
     private Nodo myNode;
@@ -65,11 +64,14 @@ public class FilePushHandler implements Runnable{
         System.out.println("NUMERO DE FILECHUNKS " + f.getNumberOfChunks() + "\n\n");
 
         FileChunk[] fc;
-        if(fp.missingFileChunks == null)
+        if(fp.missingFileChunks == null) {
             fc = f.getFileChunks();
-        else
+            System.out.println("TIVE QUE IR BUSCAR OS FILECHUNKS TODOS");
+        }
+        else {
             fc = f.getMissingFileChunks(fp.missingFileChunks);
-
+            System.out.println("\t\tTIVE QUE IR BUSCAR ALGUNS DOS FILECHUNKS");
+        }
         ArrayList<ArrayList<FileChunk>> fileChunks = new ArrayList<ArrayList<FileChunk>>();
 
         FileSender fsPointer;
@@ -148,7 +150,7 @@ public class FilePushHandler implements Runnable{
     private void sendTimeoutPacket(String h) {
 
         ArrayList<Integer> mfc = this.ficheiros.get(h).getMissingFileChunks();
-
+        System.out.println("FALTAM " + mfc.size() + " de " + this.ficheiros.get(h).getNumberOfChunks());
         HashMap<Integer, Integer> ppps = new HashMap<Integer, Integer>();
 
         for(FileReceiver fr : this.fileReceivers.get(h)){
@@ -164,12 +166,12 @@ public class FilePushHandler implements Runnable{
         kryo.writeClassAndObject(output, fp);
         output.close();
 
-        byte[] serializedPing = bStream.toByteArray();
+        byte[] serializedTimeoutPacket = bStream.toByteArray();
 
         try {
-            DatagramPacket packet = new DatagramPacket(serializedPing, serializedPing.length, InetAddress.getByName(this.fileOwners.get(h).ip), this.ucp_FilePullHandler);
+            System.out.println("ENVIEI O TIMEOUTPACKET " + "\n\t" + this.fileOwners.get(h).ip + "\n\t" + this.ucp_FilePullHandler + "\n\t" + this.fileInfos.get(h).hash + "\n\t" + serializedTimeoutPacket.length);
+            DatagramPacket packet = new DatagramPacket(serializedTimeoutPacket, serializedTimeoutPacket.length, InetAddress.getByName(this.fileOwners.get(h).ip), this.ucp_FilePullHandler);
             (new DatagramSocket()).send(packet);
-            System.out.println("ENVIEI O TIMEOUTPACKET " + "\n\t" + this.fileOwners.get(h).ip + "\n\t" + this.fileInfos.get(h).hash);
         }
         catch (Exception e){
             e.printStackTrace();

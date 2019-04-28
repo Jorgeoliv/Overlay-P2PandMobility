@@ -60,7 +60,7 @@ public class Ficheiro {
         this.fileChunks = createFileChunks(numberOfChunks, fileAsBytesChunks);
 
         try {
-            writeFileChunksToFolder("uploads", this.fileChunks, this.numberOfChunks);
+            writeFileChunksToFolder("tmp", this.fileChunks, this.numberOfChunks);
             cleanSpace();
         }
         catch (Exception e){
@@ -77,18 +77,16 @@ public class Ficheiro {
 
     private void writeFileChunksToFolder(String folder, FileChunk[] fcs, int size){
         int i;
-        String uploadPath = "NODE_" + this.nodeID + "/" + folder + "/" + this.fileName;
-        File ficheiro = new File(uploadPath);
+        String folderPath = "NODE_" + this.nodeID + "/" + folder + "/" + this.fileName;
+        File ficheiro = new File(folderPath);
 
-        if(!ficheiro.exists() && !ficheiro.isDirectory()){
-            ficheiro.mkdir();
-        }
+        while((!ficheiro.exists() && !ficheiro.isDirectory()) && !ficheiro.mkdir());
 
         Path file;
         for(i = 0; i < size; i++){
             try {
                 FileChunk fc = fcs[i];
-                file = Paths.get(uploadPath + "/" + fc.getPlace() + ".filechunk");
+                file = Paths.get(folderPath + "/" + fc.getPlace() + ".filechunk");
                 Files.write(file, fc.getFileChunk());
             }
                 catch (Exception e) {
@@ -129,7 +127,7 @@ public class Ficheiro {
 
         FileChunk[] aux = fcs.toArray(new FileChunk[0]);
 
-        writeFileChunksToFolder("/downloads/", aux, fcs.size());
+        writeFileChunksToFolder("/tmp/", aux, fcs.size());
 
         return this.full;
     }
@@ -148,10 +146,10 @@ public class Ficheiro {
     }
 
     public FileChunk[] getFileChunks(){
-        // IR BUSCAR AO FOLDER UPLOAD
-        String uploadFolder = "NODE_" + this.nodeID + "/uploads/" + this.fileName;
 
-        File ficheiro = new File (uploadFolder);
+        String tmpFolder = "NODE_" + this.nodeID + "/tmp/" + this.fileName;
+
+        File ficheiro = new File (tmpFolder);
         FileChunk [] fChunks = null;
 
         try {
@@ -160,7 +158,7 @@ public class Ficheiro {
                 int i;
 
                 for(i = 0; i < this.numberOfChunks; i++){
-                    fChunks[i] = new FileChunk(Files.readAllBytes(Paths.get(uploadFolder + "/" + i + ".filechunk")), i);
+                    fChunks[i] = new FileChunk(Files.readAllBytes(Paths.get(tmpFolder + "/" + i + ".filechunk")), i);
                 }
 
             }
@@ -220,9 +218,9 @@ public class Ficheiro {
 
     public FileChunk[] getMissingFileChunks(ArrayList<Integer> mfc){
 
-        String uploadFolder = "NODE_" + this.nodeID + "/uploads/" + this.fileName;
+        String tmpFolder = "NODE_" + this.nodeID + "/tmp/" + this.fileName;
 
-        File ficheiro = new File (uploadFolder);
+        File ficheiro = new File (tmpFolder);
         FileChunk[] res = null;
 
         try {
@@ -231,7 +229,8 @@ public class Ficheiro {
                 res = new FileChunk[tam];
                 int j = 0;
                 for(Integer i : mfc){
-                    res[j++] = new FileChunk(Files.readAllBytes(Paths.get(uploadFolder + "/" + i + ".filechunk")), i);
+                    System.out.println("LI O MISSING FILE CHUNK " + i);
+                    res[j++] = new FileChunk(Files.readAllBytes(Paths.get(tmpFolder + "/" + i + ".filechunk")), i);
                 }
 
             }

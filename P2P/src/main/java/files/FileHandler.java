@@ -21,10 +21,6 @@ class PairNodoFileInfo{
     FileInfo fileInfo;
     Nodo nodo;
 
-    public PairNodoFileInfo(){
-
-    }
-
     public PairNodoFileInfo(FileInfo fileInfo, Nodo nodo) {
         this.fileInfo = fileInfo;
         this.nodo = nodo;
@@ -117,18 +113,20 @@ public class FileHandler implements Runnable {
     }
 
     private void analisaCD(String id){
-        System.out.println("A SUA PESQUISA POR " + id + " RETORNOU OS SEGUINTES RESOLTADOS:\n");
-        int i = 1;
         ArrayList<PairNodoFileInfo> aux = cdResponses.get(id);
-        for(PairNodoFileInfo pnfi: aux)
-            System.out.println("\t" + i++ + ") " + pnfi.toString());
+        if(aux.size() > 0) {
+            System.out.println("A SUA PESQUISA POR " + id + " RETORNOU OS SEGUINTES RESOLTADOS:\n");
+            int i = 1;
+            for (PairNodoFileInfo pnfi : aux)
+                System.out.println("\t" + i++ + ") " + pnfi.toString());
 
-        PairNodoFileInfo choice = fileChoice(i, aux);
+            PairNodoFileInfo choice = fileChoice(i, aux);
 
-        this.cdResponses.remove(id);
-        System.out.println("ANTES: " + choice.nodo.ip);
-        this.filePullHandler.send(choice);
-        System.out.println("Escolheu o: " + choice.nodo.ip);
+            this.cdResponses.remove(id);
+            this.filePullHandler.send(choice);
+        }
+        else
+            System.out.println("A SUA PESQUISA POR " + id + " NÃO RETURNOU NENHUM RESULTADO");
     }
 
     private Runnable analyseAndDelete(final String id){
