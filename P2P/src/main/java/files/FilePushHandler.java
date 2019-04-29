@@ -7,12 +7,12 @@ import network.IDGen;
 import network.Nodo;
 
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Random;
 
 public class FilePushHandler implements Runnable{
     private Nodo myNode;
@@ -31,7 +31,7 @@ public class FilePushHandler implements Runnable{
     private HashMap<String, ArrayList <Thread>> fileReceiversThreads;
     private HashMap<String, Integer> timeouts;
 
-    private int TimeOutpps = 300;
+    private int TimeOutpps = 500;
 
     private FileTables ft;
 
@@ -62,14 +62,15 @@ public class FilePushHandler implements Runnable{
         System.out.println("NUMERO DE FILECHUNKS " + f.getNumberOfChunks() + "\n\n");
 
         int numOfFileChunks;
-        FileChunk[] fc;
+        FileChunk[] fc = null;
+        ArrayList<FileChunk> fcArray = null;
         if(fp.missingFileChunks == null) {
             fc = f.getFileChunks();
             System.out.println("TIVE QUE IR BUSCAR OS FILECHUNKS TODOS");
             numOfFileChunks = f.getNumberOfChunks();
         }
         else {
-            fc = f.getMissingFileChunks(fp.missingFileChunks);
+            fcArray = f.getMissingFileChunks(fp.missingFileChunks);
             System.out.println("\t\tTIVE QUE IR BUSCAR ALGUNS DOS FILECHUNKS");
             numOfFileChunks = fp.missingFileChunks.size();
         }
@@ -77,18 +78,33 @@ public class FilePushHandler implements Runnable{
 
         FileSender fsPointer;
         Thread t;
+        //verificar o numero de threads
 
-        int i, nfc = fp.ports_packetPerSecond.size();
+        int i, nfcReceivers = fp.ports_packetPerSecond.size();
 
-        for(i = 0; i < nfc; i++)
-            fileChunks.add(new ArrayList<FileChunk>());
+        if(fp.missingFileChunks == null) {
+            //mais que 1 thread pois são muitos pacotes
+            for (i = 0; i < nfcReceivers; i++)
+                fileChunks.add(new ArrayList<FileChunk>());
 
-        for(i = 0; i < numOfFileChunks; i++)
-            fileChunks.get(i%nfc).add(fc[i]);
+            for (i = 0; i < numOfFileChunks; i++)
+                fileChunks.get(i % nfcReceivers).add(fc[i]);
 
-        i = 0;
-        for(int port : fp.ports_packetPerSecond.keySet()){
-            fsPointer = new FileSender(port, fileChunks.get(i++),fp.ports_packetPerSecond.get(port),id, fp.fi.hash,this.myNode, fp.origin.ip, this.ucp_FilePushHandler);
+            i = 0;
+            for (int port : fp.ports_packetPerSecond.keySet()) {
+                fsPointer = new FileSender(port, fileChunks.get(i++), fp.ports_packetPerSecond.get(port), id, fp.fi.hash, this.myNode, fp.origin.ip, this.ucp_FilePushHandler);
+                t = new Thread(fsPointer);
+                t.start();
+            }
+        }
+        else{
+            //menos threads porque são pacotes que estao a ser pedidos novamente (max 250 para ja)
+            Random rand = new Random();
+            int pos = rand.nextInt(fp.ports_packetPerSecond.size());
+            ArrayList<Integer> aux = new ArrayList<Integer>(fp.ports_packetPerSecond.keySet());
+            int porta = aux.get(pos);
+
+            fsPointer = new FileSender(porta, fcArray, fp.ports_packetPerSecond.get(porta), id, fp.fi.hash, this.myNode, fp.origin.ip, this.ucp_FilePushHandler);
             t = new Thread(fsPointer);
             t.start();
         }
@@ -155,34 +171,45 @@ public class FilePushHandler implements Runnable{
         this.fileInfos.remove(h);
     }
 
-    private void sendTimeoutPacket(String h) {
+    private void sendTimeoutPackets(String h) {
 
         ArrayList<Integer> mfc = this.ficheiros.get(h).getMissingFileChunks();
-        System.out.println("FALTAM " + mfc.size() + " de " + this.ficheiros.get(h).getNumberOfChunks());
-        HashMap<Integer, Integer> ppps = new HashMap<Integer, Integer>();
+        ArrayList<Integer> mfcGroup;
 
-        for(FileReceiver fr : this.fileReceivers.get(h)){
-            ppps.put(fr.port, this.TimeOutpps);
-        }
+        while(!mfc.isEmpty()) {
 
-        FilePull fp = new FilePull(this.idGen.getID(), this.myNode, this.fileInfos.get(h), ppps, mfc);
+            mfcGroup = new ArrayList<Integer>();
 
-        ByteArrayOutputStream bStream = new ByteArrayOutputStream();
-        Output output = new Output(bStream);
+            for(int i = 0; (i < 250) && !mfc.isEmpty(); i++){
+                mfcGroup.add(mfc.get(0));
+                mfc.remove(0);
+            }
 
-        Kryo kryo = new Kryo();
-        kryo.writeClassAndObject(output, fp);
-        output.close();
+            System.out.println("FALTAM " + this.ficheiros.get(h).getNumberOfMissingFileChunks() + " de " + this.ficheiros.get(h).getNumberOfChunks());
+            HashMap<Integer, Integer> ppps = new HashMap<Integer, Integer>();
 
-        byte[] serializedTimeoutPacket = bStream.toByteArray();
+            for (FileReceiver fr : this.fileReceivers.get(h)) {
+                ppps.put(fr.port, this.TimeOutpps);
+            }
 
-        try {
-            System.out.println("ENVIEI O TIMEOUTPACKET " + "\n\t" + this.fileOwners.get(h).ip + "\n\t" + this.ucp_FilePullHandler + "\n\t" + this.fileInfos.get(h).hash + "\n\t" + serializedTimeoutPacket.length);
-            DatagramPacket packet = new DatagramPacket(serializedTimeoutPacket, serializedTimeoutPacket.length, InetAddress.getByName(this.fileOwners.get(h).ip), this.ucp_FilePullHandler);
-            (new DatagramSocket()).send(packet);
-        }
-        catch (Exception e){
-            e.printStackTrace();
+            FilePull fp = new FilePull(this.idGen.getID(), this.myNode, this.fileInfos.get(h), ppps, mfcGroup);
+
+            ByteArrayOutputStream bStream = new ByteArrayOutputStream();
+            Output output = new Output(bStream);
+
+            Kryo kryo = new Kryo();
+            kryo.writeClassAndObject(output, fp);
+            output.close();
+
+            byte[] serializedTimeoutPacket = bStream.toByteArray();
+
+            try {
+                System.out.println("ENVIEI O TIMEOUTPACKET " + "\n\t" + this.fileOwners.get(h).ip + "\n\t" + this.ucp_FilePullHandler + "\n\t" + this.fileInfos.get(h).hash + "\n\t" + "mfc.size = " + mfcGroup.size() + " => " + serializedTimeoutPacket.length + " bytes");
+                DatagramPacket packet = new DatagramPacket(serializedTimeoutPacket, serializedTimeoutPacket.length, InetAddress.getByName(this.fileOwners.get(h).ip), this.ucp_FilePullHandler);
+                (new DatagramSocket()).send(packet);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -224,8 +251,10 @@ public class FilePushHandler implements Runnable{
                     if(this.timeouts.containsKey(h) && !toRemove.contains(h)) {
                         to = this.timeouts.get(h);
                         if (to >= 3) {
-                            System.out.println("ENVIAR MENSAGEM DE TIMEOUT");
-                            sendTimeoutPacket(h);
+                            System.out.println("ENVIAR MENSAGENS DE TIMEOUT");
+                            sendTimeoutPackets(h);
+                            System.out.println("MENSAGENS DE TIMEOUT ENVIADAS");
+
                         }
 
                         if (to >= 10) {

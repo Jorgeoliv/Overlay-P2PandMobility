@@ -107,6 +107,7 @@ public class Ficheiro {
             e.printStackTrace();
         }
     }
+
     public boolean addFileChunks (ArrayList<FileChunk> fcs){
         this.fileLock.lock();
 
@@ -213,24 +214,24 @@ public class Ficheiro {
     }
 
     public ArrayList<Integer> getMissingFileChunks(){
-        return this.missingFileChunks;
+
+        return (ArrayList<Integer>) this.missingFileChunks.clone();
     }
 
-    public FileChunk[] getMissingFileChunks(ArrayList<Integer> mfc){
+    public ArrayList<FileChunk> getMissingFileChunks(ArrayList<Integer> mfc){
 
         String tmpFolder = "NODE_" + this.nodeID + "/tmp/" + this.fileName;
 
         File ficheiro = new File (tmpFolder);
-        FileChunk[] res = null;
+        ArrayList<FileChunk> res = new ArrayList<FileChunk>();
 
         try {
             if(ficheiro.exists() && ficheiro.isDirectory()){
-                int tam = mfc.size();
-                res = new FileChunk[tam];
-                int j = 0;
+                FileChunk f;
                 for(Integer i : mfc){
                     System.out.println("LI O MISSING FILE CHUNK " + i);
-                    res[j++] = new FileChunk(Files.readAllBytes(Paths.get(tmpFolder + "/" + i + ".filechunk")), i);
+                    f = new FileChunk(Files.readAllBytes(Paths.get(tmpFolder + "/" + i + ".filechunk")), i);
+                    res.add(f);
                 }
 
             }
@@ -247,5 +248,9 @@ public class Ficheiro {
 
     public String getFileName(){
         return this.fileName;
+    }
+
+    public int getNumberOfMissingFileChunks(){
+        return this.missingFileChunks.size();
     }
 }
