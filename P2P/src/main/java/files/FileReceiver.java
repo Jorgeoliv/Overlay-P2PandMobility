@@ -39,7 +39,7 @@ public class FileReceiver implements Runnable {
                 b = false;
             }
             catch (Exception e) {
-                e.printStackTrace();
+                System.out.println("ESCOLHI UMA PORTA JÁ EM USO => " + this.port);
             }
         }
     }

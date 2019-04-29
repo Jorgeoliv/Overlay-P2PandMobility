@@ -54,7 +54,7 @@ public class FilePullHandler implements Runnable{
     public void send(PairNodoFileInfo choice) {
         this.fph.registerFile(choice.fileInfo, choice.nodo);
 
-        ArrayList<Integer> ports = this.fph.getPorts(choice.fileInfo.hash);
+        ArrayList<Integer> ports = this.fph.getPorts(choice.fileInfo.hash, choice.fileInfo.numOfFileChunks);
 
         HashMap <Integer, Integer> ppps = new HashMap<Integer, Integer>();
 
@@ -97,7 +97,7 @@ public class FilePullHandler implements Runnable{
                 filepull = new DatagramPacket(buf, buf.length);
 
                 ds.receive(filepull);
-                System.out.println("AQUIAQUIAQUIAQUIAQUIAQUIAQUIAQUIAQUIAQUIAQUIAQUIAQUIAQUIAQUIAQUIAQUIAQUIAQUIAQUIAQUIAQUIAQUIAQUIAQUIAQUIAQUIAQUIAQUIAQUIAQUIAQUIAQUIAQUI");
+
                 processFPH(filepull);
             }
         }

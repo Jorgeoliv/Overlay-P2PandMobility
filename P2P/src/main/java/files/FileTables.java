@@ -70,7 +70,6 @@ public class FileTables {
         try{
             for(FileInfo m: files) {
                 myContent.put(m.hash, m);
-                System.out.println("AQUIIIIIIIIIIIIIIIIIIIIIII =================> " + m.name);
             }
             this.myHash = UUID.randomUUID().toString();
             return this.myHash;

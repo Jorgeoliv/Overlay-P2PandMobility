@@ -7,6 +7,7 @@ import network.IDGen;
 import network.Nodo;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
@@ -16,8 +17,7 @@ import java.util.HashMap;
 public class FilePushHandler implements Runnable{
     private Nodo myNode;
 
-    private int numOfReceivers;
-    private int timeoutTime = 10000;
+    private int timeoutTime = 5000;
 
     private int ucp_FilePushHandler;
     private int ucp_FilePullHandler;
@@ -37,8 +37,6 @@ public class FilePushHandler implements Runnable{
 
     public FilePushHandler(int ucp_FilePushHandler, int ucp_FilePullHandler, FileTables ft, IDGen idGen, Nodo myNode){
         this.myNode = myNode;
-
-        this.numOfReceivers = 20;
 
         this.ucp_FilePushHandler = ucp_FilePushHandler;
         this.ucp_FilePullHandler = ucp_FilePullHandler;
@@ -63,14 +61,17 @@ public class FilePushHandler implements Runnable{
         Ficheiro f = this.ft.getFicheiro(fp.fi.name);
         System.out.println("NUMERO DE FILECHUNKS " + f.getNumberOfChunks() + "\n\n");
 
+        int numOfFileChunks;
         FileChunk[] fc;
         if(fp.missingFileChunks == null) {
             fc = f.getFileChunks();
             System.out.println("TIVE QUE IR BUSCAR OS FILECHUNKS TODOS");
+            numOfFileChunks = f.getNumberOfChunks();
         }
         else {
             fc = f.getMissingFileChunks(fp.missingFileChunks);
             System.out.println("\t\tTIVE QUE IR BUSCAR ALGUNS DOS FILECHUNKS");
+            numOfFileChunks = fp.missingFileChunks.size();
         }
         ArrayList<ArrayList<FileChunk>> fileChunks = new ArrayList<ArrayList<FileChunk>>();
 
@@ -82,7 +83,7 @@ public class FilePushHandler implements Runnable{
         for(i = 0; i < nfc; i++)
             fileChunks.add(new ArrayList<FileChunk>());
 
-        for(i = 0; i < f.getNumberOfChunks(); i++)
+        for(i = 0; i < numOfFileChunks; i++)
             fileChunks.get(i%nfc).add(fc[i]);
 
         i = 0;
@@ -101,14 +102,21 @@ public class FilePushHandler implements Runnable{
         this.timeouts.put(fi.hash, 0);
     }
 
-    public ArrayList<Integer> getPorts(String id) {
+    public ArrayList<Integer> getPorts(String id, int numOfFileChunks) {
 
         ArrayList<FileReceiver> fR = new ArrayList<FileReceiver>();
         ArrayList<Integer> fRPorts = new ArrayList<Integer>();
 
+        int numOfReceivers = numOfFileChunks / 3000;
+
+        if(numOfReceivers == 0)
+            numOfReceivers = 1;
+        if(numOfReceivers >= 30)
+            numOfReceivers = 30;
+
         int i = 0;
         FileReceiver pointer;
-        while(i < this.numOfReceivers) {
+        while(i < numOfReceivers) {
             pointer = new FileReceiver();
             fR.add(pointer);
             fRPorts.add(pointer.port);
@@ -213,7 +221,7 @@ public class FilePushHandler implements Runnable{
                             this.timeouts.put(h, 0);
                     }
 
-                    if(this.timeouts.containsKey(h)) {
+                    if(this.timeouts.containsKey(h) && !toRemove.contains(h)) {
                         to = this.timeouts.get(h);
                         if (to >= 3) {
                             System.out.println("ENVIAR MENSAGEM DE TIMEOUT");
