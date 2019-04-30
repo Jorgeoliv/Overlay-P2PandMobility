@@ -24,6 +24,7 @@ public class AliveHandler implements Runnable {
     private ArrayList <Alive> aliveTray;
     private ReentrantLock aliveTrayLock;
 
+    private ArrayList<String> ids = new ArrayList<String>();
 
     public AliveHandler(NetworkHandler nh, NetworkTables nt, Nodo id, int ucp_Alive, IDGen idGen) {
         this.nh = nh;
@@ -97,6 +98,8 @@ public class AliveHandler implements Runnable {
 
                 DatagramPacket packet = new DatagramPacket(serializedMessage, serializedMessage.length, InetAddress.getByName(n.ip), this.ucp_Alive);
                 socket.send(packet);
+                Thread.sleep(100);
+                socket.send(packet);
 
             }
             catch (Exception e) {
@@ -166,14 +169,25 @@ public class AliveHandler implements Runnable {
 
             byte[] serializedMessage = bStream.toByteArray();
 
+            DatagramSocket ds = new DatagramSocket();
             DatagramPacket packet = new DatagramPacket(serializedMessage, serializedMessage.length, InetAddress.getByName(ea.origin.ip), this.ucp_Alive);
-            (new DatagramSocket()).send(packet);
+
+            ds.send(packet);
+            Thread.sleep(50);
+            ds.send(packet);
+            Thread.sleep(50);
+            ds.send(packet);
             //System.out.println("EMERGENCY ALIVE ENVIADO\n");
         }
-        catch (IOException e) {
+        catch (Exception e) {
             e.printStackTrace();
         }
     }
+
+    private Runnable removeID = () ->{
+        if(!this.ids.isEmpty())
+            this.ids.remove(0);
+    };
 
     public void run() {
         try {
@@ -202,17 +216,20 @@ public class AliveHandler implements Runnable {
                 Header header = (Header) kryo.readClassAndObject(input);
                 input.close();
 
-                if (header instanceof Alive) {
-                    this.aliveTrayLock.lock();
-                    this.aliveTray.add((Alive) header);
-                    this.aliveTrayLock.unlock();
-                }
-                else
-                    if(header instanceof EmergencyAlive) {
+                if (!this.ids.contains(header.requestID)) {
+
+                    this.ids.add(header.requestID);
+                    ses.schedule(removeID, 60, TimeUnit.SECONDS);
+
+                    if (header instanceof Alive) {
+                        this.aliveTrayLock.lock();
+                        this.aliveTray.add((Alive) header);
+                        this.aliveTrayLock.unlock();
+                    } else if (header instanceof EmergencyAlive) {
                         processEmergencyAlive((EmergencyAlive) header);
-                    }
-                    else
+                    } else
                         System.out.println("ERRO AO PROCESSAR ALIVE");
+                }
             }
 
         }

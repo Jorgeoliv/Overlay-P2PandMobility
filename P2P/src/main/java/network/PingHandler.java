@@ -103,9 +103,10 @@ public class PingHandler implements Runnable{
 
         try {
             new MulticastSocket().send(packet);
+            Thread.sleep(100);
             new MulticastSocket().send(packet);
             //System.out.println("PING "+ id + " ENVIADO\n");
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     };
@@ -162,8 +163,12 @@ public class PingHandler implements Runnable{
         try {
             DatagramPacket packet = new DatagramPacket(serializedPong, serializedPong.length, InetAddress.getByName(ping.origin.ip), this.ucport);
             this.ucs.send(packet);
+            Thread.sleep(50);
+            this.ucs.send(packet);
+            Thread.sleep(50);
+            this.ucs.send(packet);
             //System.out.println("PONG ENVIADO\n");
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
@@ -249,9 +254,6 @@ public class PingHandler implements Runnable{
                         } else
                             System.out.println("ERRO NO PARSE DO DATAGRAMPACKET (PINGHANDLER)");
                     }
-                    else
-                        System.out.println("PING REPETIDO!!!!!!");
-
                 }
             }
         } catch (IOException e) {

@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.util.ArrayList;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -30,6 +31,8 @@ public class AddNbrHandler implements Runnable{
     private NetworkTables nt;
     private NetworkHandler nh;
 
+    private ArrayList<String> ids = new ArrayList<String>();
+
     public AddNbrHandler(int softcap, int hardcap, IDGen idGen, NetworkHandler nh, Nodo myNode, int ucp_AddNbr, int ucp_NbrConfirmation, NetworkTables nt){
         this.softcap = softcap;
         this.hardcap = hardcap;
@@ -45,30 +48,16 @@ public class AddNbrHandler implements Runnable{
         this.nt = nt;
     }
 
-    private void processAddNbr(DatagramPacket addnbr) {
-        Kryo kryo = new Kryo();
-        byte[] buf = addnbr.getData();
+    private void processAddNbr(AddNbr addnbr) {
 
-        //System.out.println("RECEBI UM ADDNBR!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-        ByteArrayInputStream bStream = new ByteArrayInputStream(buf);
-        Input input = new Input(bStream);
-        Header header = (Header) kryo.readClassAndObject(input);
-        input.close();
-
-        if(header instanceof AddNbr) {
-            AddNbr addNbr = (AddNbr) header;
-            printAddNbr(addNbr);
-
-            if (this.nt.getNbrsN1().contains(addNbr.intermediary)){
-                this.nh.addInConv(addNbr.origin);
-                sendNbrConfirmation(addNbr);
-            }
-            else{
-                System.out.println("NODO INTERMEDIÁRIO DESCONHECIDO");
-            }
+        //printAddNbr(addNbr);
+        if (this.nt.getNbrsN1().contains(addnbr.intermediary)){
+            this.nh.addInConv(addnbr.origin);
+            sendNbrConfirmation(addnbr);
         }
-        else
-            System.out.println("ERRO NO PARSE DO ADDNBR");
+        else{
+            System.out.println("NODO INTERMEDIÁRIO DESCONHECIDO");
+        }
     }
 
     private void sendNbrConfirmation(AddNbr addNbr) {
@@ -88,10 +77,16 @@ public class AddNbrHandler implements Runnable{
 
 
         try {
+            DatagramSocket ds = new DatagramSocket();
             DatagramPacket packet = new DatagramPacket(serializedNbrConfirmation, serializedNbrConfirmation.length, InetAddress.getByName(addNbr.origin.ip), this.ucp_NbrConfirmation);
-            (new DatagramSocket()).send(packet);
+
+            ds.send(packet);
+            Thread.sleep(50);
+            ds.send(packet);
+            Thread.sleep(50);
+            ds.send(packet);
             //System.out.println("NBRCONFIRMATION ENVIADO\n");
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
@@ -135,10 +130,15 @@ public class AddNbrHandler implements Runnable{
 
                         byte[] serializedAddNbr = bStream.toByteArray();
                         try {
+                            DatagramSocket ds = new DatagramSocket();
                             DatagramPacket packet = new DatagramPacket(serializedAddNbr, serializedAddNbr.length, InetAddress.getByName(nN2.ip), this.ucp_AddNbr);
-                            (new DatagramSocket()).send(packet);
+                            ds.send(packet);
+                            Thread.sleep(50);
+                            ds.send(packet);
+                            Thread.sleep(50);
+                            ds.send(packet);
                             //System.out.println("ADDNBR ENVIADO PARA " + nN2.ip + "\n");
-                        } catch (IOException e) {
+                        } catch (Exception e) {
                             e.printStackTrace();
                         }
                     }
@@ -150,8 +150,14 @@ public class AddNbrHandler implements Runnable{
         }
     };
 
+    private Runnable removeID = () ->{
+        if(!this.ids.isEmpty())
+            this.ids.remove(0);
+    };
+
     public void run() {
         try {
+            Kryo kryo = new Kryo();
 
             ScheduledExecutorService ses = Executors.newSingleThreadScheduledExecutor();
 
@@ -159,14 +165,28 @@ public class AddNbrHandler implements Runnable{
 
             DatagramSocket ucs = new DatagramSocket(this.ucp_AddNbr);
             byte[] buf;
-            DatagramPacket addNbr;
+            DatagramPacket dp;
 
             while (true){
                 buf = new byte[1500];
-                addNbr = new DatagramPacket(buf, buf.length);
-                ucs.receive(addNbr);
+                dp = new DatagramPacket(buf, buf.length);
+                ucs.receive(dp);
 
-                processAddNbr(addNbr);
+                ByteArrayInputStream bStream = new ByteArrayInputStream(buf);
+                Input input = new Input(bStream);
+                Header header = (Header) kryo.readClassAndObject(input);
+                input.close();
+
+                if (!this.ids.contains(header.requestID)) {
+
+                    this.ids.add(header.requestID);
+                    ses.schedule(removeID, 60, TimeUnit.SECONDS);
+
+                    if (header instanceof AddNbr) {
+                        AddNbr addNbr = (AddNbr) header;
+                        processAddNbr(addNbr);
+                    }
+                }
             }
 
         } catch (IOException e) {

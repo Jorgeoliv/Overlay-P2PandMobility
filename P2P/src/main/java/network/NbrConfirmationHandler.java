@@ -13,6 +13,10 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.util.ArrayList;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 public class NbrConfirmationHandler implements Runnable {
 
@@ -25,6 +29,7 @@ public class NbrConfirmationHandler implements Runnable {
 
     private NetworkTables nt;
 
+    private ArrayList<String> ids = new ArrayList<String>();
 
     public NbrConfirmationHandler(NetworkHandler nh, Nodo myNode, int ucp_NbrConfirmation, int ucp_Alive, NetworkTables nt){
 
@@ -38,48 +43,39 @@ public class NbrConfirmationHandler implements Runnable {
         this.nt = nt;
     }
 
-    private void processNbrConfirmation(DatagramPacket nbrConfirmation) {
-        Kryo kryo = new Kryo();
+    private void processNbrConfirmation(NbrConfirmation nbrc) {
+
         boolean valid = false;
 
-        byte [] buf = nbrConfirmation.getData();
-        ByteArrayInputStream bStream = new ByteArrayInputStream(buf);
-        Input input = new Input(bStream);
-        Header header = (Header) kryo.readClassAndObject(input);
-        input.close();
 
-        if(header instanceof NbrConfirmation) {
-            NbrConfirmation nbrc = (NbrConfirmation) header;
-            //printNbrConfirmation(nbrc);
+        //printNbrConfirmation(nbrc);
 
-            if(this.nh.isNodeValid(nbrc.requestID, nbrc.origin) || (valid = this.nh.isAddNbrValid(nbrc.IDresponse))){
-                //System.out.println("NBRCONF => " + nbrc.origin.ip + " VS MYNODE => " + this.myNode.ip + "\n\n");
-                //System.out.println("RESULTADO DO EQUALS: " + nbrc.origin.equals(this.myNode));
-                this.nt.addNbrN1(nbrc.origin);
-                this.nh.remInConv(nbrc.origin);
-                
-                //Vou adicionar os ficheiros dos vizinhos bem como a hash da sua tabela
-                this.nh.ft.addContentForOneNbr(nbrc.fileInfos, nbrc.origin, nbrc.hash);
+        if(this.nh.isNodeValid(nbrc.requestID, nbrc.origin) || (valid = this.nh.isAddNbrValid(nbrc.IDresponse))){
+            //System.out.println("NBRCONF => " + nbrc.origin.ip + " VS MYNODE => " + this.myNode.ip + "\n\n");
+            //System.out.println("RESULTADO DO EQUALS: " + nbrc.origin.equals(this.myNode));
+            this.nt.addNbrN1(nbrc.origin);
+            this.nh.remInConv(nbrc.origin);
 
-                //falta adicionar o conteudo do vizinho
-                System.out.println("=============================================>New NBR Added");
-                if(nbrc.added){
-                    sendEmergencyAlive(nbrc);
-                }
-                else{
-                    sendNbrConfirmation(nbrc);
-                }
+            //Vou adicionar os ficheiros dos vizinhos bem como a hash da sua tabela
+            this.nh.ft.addContentForOneNbr(nbrc.fileInfos, nbrc.origin, nbrc.hash);
 
-                if(valid) {
-                    //System.out.println("VOU REGISTAR O ADDNBR E REMOVER DA LISTA DE NBR VÁLIDOS");
-                    this.nh.registerNode(nbrc.requestID, nbrc.origin);
-                    this.nh.removeAddNbr(nbrc.IDresponse);
-                }
+            //falta adicionar o conteudo do vizinho
+            System.out.println("=============================================>New NBR Added");
+            if(nbrc.added){
+                sendEmergencyAlive(nbrc);
             }
-            else
-                System.out.println("COMBINAÇÃO ID NODO INEXISTENTE");
+            else{
+                sendNbrConfirmation(nbrc);
+            }
 
+            if(valid) {
+                //System.out.println("VOU REGISTAR O ADDNBR E REMOVER DA LISTA DE NBR VÁLIDOS");
+                this.nh.registerNode(nbrc.requestID, nbrc.origin);
+                this.nh.removeAddNbr(nbrc.IDresponse);
+            }
         }
+        else
+            System.out.println("COMBINAÇÃO ID NODO INEXISTENTE");
     }
 
     private void printNbrConfirmation(NbrConfirmation nbrc) {
@@ -110,12 +106,17 @@ public class NbrConfirmationHandler implements Runnable {
             output.close();
 
             byte[] serializedMessage = bStream.toByteArray();
-
+            DatagramSocket ds = new DatagramSocket();
             DatagramPacket packet = new DatagramPacket(serializedMessage, serializedMessage.length, InetAddress.getByName(nbrc.origin.ip), this.ucp_Alive);
-            (new DatagramSocket()).send(packet);
+
+            ds.send(packet);
+            Thread.sleep(50);
+            ds.send(packet);
+            Thread.sleep(50);
+            ds.send(packet);
             //System.out.println("EMERGENCY ALIVE ENVIADO\n");
         }
-        catch (IOException e) {
+        catch (Exception e) {
             e.printStackTrace();
         }
     }
@@ -133,29 +134,54 @@ public class NbrConfirmationHandler implements Runnable {
         byte[] serializedNbrConfirmation = bStream.toByteArray();
 
         try {
+            DatagramSocket ds = new DatagramSocket();
             DatagramPacket packet = new DatagramPacket(serializedNbrConfirmation, serializedNbrConfirmation.length, InetAddress.getByName(nbrc.origin.ip), this.ucp_NbrConfirmation);
-            (new DatagramSocket()).send(packet);
+            ds.send(packet);
+            Thread.sleep(50);
+            ds.send(packet);
+            Thread.sleep(50);
+            ds.send(packet);
             //System.out.println("NBRCONFIRMATION RESPONSE ENVIADO\n");
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
+    private Runnable removeID = () ->{
+        if(!this.ids.isEmpty())
+            this.ids.remove(0);
+    };
+
     public void run (){
         try {
+            ScheduledExecutorService ses = Executors.newSingleThreadScheduledExecutor();
+
+            Kryo kryo = new Kryo();
 
             DatagramSocket ucs = new DatagramSocket(this.ucp_NbrConfirmation);
             byte[] buf;
-            DatagramPacket nbrConfirmation;
+            DatagramPacket dp;
 
             while (true){
                 buf = new byte[1500];
-                nbrConfirmation = new DatagramPacket(buf, buf.length);
-                ucs.receive(nbrConfirmation);
+                dp = new DatagramPacket(buf, buf.length);
+                ucs.receive(dp);
 
-                // Adicionar o vizinho e o seu conteudo
-                    //Preciso do lock para mexer na tabela de vizinhos e tabela de conteudos
-                processNbrConfirmation(nbrConfirmation);
+                ByteArrayInputStream bStream = new ByteArrayInputStream(buf);
+                Input input = new Input(bStream);
+                Header header = (Header) kryo.readClassAndObject(input);
+                input.close();
+
+                if(!this.ids.contains(header.requestID)) {
+
+                    this.ids.add(header.requestID);
+                    ses.schedule(removeID, 60, TimeUnit.SECONDS);
+
+                    if (header instanceof NbrConfirmation) {
+                        NbrConfirmation nbrc = (NbrConfirmation) header;
+                        processNbrConfirmation(nbrc);
+                    }
+                }
             }
 
         } catch (IOException e) {

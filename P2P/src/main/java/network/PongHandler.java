@@ -35,10 +35,12 @@ public class PongHandler implements Runnable {
 
     private IDGen idGen;
 
-    private ArrayList <DatagramPacket> pongTray;
+    private ArrayList <Pong> pongTray;
     private ReentrantLock trayLock;
 
     private DatagramSocket ucs;
+
+    private ArrayList<String> ids = new ArrayList<String>();
 
     public PongHandler(int softcap, int hardcap, NetworkHandler nh, IDGen idGen, Nodo myNode, int ucp_Pong, int ucp_NbrConfirmation, int ucp_AddNbr, NetworkTables nt){
         this.nh = nh;
@@ -54,7 +56,7 @@ public class PongHandler implements Runnable {
 
         this.idGen = idGen;
 
-        this.pongTray = new ArrayList<DatagramPacket>();
+        this.pongTray = new ArrayList<Pong>();
         this.trayLock = new ReentrantLock();
 
         try {
@@ -65,12 +67,11 @@ public class PongHandler implements Runnable {
     }
 
     private Runnable emptyPongTray = () -> {
-        byte[] buf;
-        Kryo kryo = new Kryo();
+
 
 
         this.trayLock.lock();
-        ArrayList<DatagramPacket> auxPong = (ArrayList<DatagramPacket>) this.pongTray.clone();
+        ArrayList<Pong> auxPong = (ArrayList<Pong>) this.pongTray.clone();
         int n_pongs = this.pongTray.size();
         int nNbrs = this.nt.getNumVN1();
         int vagas = this.softcap - nNbrs;
@@ -83,30 +84,16 @@ public class PongHandler implements Runnable {
             //System.out.println("PRIMEIRA ESCOLHA n_pongs " + n_pongs + " vagas " + vagas);
             //Verificar se o numero de pongs no tray é menor que o número de lugares restantes para vizinhos
             //Se FOR, enviar NBRConfirmations a todos
-            for(DatagramPacket dp : auxPong){
-
-                buf = dp.getData();
-                ByteArrayInputStream bStream = new ByteArrayInputStream(buf);
-                Input input = new Input(bStream);
-                Header header = (Header) kryo.readClassAndObject(input);
-                input.close();
-
-                if(header instanceof Pong){
-                    Pong pong = (Pong) header;
-                    //printPong(pong);
-                    if(this.nh.isPingValid(pong.pingID)) {
-                        //Enviar NBRConfirmation
-                        this.nh.addInConv(pong.origin);
-                        sendNbrConfirmation(pong);
-                        //System.out.println("ENVIOU NBRCONFIRMATION");
-                    }
-                    else
-                        System.out.println("PING INVÁLIDO");
-
+            for(Pong pong : auxPong){
+                //printPong(pong);
+                if(this.nh.isPingValid(pong.pingID)) {
+                    //Enviar NBRConfirmation
+                    this.nh.addInConv(pong.origin);
+                    sendNbrConfirmation(pong);
+                    //System.out.println("ENVIOU NBRCONFIRMATION");
                 }
                 else
-                    System.out.println("ERRO NO PARSE DO DATAGRAMPACKET (PONGHANDLER)");
-
+                    System.out.println("PING INVÁLIDO");
             }
         }
         else{
@@ -116,28 +103,17 @@ public class PongHandler implements Runnable {
             Random random = new Random();
             for(int i = 0; i < vagas; i++){
                 //System.out.println("ESCOLHA DE UM VIZINHO Nº " + i + "/" + vagas);
-                DatagramPacket dp = auxPong.get(random.nextInt(auxPong.size()));
-                auxPong.remove(dp);
+                Pong pong = auxPong.get(random.nextInt(auxPong.size()));
+                auxPong.remove(pong);
 
-                buf = dp.getData();
-                ByteArrayInputStream bStream = new ByteArrayInputStream(buf);
-                Input input = new Input(bStream);
-                Header header = (Header) kryo.readClassAndObject(input);
-                input.close();
-
-                if(header instanceof Pong){
-                    Pong pong = (Pong) header;
-                    if(this.nh.isPingValid(pong.pingID)) {
-                        //Enviar NBRConfirmation
-                        sendNbrConfirmation(pong);
-                    }
-                    else {
-                        System.out.println("PING INVÁLIDO");
-                        i--;
-                    }
+                if(this.nh.isPingValid(pong.pingID)) {
+                    //Enviar NBRConfirmation
+                    sendNbrConfirmation(pong);
                 }
-                else
-                    System.out.println("ERRO NO PARSE DO DATAGRAMPACKET (PONGHANDLER)");
+                else {
+                    System.out.println("PING INVÁLIDO");
+                    i--;
+                }
             }
         }
     };
@@ -176,11 +152,20 @@ public class PongHandler implements Runnable {
         try {
             DatagramPacket packet = new DatagramPacket(serializedNbrConfirmation, serializedNbrConfirmation.length, InetAddress.getByName(pong.origin.ip), this.ucp_NbrConfirmation);
             this.ucs.send(packet);
+            Thread.sleep(50);
+            this.ucs.send(packet);
+            Thread.sleep(50);
+            this.ucs.send(packet);
             //System.out.println("NBRCNFIRMATION ENVIADO\n");
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
+
+    private Runnable removeID = () ->{
+        if(!this.ids.isEmpty())
+            this.ids.remove(0);
+    };
 
     public void run(){
         try {
@@ -188,18 +173,33 @@ public class PongHandler implements Runnable {
 
             ses.scheduleWithFixedDelay(emptyPongTray, 0, 2, TimeUnit.SECONDS);
 
+            Kryo kryo = new Kryo();
             DatagramSocket ucs = new DatagramSocket(this.ucp_Pong);
             byte[] buf;
-            DatagramPacket pong;
+            DatagramPacket dp;
 
             while (true){
                 buf = new byte[1500];
-                pong = new DatagramPacket(buf, 1500);
-                ucs.receive(pong);
+                dp = new DatagramPacket(buf, 1500);
+                ucs.receive(dp);
 
-                this.trayLock.lock();
-                this.pongTray.add(pong);
-                this.trayLock.unlock();
+                ByteArrayInputStream bStream = new ByteArrayInputStream(buf);
+                Input input = new Input(bStream);
+                Header header = (Header) kryo.readClassAndObject(input);
+                input.close();
+
+                if(!this.ids.contains(header.requestID)) {
+
+                    this.ids.add(header.requestID);
+                    ses.schedule(removeID, 60, TimeUnit.SECONDS);
+
+                    if (header instanceof Pong) {
+                        Pong pong = (Pong) header;
+                        this.trayLock.lock();
+                        this.pongTray.add(pong);
+                        this.trayLock.unlock();
+                    }
+                }
             }
 
         } catch (IOException e) {
