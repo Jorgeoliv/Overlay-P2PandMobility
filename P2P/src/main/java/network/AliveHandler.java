@@ -82,7 +82,7 @@ public class AliveHandler implements Runnable {
         /**
          * ISTO DEPPIS VAI PARA O CREATE PACKET!!!
          */
-        Alive a = new Alive(this.idGen.getID(), this.myNode, myNbrs,  myNbrsN2);
+        Alive a = new Alive(this.idGen.getID(""), this.myNode, myNbrs,  myNbrsN2);
         Kryo kryo = new Kryo();
 
         for(Nodo n: myNbrs){

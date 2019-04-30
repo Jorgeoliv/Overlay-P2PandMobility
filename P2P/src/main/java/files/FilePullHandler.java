@@ -61,7 +61,7 @@ public class FilePullHandler implements Runnable{
         for(int p : ports)
             ppps.put(p,this.pps);
 
-        FilePull fp = new FilePull(this.idGen.getID(), this.myNode, choice.fileInfo, ppps, null);
+        FilePull fp = new FilePull(this.idGen.getID(""), this.myNode, choice.fileInfo, ppps, null);
 
         ByteArrayOutputStream bStream = new ByteArrayOutputStream();
         Output output = new Output(bStream);

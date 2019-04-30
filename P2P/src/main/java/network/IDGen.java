@@ -3,6 +3,7 @@ package network;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.util.Date;
 import java.util.Random;
 
 public class IDGen {
@@ -14,15 +15,20 @@ public class IDGen {
         this.chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuvxyz!#$%&/()=?»«'}][{§£@|*-+.:,;_<>";
 
     }
-    public String getID() {
+    public String getID(String optChars) {
 
         StringBuilder sb = new StringBuilder(this.tam);
+        String charSet;
+        if(optChars == "")
+            charSet = this.chars;
+        else
+            charSet = optChars;
 
         for (int i = 0; i < this.tam; i++) {
 
-            int index = (int) (this.chars.length() * Math.random());
+            int index = (int) (charSet.length() * Math.random());
 
-            sb.append(this.chars.charAt(index));
+            sb.append(charSet.charAt(index));
         }
 
         return sb.toString();
@@ -38,9 +44,7 @@ public class IDGen {
             File idFolder = new File("NODE_" + id);
             File tmp = new File("NODE_" + id + "/tmp");
             File files = new File("NODE_" + id + "/files");
-
             while ((!idFolder.exists() || !idFolder.isDirectory()) && !idFolder.mkdir());
-
             while((!tmp.exists() || !tmp.isDirectory()) && !tmp.mkdir());
             while((!files.exists() || !files.isDirectory()) && !files.mkdir());
         }
@@ -93,24 +97,27 @@ public class IDGen {
     }
 
     private String newID(){//String macAddress){
-        String hash = null;
+        String id= null;
         try {
             Random rand = new Random();
 
-            String id = this.getID();
-            String date = "" + System.currentTimeMillis();
+            String time = "" + System.nanoTime();
+            String date = new Date().toString();
             String nounce = "" + rand.nextInt();
+            id = this.getID("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuvxyz" + time + date + nounce);
+            id += this.getID("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuvxyz" + time + date + nounce);
 
+            /*
             String toHash = id + date + nounce;
 
             MessageDigest digest = null;
             byte[] encodedhash = null;
 
             digest = MessageDigest.getInstance("SHA-256");
-            encodedhash = digest.digest(toHash.getBytes(StandardCharsets.UTF_8));
+            encodedhash = digest.digest(toHash.getBytes());
             hash = new String(encodedhash);
 
-            /*if (hash != null) {
+            if (hash != null) {
                 Path file = Paths.get(macAddress + "/config");
                 Files.write(file, encodedhash);
             }*/
@@ -118,6 +125,6 @@ public class IDGen {
         catch (Exception e){
             e.printStackTrace();
         }
-        return hash;
+        return id;
     }
 }

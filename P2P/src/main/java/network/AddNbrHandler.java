@@ -73,7 +73,7 @@ public class AddNbrHandler implements Runnable{
 
     private void sendNbrConfirmation(AddNbr addNbr) {
 
-        NbrConfirmation nc = new NbrConfirmation(this.idGen.getID(), this.myNode, this.nt.getFileInfo(), addNbr.requestID, false,  this.nh.ft.getMyHash());
+        NbrConfirmation nc = new NbrConfirmation(this.idGen.getID(""), this.myNode, this.nt.getFileInfo(), addNbr.requestID, false,  this.nh.ft.getMyHash());
 
         this.nh.registerNode(addNbr.requestID, addNbr.origin);
 
@@ -120,7 +120,7 @@ public class AddNbrHandler implements Runnable{
                     Nodo nN2 = this.nt.getRandomNN2(nN1);
                     //System.out.println("QUEM É QUE ESCOLHI!!!!!!\n" + "\t" + nN2 + "\n\t" + nN2.equals(this.myNode));
                     if (!this.nh.isNodePresent(nN2)) {
-                        String id = this.idGen.getID();
+                        String id = this.idGen.getID("");
                         AddNbr addNbr = new AddNbr(id, this.myNode, nN1);
 
                         this.nh.registerAddNbr(id);

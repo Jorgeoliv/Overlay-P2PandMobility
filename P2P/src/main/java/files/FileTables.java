@@ -1,5 +1,6 @@
 package files;
 
+import java.io.File;
 import java.util.*;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -220,14 +221,21 @@ public class FileTables {
     public ArrayList<FileInfo> newFicheiro (ArrayList<String> path, String NodeId) {
         ArrayList<FileInfo> fi = new ArrayList<FileInfo>();
         FileInfo aux;
+        File file;
         for (String p : path) {
-            String[] auxSplit = p.split("/");
-            String name = auxSplit[auxSplit.length-1];
-            Ficheiro f = new Ficheiro(p, NodeId, name, FileChunkSize);
-            this.myFiles.put(name, f);
-            aux = new FileInfo(name, UUID.randomUUID().toString(), f.getNumberOfChunks(), f.getFileSize());
-            fi.add(aux);
-            this.myContent.put(name, aux);
+            file = new File(p);
+            if(file.exists() && !file.isDirectory()) {
+                String[] auxSplit = p.split("/");
+                String name = auxSplit[auxSplit.length - 1];
+                Ficheiro f = new Ficheiro(p, NodeId, name, FileChunkSize);
+                this.myFiles.put(name, f);
+                aux = new FileInfo(name, UUID.randomUUID().toString(), f.getNumberOfChunks(), f.getFileSize());
+                fi.add(aux);
+                this.myContent.put(name, aux);
+            }
+            else{
+                System.out.println(p +" NÃO È UM FICHEIRO VÁLIDO!!");
+            }
         }
         return fi;
     }

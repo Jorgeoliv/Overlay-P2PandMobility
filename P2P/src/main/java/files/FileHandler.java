@@ -218,7 +218,7 @@ public class FileHandler implements Runnable {
         //tenho mesmo de criar assim o arraylist senão vai dar problemas com o kryo
         ArrayList<String> route = new ArrayList<>();
         route.add(myNode.id);
-        String id = this.idGen.getID();
+        String id = this.idGen.getID("");
         //Vamos colocar por defeito um ttl de 5
         this.cdResponses.put(id, new ArrayList<PairNodoFileInfo>());
         ContentDiscovery cd = new ContentDiscovery(id, myNode, 5, file, route, this.myNode);
@@ -242,7 +242,7 @@ public class FileHandler implements Runnable {
         String oldHash = this.fileTables.getMyHash();
         String newHash = this.fileTables.addMyContent(files);
 
-        UpdateTable ut = new UpdateTable(this.idGen.getID(), this.myNode, files, null, oldHash, newHash);
+        UpdateTable ut = new UpdateTable(this.idGen.getID(""), this.myNode, files, null, oldHash, newHash);
         this.updateHandler.sendUpdate(ut);
     }
 

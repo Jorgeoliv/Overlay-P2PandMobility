@@ -56,7 +56,7 @@ public class FilePushHandler implements Runnable{
 
     public void sendFile(FilePull fp) {
 
-        String id = this.idGen.getID();
+        String id = this.idGen.getID("");
 
         Ficheiro f = this.ft.getFicheiro(fp.fi.name);
         System.out.println("NUMERO DE FILECHUNKS " + f.getNumberOfChunks() + "\n\n");
@@ -192,7 +192,7 @@ public class FilePushHandler implements Runnable{
                 ppps.put(fr.port, this.TimeOutpps);
             }
 
-            FilePull fp = new FilePull(this.idGen.getID(), this.myNode, this.fileInfos.get(h), ppps, mfcGroup);
+            FilePull fp = new FilePull(this.idGen.getID(""), this.myNode, this.fileInfos.get(h), ppps, mfcGroup);
 
             ByteArrayOutputStream bStream = new ByteArrayOutputStream();
             Output output = new Output(bStream);

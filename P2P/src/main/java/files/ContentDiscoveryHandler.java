@@ -164,7 +164,7 @@ public class ContentDiscoveryHandler implements Runnable{
                         if(this.ft.itsMyFile(filename)){
                             System.out.println("\tSou eu o Nodo " + this.myNodo + " que tem o ficheiro: " + filename);
                             FileInfo fileToSend = this.ft.getMyFile(filename);
-                            ContentOwner co = new ContentOwner(this.idGen.getID(), this.myNodo, fileToSend, cd.requestID);
+                            ContentOwner co = new ContentOwner(this.idGen.getID(""), this.myNodo, fileToSend, cd.requestID);
                             this.sendOwner(co, cd.requester);
                         }
                         else{

@@ -79,7 +79,7 @@ public class PingHandler implements Runnable{
 
     private Runnable sendPing = () -> {
 
-        String id = this.idGen.getID();
+        String id = this.idGen.getID("");
         this.nh.registerPing(id);
 
         ByteArrayOutputStream bStream = new ByteArrayOutputStream();
@@ -157,7 +157,7 @@ public class PingHandler implements Runnable{
 
     private void sendPong(Ping ping) {
 
-        Pong pong = new Pong(this.idGen.getID(), this.myNode, 64, ping.requestID, this.myN1Nbrs, this.myN2Nbrs);
+        Pong pong = new Pong(this.idGen.getID(""), this.myNode, 64, ping.requestID, this.myN1Nbrs, this.myN2Nbrs);
 
         ByteArrayOutputStream bStream = new ByteArrayOutputStream();
         Output output = new Output(bStream);

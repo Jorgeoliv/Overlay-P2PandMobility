@@ -275,7 +275,7 @@ public class UpdateHandler implements Runnable{
 
     private void sendEmergencyUpdate(UpdateTable ut){
 
-        EmergencyUpdate eu = new EmergencyUpdate(this.idGen.getID(), myNode);
+        EmergencyUpdate eu = new EmergencyUpdate(this.idGen.getID(""), myNode);
 
         try {
             Kryo kryo = new Kryo();
@@ -334,7 +334,7 @@ public class UpdateHandler implements Runnable{
                                 ft.rmContentForOneNbr(ut.toRemove, ut.origin, ut.newHash);
 
                             //Vou agora tratar de enviar um ack a dizer que recebi
-                            Ack ack = new Ack(this.idGen.getID(), this.myNode, ut.requestID);
+                            Ack ack = new Ack(this.idGen.getID(""), this.myNode, ut.requestID);
                             sendAck(ack, ut.origin);
                         }else{
                             System.out.println("ATENÇÃO ATENÇÃO ATENÇÃO");
@@ -346,7 +346,7 @@ public class UpdateHandler implements Runnable{
                     }else{
                         //Se chega aqui indica que já recebemos o update table no entanto o nodo não recebeu o nosso ack, temos de enviá-lo de novo ...
                         //Depois podemos pôr algo a enviar uma sequência de acks espaçados no tempo só para ter a certeza
-                        Ack ack = new Ack(this.idGen.getID(), this.myNode, ut.requestID);
+                        Ack ack = new Ack(this.idGen.getID(""), this.myNode, ut.requestID);
                         sendAck(ack, ut.origin);
                     }
                 }else{

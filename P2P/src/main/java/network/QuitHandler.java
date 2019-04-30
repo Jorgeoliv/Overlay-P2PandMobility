@@ -47,7 +47,7 @@ public class QuitHandler implements Runnable {
         //Remover conteúdos
         this.nh.ft.rmNbr(node.id);
 
-        Quit quit = new Quit(this.idGen.getID(), this.myNode);
+        Quit quit = new Quit(this.idGen.getID(""), this.myNode);
         ByteArrayOutputStream bStream = new ByteArrayOutputStream();
         Output output = new Output(bStream);
 
