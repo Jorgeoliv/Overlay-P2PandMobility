@@ -6,13 +6,13 @@ import network.Nodo;
 public class FilePull extends Header {
 
     public FileInfo fi;
-    public int[] missingFileChunks;
+    public short[] missingFileChunks;
     public int[] portas;
     public int pps;
 
     public FilePull(){super();}
 
-    public FilePull(String requestID, Nodo origin, FileInfo fi, int[] portas, int pps, int[] missingFileChunks) {
+    public FilePull(String requestID, Nodo origin, FileInfo fi, int[] portas, int pps, short[] missingFileChunks) {
         super(requestID, origin);
         this.fi = fi;
         this.portas = portas;

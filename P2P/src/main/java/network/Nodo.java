@@ -1,7 +1,5 @@
 package network;
 
-import java.io.Serializable;
-import java.net.InetAddress;
 import java.util.Objects;
 
 public class Nodo implements Comparable {
@@ -9,11 +7,7 @@ public class Nodo implements Comparable {
     public String id; //representa o id do Nodo => Posteriormente o nome (para já é o ID?)
     public String ip;
 
-    //MAIS ALGUMA COISA???
-
-    public Nodo(){
-
-    }
+    public Nodo(){}
 
     public Nodo(String id, String ip) {
         this.id = id;

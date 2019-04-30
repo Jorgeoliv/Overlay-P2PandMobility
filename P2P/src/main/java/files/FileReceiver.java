@@ -48,7 +48,6 @@ public class FileReceiver implements Runnable {
 
         try{
             byte[] buffer;
-            byte[] buf;
             DatagramPacket dp;
 
             while (true){
@@ -57,8 +56,7 @@ public class FileReceiver implements Runnable {
 
                 this.ds.receive(dp);
 
-                buf = dp.getData();
-                ByteArrayInputStream bStream = new ByteArrayInputStream(buf);
+                ByteArrayInputStream bStream = new ByteArrayInputStream(buffer);
                 Input input = new Input(bStream);
                 Header header = (Header) kryo.readClassAndObject(input);
                 input.close();

@@ -54,6 +54,10 @@ public class FilePushHandler implements Runnable{
         this.ft = ft;
     }
 
+    private int shortToInt(short s){
+        return s - Short.MIN_VALUE;
+    }
+
     public void sendFile(FilePull fp) {
 
         String id = this.idGen.getID("");
@@ -72,8 +76,8 @@ public class FilePushHandler implements Runnable{
         else {
             ArrayList<Integer> aux = new ArrayList<Integer>();
 
-            for(int i : fp.missingFileChunks)
-                aux.add(i);
+            for(short s : fp.missingFileChunks)
+                aux.add(shortToInt(s));
 
             fcArray = f.getMissingFileChunks(aux);
             System.out.println("\t\tTIVE QUE IR BUSCAR ALGUNS DOS FILECHUNKS");
@@ -175,21 +179,26 @@ public class FilePushHandler implements Runnable{
         this.fileInfos.remove(h);
     }
 
+    private short intToShort(int fcID){
+        return (short) (fcID + Short.MIN_VALUE);
+    }
+
     private void sendTimeoutPackets(String h) {
 
         ArrayList<Integer> mfc = this.ficheiros.get(h).getMissingFileChunks();
-        int[] mfcGroup;
+        short[] mfcGroup;
+        int mfcGroupSize = 600;
 
         while(!mfc.isEmpty()) {
 
             int mfcSize = mfc.size();
-            if (mfcSize > 425)
-                mfcGroup = new int[425];
+            if (mfcSize > mfcGroupSize)
+                mfcGroup = new short[mfcGroupSize];
             else
-                mfcGroup = new int[mfcSize];
+                mfcGroup = new short[mfcSize];
 
-            for(int i = 0; (i < 425) && !mfc.isEmpty(); i++){
-                mfcGroup[i] = mfc.get(0);
+            for(int i = 0; (i < mfcGroupSize) && !mfc.isEmpty(); i++){
+                mfcGroup[i] = intToShort(mfc.get(0));
                 mfc.remove(0);
             }
 

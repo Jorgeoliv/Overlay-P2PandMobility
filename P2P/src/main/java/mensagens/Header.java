@@ -4,7 +4,7 @@ import network.Nodo;
 
 import java.util.Objects;
 
-public class Header /*implements Serializable*/ {
+public class Header {
 
     public String requestID; //id referente ao pedido
     /**
