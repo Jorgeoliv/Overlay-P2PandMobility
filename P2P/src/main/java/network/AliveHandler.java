@@ -219,7 +219,7 @@ public class AliveHandler implements Runnable {
                 if (!this.ids.contains(header.requestID)) {
 
                     this.ids.add(header.requestID);
-                    ses.schedule(removeID, 60, TimeUnit.SECONDS);
+                    ses.schedule(removeID, 30, TimeUnit.SECONDS);
 
                     if (header instanceof Alive) {
                         this.aliveTrayLock.lock();

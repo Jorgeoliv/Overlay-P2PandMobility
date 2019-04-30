@@ -245,7 +245,7 @@ public class PingHandler implements Runnable{
 
                     if(!this.ids.contains(header.requestID)) {
                         this.ids.add(header.requestID);
-                        ses.schedule(removeID,20,TimeUnit.SECONDS);
+                        ses.schedule(removeID,15,TimeUnit.SECONDS);
                         if (header instanceof Ping) {
                             Ping ping = (Ping) header;
                             this.trayLock.lock();

@@ -191,7 +191,7 @@ public class PongHandler implements Runnable {
                 if(!this.ids.contains(header.requestID)) {
 
                     this.ids.add(header.requestID);
-                    ses.schedule(removeID, 60, TimeUnit.SECONDS);
+                    ses.schedule(removeID, 5, TimeUnit.SECONDS);
 
                     if (header instanceof Pong) {
                         Pong pong = (Pong) header;

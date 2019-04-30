@@ -17,7 +17,7 @@ import java.util.Random;
 public class FilePushHandler implements Runnable{
     private Nodo myNode;
 
-    private int timeoutTime = 5000;
+    private int timeoutTime = 1000;
 
     private int ucp_FilePushHandler;
     private int ucp_FilePullHandler;
@@ -31,7 +31,7 @@ public class FilePushHandler implements Runnable{
     private HashMap<String, ArrayList <Thread>> fileReceiversThreads;
     private HashMap<String, Integer> timeouts;
 
-    private int TimeOutpps = 200;
+    private int TimeOutpps = 100;
 
     private FileTables ft;
 
