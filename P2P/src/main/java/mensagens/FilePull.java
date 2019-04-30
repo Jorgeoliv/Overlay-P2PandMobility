@@ -3,21 +3,20 @@ package mensagens;
 import files.FileInfo;
 import network.Nodo;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-
 public class FilePull extends Header {
 
     public FileInfo fi;
-    public HashMap <Integer, Integer> ports_packetPerSecond;
-    public ArrayList<Integer> missingFileChunks;
+    public int[] missingFileChunks;
+    public int[] portas;
+    public int pps;
 
     public FilePull(){super();}
 
-    public FilePull(String requestID, Nodo origin, FileInfo fi, HashMap <Integer, Integer> ppps, ArrayList<Integer> missingFileChunks) {
+    public FilePull(String requestID, Nodo origin, FileInfo fi, int[] portas, int pps, int[] missingFileChunks) {
         super(requestID, origin);
         this.fi = fi;
-        this.ports_packetPerSecond = ppps;
+        this.portas = portas;
+        this.pps = pps;
         this.missingFileChunks = missingFileChunks;
     }
 }

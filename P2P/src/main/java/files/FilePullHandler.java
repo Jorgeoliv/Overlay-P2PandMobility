@@ -23,7 +23,7 @@ public class FilePullHandler implements Runnable{
     private IDGen idGen;
     private int ucp_FilePullHandler;
 
-    private int pps = 500;
+    private int pps = 200;
 
     public FilePullHandler(int ucp_FilePull, FilePushHandler fph, IDGen idGen, Nodo myNode){
         this.myNode = myNode;
@@ -40,7 +40,7 @@ public class FilePullHandler implements Runnable{
         buf = dp.getData();
         ByteArrayInputStream bStream = new ByteArrayInputStream(buf);
         Input input = new Input(bStream);
-        Header header = (Header) kryo.readClassAndObject(input);// DEU EXCEPÇÃO AQUI !?!?!?!?!?!?!?!?
+        Header header = (Header) kryo.readClassAndObject(input);
         input.close();
 
         if(header instanceof FilePull) {
@@ -56,12 +56,12 @@ public class FilePullHandler implements Runnable{
 
         ArrayList<Integer> ports = this.fph.getPorts(choice.fileInfo.hash, choice.fileInfo.numOfFileChunks);
 
-        HashMap <Integer, Integer> ppps = new HashMap<Integer, Integer>();
+        int [] portas = new int[ports.size()];
 
-        for(int p : ports)
-            ppps.put(p,this.pps);
+        for(int i = 0; i < ports.size(); i++)
+            portas[i] = ports.get(i);
 
-        FilePull fp = new FilePull(this.idGen.getID(""), this.myNode, choice.fileInfo, ppps, null);
+        FilePull fp = new FilePull(this.idGen.getID(""), this.myNode, choice.fileInfo, portas, this.pps, null);
 
         ByteArrayOutputStream bStream = new ByteArrayOutputStream();
         Output output = new Output(bStream);
@@ -71,7 +71,7 @@ public class FilePullHandler implements Runnable{
         output.close();
 
         byte[] serializedPing = bStream.toByteArray();
-
+        System.out.println("É ISTO QUE QUERO VER!!!!!!!!!!!!!!!!!!!!!!" + serializedPing.length);
         try {
             DatagramPacket packet = new DatagramPacket(serializedPing, serializedPing.length, InetAddress.getByName(choice.nodo.ip), this.ucp_FilePullHandler);
             (new DatagramSocket()).send(packet);

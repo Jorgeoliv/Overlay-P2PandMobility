@@ -229,7 +229,7 @@ public class Ficheiro {
             if(ficheiro.exists() && ficheiro.isDirectory()){
                 FileChunk f;
                 for(Integer i : mfc){
-                    System.out.println("LI O MISSING FILE CHUNK " + i);
+                    //System.out.println("LI O MISSING FILE CHUNK " + i);
                     f = new FileChunk(Files.readAllBytes(Paths.get(tmpFolder + "/" + i + ".filechunk")), i);
                     res.add(f);
                 }

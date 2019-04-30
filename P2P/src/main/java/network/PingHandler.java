@@ -39,10 +39,12 @@ public class PingHandler implements Runnable{
     private DatagramSocket ucs;
 
     private NetworkTables nt; //Para obter os vizinhos
-    private ArrayList<DatagramPacket> pingTray; //Tabuleiro de DatagramPackets
+    private ArrayList<Ping> pingTray; //Tabuleiro de DatagramPackets
 
     private ReentrantLock trayLock;
     private IDGen idGen;
+
+    private ArrayList<String> ids = new ArrayList<String>();
 
     public PingHandler(int softcap, int hardcap, NetworkHandler nh, IDGen idGen, Nodo myNode, InetAddress ip, int mcport, int ucport, int ttl, NetworkTables nt){
         this.softcap = softcap;
@@ -62,7 +64,7 @@ public class PingHandler implements Runnable{
 
         this.nt = nt;
 
-        this.pingTray = new ArrayList<DatagramPacket>();
+        this.pingTray = new ArrayList<Ping>();
 
         this.trayLock = new ReentrantLock();
 
@@ -101,6 +103,7 @@ public class PingHandler implements Runnable{
 
         try {
             new MulticastSocket().send(packet);
+            new MulticastSocket().send(packet);
             //System.out.println("PING "+ id + " ENVIADO\n");
         } catch (IOException e) {
             e.printStackTrace();
@@ -108,34 +111,21 @@ public class PingHandler implements Runnable{
     };
 
     private Runnable emptyPingTray = () -> {
-        byte[] buf;
-        Kryo kryo = new Kryo();
+
 
         this.trayLock.lock();
-        ArrayList <DatagramPacket> auxPing = (ArrayList<DatagramPacket>) this.pingTray.clone();
+        ArrayList <Ping> auxPing = (ArrayList<Ping>) this.pingTray.clone();
         this.pingTray.clear();
         this.trayLock.unlock();
 
-        for(DatagramPacket dp : auxPing){
+        for(Ping ping : auxPing) {
 
-            buf = dp.getData();
-            ByteArrayInputStream bStream = new ByteArrayInputStream(buf);
-            Input input = new Input(bStream);
-            Header header = (Header) kryo.readClassAndObject(input);
-            input.close();
-
-            if(header instanceof Ping){
-                Ping ping = (Ping) header;
-                //printPing(ping);
-                if (analisePing(ping)) {
-                    this.nh.addInConv(ping.origin);
-                    sendPong(ping);
-                    this.nh.registerNode(ping.requestID, ping.origin);
-                }
+            //printPing(ping);
+            if (analisePing(ping)) {
+                this.nh.addInConv(ping.origin);
+                sendPong(ping);
+                this.nh.registerNode(ping.requestID, ping.origin);
             }
-            else
-                System.out.println("ERRO NO PARSE DO DATAGRAMPACKET (PINGHANDLER)");
-
         }
 
     };
@@ -218,11 +208,17 @@ public class PingHandler implements Runnable{
         return decision;
     }
 
+    private Runnable removeID = () ->{
+      if(!this.ids.isEmpty())
+          this.ids.remove(0);
+    };
+
     public void run(){
         try{
             this.mcs.joinGroup(this.groupIP);
             byte[] buf;
-            DatagramPacket ping;
+            Kryo kryo = new Kryo();
+            DatagramPacket dp;
 
             ScheduledExecutorService ses = Executors.newSingleThreadScheduledExecutor();
 
@@ -232,14 +228,30 @@ public class PingHandler implements Runnable{
 
             while(true){
                 buf = new byte[1500];
-                ping = new DatagramPacket(buf, 1500);
-                mcs.receive(ping);
+                dp = new DatagramPacket(buf, 1500);
+                mcs.receive(dp);
                 //Filtragem por IP
 
-                if (!ping.getAddress().equals(myIP)) {
-                    this.trayLock.lock();
-                    this.pingTray.add(ping);
-                    this.trayLock.unlock();
+                if (!dp.getAddress().equals(myIP)) {
+                    ByteArrayInputStream bStream = new ByteArrayInputStream(buf);
+                    Input input = new Input(bStream);
+                    Header header = (Header) kryo.readClassAndObject(input);
+                    input.close();
+
+                    if(!this.ids.contains(header.requestID)) {
+                        this.ids.add(header.requestID);
+                        ses.schedule(removeID,20,TimeUnit.SECONDS);
+                        if (header instanceof Ping) {
+                            Ping ping = (Ping) header;
+                            this.trayLock.lock();
+                            this.pingTray.add(ping);
+                            this.trayLock.unlock();
+                        } else
+                            System.out.println("ERRO NO PARSE DO DATAGRAMPACKET (PINGHANDLER)");
+                    }
+                    else
+                        System.out.println("PING REPETIDO!!!!!!");
+
                 }
             }
         } catch (IOException e) {

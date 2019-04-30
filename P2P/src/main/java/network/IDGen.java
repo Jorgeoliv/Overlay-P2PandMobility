@@ -1,8 +1,6 @@
 package network;
 
 import java.io.File;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
 import java.util.Date;
 import java.util.Random;
 
@@ -101,11 +99,8 @@ public class IDGen {
         try {
             Random rand = new Random();
 
-            String time = "" + System.nanoTime();
-            String date = new Date().toString();
-            String nounce = "" + rand.nextInt();
-            id = this.getID("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuvxyz" + time + date + nounce);
-            id += this.getID("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuvxyz" + time + date + nounce);
+            id = this.getID("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuvxyz" + System.nanoTime() + new Date().toString() + rand.nextInt());
+            id += this.getID("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuvxyz" + System.nanoTime() + new Date().toString() + rand.nextInt());
 
             /*
             String toHash = id + date + nounce;

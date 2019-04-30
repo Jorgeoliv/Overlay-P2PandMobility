@@ -1,8 +1,7 @@
 package mensagens;
 
-import network.*;
+import network.Nodo;
 
-import java.io.Serializable;
 import java.util.Objects;
 
 public class Header /*implements Serializable*/ {
@@ -17,19 +16,6 @@ public class Header /*implements Serializable*/ {
 
     public Header(){
 
-    }
-
-    public Header(String requestID, Nodo origin, Nodo antecessor, long ttl) {
-        this.requestID = requestID;
-        this.origin = origin;
-        this.antecessor = antecessor;
-        this.ttl = ttl;
-    }
-
-    public Header(String requestID, Nodo origin, Nodo antecessor) {
-        this.requestID = requestID;
-        this.origin = origin;
-        this.antecessor = antecessor;
     }
 
     public Header(String requestID, Nodo origin, long ttl) {
