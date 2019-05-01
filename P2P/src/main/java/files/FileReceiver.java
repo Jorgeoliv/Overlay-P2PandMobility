@@ -8,6 +8,7 @@ import mensagens.Header;
 import java.io.ByteArrayInputStream;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.Random;
 import java.util.concurrent.locks.ReentrantLock;
@@ -21,6 +22,8 @@ public class FileReceiver implements Runnable {
     private Kryo kryo;
 
     private ReentrantLock lock;
+
+    private boolean run = true;
 
     public FileReceiver(){
         this.port = -1;
@@ -39,9 +42,14 @@ public class FileReceiver implements Runnable {
                 b = false;
             }
             catch (Exception e) {
-                System.out.println("ESCOLHI UMA PORTA JÁ EM USO => " + this.port);
+                //System.out.println("ESCOLHI UMA PORTA JÁ EM USO => " + this.port);
             }
         }
+    }
+
+    public void kill(){
+        this.run = false;
+        this.ds.close();
     }
 
     public void run() {
@@ -50,7 +58,7 @@ public class FileReceiver implements Runnable {
             byte[] buffer;
             DatagramPacket dp;
 
-            while (true){
+            while (this.run){
                 buffer = new byte[1500];
                 dp = new DatagramPacket(buffer, buffer.length);
 
@@ -67,6 +75,9 @@ public class FileReceiver implements Runnable {
                     this.lock.unlock();
                 }
             }
+        }
+        catch (SocketException se){
+            System.out.println("\t=>FILERECEIVER DATAGRAMSOCKET CLOSED");
         }
         catch (Exception e){
             e.printStackTrace();

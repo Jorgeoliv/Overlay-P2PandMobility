@@ -320,7 +320,7 @@ public class NetworkHandler implements Runnable{
             Thread.sleep(100);
 
             this.ses.shutdownNow();
-            
+
         } catch (Exception e) {
             e.printStackTrace();
         }

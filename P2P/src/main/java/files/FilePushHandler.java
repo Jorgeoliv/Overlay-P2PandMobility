@@ -165,11 +165,12 @@ public class FilePushHandler implements Runnable{
     }
 
     public void clean(String h){
-        for(Thread t : this.fileReceiversThreads.get(h))
-            t.interrupt();
+        /*for(Thread t : this.fileReceiversThreads.get(h))
+            t.interrupt();*/
 
         for(FileReceiver fr : this.fileReceivers.get(h))
-            fr = null;
+            fr.kill();
+
 
         this.fileReceivers.remove(h);
         this.fileReceiversThreads.remove(h);
