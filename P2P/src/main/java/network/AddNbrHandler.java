@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -32,6 +33,8 @@ public class AddNbrHandler implements Runnable{
     private NetworkHandler nh;
 
     private ArrayList<String> ids = new ArrayList<String>();
+    private ScheduledExecutorService ses;
+    private DatagramSocket ucs;
 
     public AddNbrHandler(int softcap, int hardcap, IDGen idGen, NetworkHandler nh, Nodo myNode, int ucp_AddNbr, int ucp_NbrConfirmation, NetworkTables nt){
         this.softcap = softcap;
@@ -46,6 +49,14 @@ public class AddNbrHandler implements Runnable{
 
         this.nh = nh;
         this.nt = nt;
+
+        this.ses = Executors.newSingleThreadScheduledExecutor();
+        try {
+            this.ucs = new DatagramSocket(this.ucp_AddNbr);
+        } catch (SocketException e) {
+            e.printStackTrace();
+        }
+
     }
 
     private void processAddNbr(AddNbr addnbr) {
@@ -155,22 +166,25 @@ public class AddNbrHandler implements Runnable{
             this.ids.remove(0);
     };
 
+    public void kill(){
+        this.ses.shutdownNow();
+        this.ucs.close();
+    }
+
     public void run() {
         try {
             Kryo kryo = new Kryo();
 
-            ScheduledExecutorService ses = Executors.newSingleThreadScheduledExecutor();
 
-            ses.scheduleWithFixedDelay(sendAddNbr, 20, 20, TimeUnit.SECONDS);
+            this.ses.scheduleWithFixedDelay(sendAddNbr, 20, 20, TimeUnit.SECONDS);
 
-            DatagramSocket ucs = new DatagramSocket(this.ucp_AddNbr);
             byte[] buf;
             DatagramPacket dp;
 
             while (true){
                 buf = new byte[1500];
                 dp = new DatagramPacket(buf, buf.length);
-                ucs.receive(dp);
+                this.ucs.receive(dp);
 
                 ByteArrayInputStream bStream = new ByteArrayInputStream(buf);
                 Input input = new Input(bStream);
@@ -180,7 +194,7 @@ public class AddNbrHandler implements Runnable{
                 if (!this.ids.contains(header.requestID)) {
 
                     this.ids.add(header.requestID);
-                    ses.schedule(removeID, 5, TimeUnit.SECONDS);
+                    this.ses.schedule(removeID, 5, TimeUnit.SECONDS);
 
                     if (header instanceof AddNbr) {
                         AddNbr addNbr = (AddNbr) header;
@@ -189,7 +203,9 @@ public class AddNbrHandler implements Runnable{
                 }
             }
 
-        } catch (IOException e) {
+        }catch (SocketException se){
+            System.out.println("\t=>ADDNBRHANDLER DATAGRAMSOCKET CLOSED");
+        }catch (IOException e) {
             e.printStackTrace();
         }
     }

@@ -73,12 +73,12 @@ public class StartP2P {
 
         fh.updateVars(nh.getNetworkTables());
 
-        Thread t = new Thread(nh);
-        t.start();
+        Thread nht = new Thread(nh);
+        nht.start();
         System.out.println("NETWORKHANDLER CRIADO");
 
-        t = new Thread(fh);
-        t.start();
+        Thread fht = new Thread(fh);
+        fht.start();
         System.out.println("FILEHANDLER CRIADO");
 
 
@@ -121,5 +121,10 @@ public class StartP2P {
                 default: sair = true;
             }
         }
+        nh.sendBroadcastQuit();
+        nh.kill();
+        fh.kill();
+        nht.interrupt();
+        fht.interrupt();
     }
 }

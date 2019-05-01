@@ -49,6 +49,8 @@ class SupportUpdate{
 
 public class UpdateHandler implements Runnable{
 
+    public boolean run = true;
+
     private int ucp_Update;
     private Nodo myNode;
     private FileTables ft;
@@ -56,6 +58,7 @@ public class UpdateHandler implements Runnable{
     private TreeSet<String> updateRequests = new TreeSet<>();
     private ScheduledExecutorService ses = Executors.newSingleThreadScheduledExecutor();
     private NetworkTables nt;
+    private DatagramSocket socket;
 
     //Para tratar dos updates tables que possam não chegar
     private ArrayList<SupportUpdate> updateSent = new ArrayList<>();
@@ -69,6 +72,14 @@ public class UpdateHandler implements Runnable{
         this.ft = ft;
         this.idGen = idGen;
         this.nt = nt;
+        try {
+            this.socket = new DatagramSocket(ucp_Update, InetAddress.getByName(InetAddress.getLocalHost().getHostAddress()));
+        } catch (SocketException e) {
+            e.printStackTrace();
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        }
+
     }
 
     private synchronized boolean containsRequest(String id){
@@ -91,6 +102,7 @@ public class UpdateHandler implements Runnable{
         Runnable ret = new Runnable() {
             @Override
             public void run() {
+
                 removeRequest(id);
             }
         };
@@ -298,34 +310,39 @@ public class UpdateHandler implements Runnable{
         }
     }
 
-    @Override
+    public void kill(){
+        this.run = false;
+        this.ses.shutdownNow();
+        this.socket.close();
+    }
+
     public void run() {
         try {
-            DatagramSocket socket = new DatagramSocket(ucp_Update, InetAddress.getByName(InetAddress.getLocalHost().getHostAddress()));
 
             byte[] buffer = new byte[2048];
             DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
 
-            ses.scheduleWithFixedDelay(inspectAck, 60, 60, TimeUnit.SECONDS);
-            ses.scheduleWithFixedDelay(deleteNbrs, 30, 30, TimeUnit.SECONDS);
+            this.ses.scheduleWithFixedDelay(inspectAck, 60, 60, TimeUnit.SECONDS);
+            this.ses.scheduleWithFixedDelay(deleteNbrs, 30, 30, TimeUnit.SECONDS);
 
             Kryo kryo = new Kryo();
 
-            while(true){
+            while (this.run) {
 
-                socket.receive(packet);
+                this.socket.receive(packet);
+
                 ByteArrayInputStream bStream = new ByteArrayInputStream(buffer);
                 Input input = new Input(bStream);
                 Header header = (Header) kryo.readClassAndObject(input);
                 input.close();
 
-                if(header instanceof UpdateTable){
+                if (header instanceof UpdateTable) {
                     System.out.println("Recebi um update table");
                     UpdateTable ut = (UpdateTable) header;
                     String nodeID = ut.origin.id;
                     String requestID = ut.requestID;
                     //Só vai processar senão estiver na lista
-                    if(!this.containsRequest(requestID)) {
+                    if (!this.containsRequest(requestID)) {
                         this.addRequest(requestID);
                         if (ft.getHash(nodeID).equals(ut.oldHash)) { // DEU UMA EXCEPÇÃO AQUI!?!?!?!?!?!?
                             if (ut.toAdd != null)
@@ -336,22 +353,22 @@ public class UpdateHandler implements Runnable{
                             //Vou agora tratar de enviar um ack a dizer que recebi
                             Ack ack = new Ack(this.idGen.getID(""), this.myNode, ut.requestID);
                             sendAck(ack, ut.origin);
-                        }else{
+                        } else {
                             System.out.println("ATENÇÃO ATENÇÃO ATENÇÃO");
                             System.out.println("\t Falta um pacote do UpdateHandler para o nodo: " + myNode.ip);
                             this.sendEmergencyUpdate(ut);
                         }
                         //Para dar tempo no caso de recebermos repetidos ..
-                        ses.schedule(delete(requestID), 300, TimeUnit.SECONDS);
-                    }else{
+                        this.ses.schedule(delete(requestID), 300, TimeUnit.SECONDS);
+                    } else {
                         //Se chega aqui indica que já recebemos o update table no entanto o nodo não recebeu o nosso ack, temos de enviá-lo de novo ...
                         //Depois podemos pôr algo a enviar uma sequência de acks espaçados no tempo só para ter a certeza
                         Ack ack = new Ack(this.idGen.getID(""), this.myNode, ut.requestID);
                         sendAck(ack, ut.origin);
                     }
-                }else{
+                } else {
                     System.out.println("Recebi um ack!!!");
-                    if(header instanceof Ack){
+                    if (header instanceof Ack) {
                         System.out.println("Recebi efetivamente um ack!!!");
                         Ack ack = (Ack) header;
                         try {
@@ -365,25 +382,24 @@ public class UpdateHandler implements Runnable{
                                     break;
                                 }
                             }
-                        }finally {
+                        } finally {
                             lockUpdate.unlock();
                         }
-                    }else{
-                       if(header instanceof EmergencyUpdate){
-                           System.out.println("RECEBI UM EMERGENCY UPDATE!!");
-                           EmergencyUpdate eu = (EmergencyUpdate) header;
-                           this.sendAgainUpdateTable(eu.origin);
-                       }
+                    } else {
+                        if (header instanceof EmergencyUpdate) {
+                            System.out.println("RECEBI UM EMERGENCY UPDATE!!");
+                            EmergencyUpdate eu = (EmergencyUpdate) header;
+                            this.sendAgainUpdateTable(eu.origin);
+                        }
                     }
                 }
 
             }
-
+        }catch (SocketException se){
+                System.out.println("\t=>UPDATEHANDLER DATAGRAMSOCKET CLOSED");
         }catch (UnknownHostException e) {
             e.printStackTrace();
-        } catch (SocketException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
+        }catch (IOException e) {
             e.printStackTrace();
         }
     }

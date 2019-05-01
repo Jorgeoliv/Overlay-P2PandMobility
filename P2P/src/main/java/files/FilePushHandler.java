@@ -15,6 +15,9 @@ import java.util.HashMap;
 import java.util.Random;
 
 public class FilePushHandler implements Runnable{
+
+    private boolean run = true;
+
     private Nodo myNode;
 
     private int timeoutTime = 2500;
@@ -163,7 +166,7 @@ public class FilePushHandler implements Runnable{
 
     public void clean(String h){
         for(Thread t : this.fileReceiversThreads.get(h))
-            t.stop();
+            t.interrupt();
 
         for(FileReceiver fr : this.fileReceivers.get(h))
             fr = null;
@@ -269,6 +272,10 @@ public class FilePushHandler implements Runnable{
         }
     }
 
+    public void kill(){
+        this.run = false;
+    }
+
     public void run(){
         Ficheiro filePointer;
         ArrayList<FileReceiver> fRPointer;
@@ -277,7 +284,7 @@ public class FilePushHandler implements Runnable{
 
         int packets = 0, to, i, tam;
 
-        while(true){
+        while(this.run){
             try {
                 for (String h : this.ficheiros.keySet()) {
                     filePointer = this.ficheiros.get(h);

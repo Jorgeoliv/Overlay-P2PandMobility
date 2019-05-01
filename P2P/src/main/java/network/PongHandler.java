@@ -39,8 +39,10 @@ public class PongHandler implements Runnable {
     private ReentrantLock trayLock;
 
     private DatagramSocket ucs;
+    private DatagramSocket ucsR;
 
     private ArrayList<String> ids = new ArrayList<String>();
+    private ScheduledExecutorService ses;
 
     public PongHandler(int softcap, int hardcap, NetworkHandler nh, IDGen idGen, Nodo myNode, int ucp_Pong, int ucp_NbrConfirmation, int ucp_AddNbr, NetworkTables nt){
         this.nh = nh;
@@ -61,14 +63,14 @@ public class PongHandler implements Runnable {
 
         try {
             this.ucs = new DatagramSocket();
+            this.ucsR = new DatagramSocket(this.ucp_Pong);
         } catch (SocketException e) {
             e.printStackTrace();
         }
+        this.ses = Executors.newSingleThreadScheduledExecutor();
     }
 
     private Runnable emptyPongTray = () -> {
-
-
 
         this.trayLock.lock();
         ArrayList<Pong> auxPong = (ArrayList<Pong>) this.pongTray.clone();
@@ -167,21 +169,23 @@ public class PongHandler implements Runnable {
             this.ids.remove(0);
     };
 
+    public void kill(){
+        this.ses.shutdownNow();
+        this.ucsR.close();
+    }
+
     public void run(){
         try {
-            ScheduledExecutorService ses = Executors.newSingleThreadScheduledExecutor();
-
-            ses.scheduleWithFixedDelay(emptyPongTray, 0, 2, TimeUnit.SECONDS);
+            this.ses.scheduleWithFixedDelay(emptyPongTray, 0, 2, TimeUnit.SECONDS);
 
             Kryo kryo = new Kryo();
-            DatagramSocket ucs = new DatagramSocket(this.ucp_Pong);
             byte[] buf;
             DatagramPacket dp;
 
             while (true){
                 buf = new byte[1500];
                 dp = new DatagramPacket(buf, 1500);
-                ucs.receive(dp);
+                this.ucsR.receive(dp);
 
                 ByteArrayInputStream bStream = new ByteArrayInputStream(buf);
                 Input input = new Input(bStream);
@@ -191,7 +195,7 @@ public class PongHandler implements Runnable {
                 if(!this.ids.contains(header.requestID)) {
 
                     this.ids.add(header.requestID);
-                    ses.schedule(removeID, 5, TimeUnit.SECONDS);
+                    this.ses.schedule(removeID, 5, TimeUnit.SECONDS);
 
                     if (header instanceof Pong) {
                         Pong pong = (Pong) header;
@@ -202,7 +206,11 @@ public class PongHandler implements Runnable {
                 }
             }
 
-        } catch (IOException e) {
+        }
+        catch (SocketException se){
+            System.out.println("\t=>PONG DATAGRAMSOCKET CLOSED");
+        }
+        catch (IOException e) {
             e.printStackTrace();
         }
     }

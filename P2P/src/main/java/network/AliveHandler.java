@@ -15,6 +15,8 @@ import java.util.concurrent.locks.ReentrantLock;
 
 public class AliveHandler implements Runnable {
 
+    private boolean run = true;
+
     private int ucp_Alive; //Porta para escutar
     private Nodo myNode;
     private NetworkHandler nh;
@@ -25,6 +27,8 @@ public class AliveHandler implements Runnable {
     private ReentrantLock aliveTrayLock;
 
     private ArrayList<String> ids = new ArrayList<String>();
+    private ScheduledExecutorService ses;
+    private DatagramSocket ucs_Alive;
 
     public AliveHandler(NetworkHandler nh, NetworkTables nt, Nodo id, int ucp_Alive, IDGen idGen) {
         this.nh = nh;
@@ -37,6 +41,14 @@ public class AliveHandler implements Runnable {
 
         this.aliveTray = new ArrayList<Alive>();
         this.aliveTrayLock = new ReentrantLock();
+
+        this.ses = Executors.newSingleThreadScheduledExecutor();
+        try {
+            this.ucs_Alive = new DatagramSocket(this.ucp_Alive);
+        } catch (SocketException e) {
+            e.printStackTrace();
+        }
+
     }
 
     private Runnable emptyAliveTray = () ->{
@@ -189,26 +201,30 @@ public class AliveHandler implements Runnable {
             this.ids.remove(0);
     };
 
+    public void kill(){
+        this.run = false;
+        this.ses.shutdownNow();
+        this.ucs_Alive.close();
+    }
+
     public void run() {
         try {
-            DatagramSocket ucs_Alive = new DatagramSocket(this.ucp_Alive);
 
             byte[] buffer;
             DatagramPacket dp;
 
             //schedulers
-            ScheduledExecutorService ses = Executors.newSingleThreadScheduledExecutor();
-            ses.scheduleAtFixedRate(sendAlive, 0, 20, TimeUnit.SECONDS);
-            ses.scheduleAtFixedRate(emptyAliveTray, 1, 20, TimeUnit.SECONDS);
-            ses.scheduleAtFixedRate(upAll, 59, 20, TimeUnit.SECONDS);
+            this.ses.scheduleAtFixedRate(sendAlive, 0, 20, TimeUnit.SECONDS);
+            this.ses.scheduleAtFixedRate(emptyAliveTray, 1, 20, TimeUnit.SECONDS);
+            this.ses.scheduleAtFixedRate(upAll, 59, 20, TimeUnit.SECONDS);
 
             Kryo kryo = new Kryo();
 
-            while(true) {
+            while(this.run){
                 buffer = new byte[1500];
                 dp = new DatagramPacket(buffer, buffer.length);
 
-                ucs_Alive.receive(dp);
+                this.ucs_Alive.receive(dp);
 
                 ByteArrayInputStream bStream = new ByteArrayInputStream(buffer);
                 Input input = new Input(bStream);
@@ -219,7 +235,7 @@ public class AliveHandler implements Runnable {
                 if (!this.ids.contains(header.requestID)) {
 
                     this.ids.add(header.requestID);
-                    ses.schedule(removeID, 30, TimeUnit.SECONDS);
+                    this.ses.schedule(removeID, 30, TimeUnit.SECONDS);
 
                     if (header instanceof Alive) {
                         this.aliveTrayLock.lock();
@@ -232,6 +248,9 @@ public class AliveHandler implements Runnable {
                 }
             }
 
+        }
+        catch (SocketException se){
+            System.out.println("\t=>ALIVEHANDLER DATAGRAMSOCKET CLOSED");
         }
         catch (Exception e) {
             e.printStackTrace();

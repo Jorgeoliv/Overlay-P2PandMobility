@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -30,6 +31,8 @@ public class NbrConfirmationHandler implements Runnable {
     private NetworkTables nt;
 
     private ArrayList<String> ids = new ArrayList<String>();
+    private ScheduledExecutorService ses;
+    private DatagramSocket ucs;
 
     public NbrConfirmationHandler(NetworkHandler nh, Nodo myNode, int ucp_NbrConfirmation, int ucp_Alive, NetworkTables nt){
 
@@ -41,6 +44,14 @@ public class NbrConfirmationHandler implements Runnable {
         this.ucp_Alive = ucp_Alive;
 
         this.nt = nt;
+
+        this.ses = Executors.newSingleThreadScheduledExecutor();
+        try {
+            this.ucs = new DatagramSocket(this.ucp_NbrConfirmation);
+        } catch (SocketException e) {
+            e.printStackTrace();
+        }
+
     }
 
     private void processNbrConfirmation(NbrConfirmation nbrc) {
@@ -152,20 +163,23 @@ public class NbrConfirmationHandler implements Runnable {
             this.ids.remove(0);
     };
 
+    public void kill(){
+        this.ses.shutdownNow();
+        this.ucs.close();
+    }
+
     public void run (){
         try {
-            ScheduledExecutorService ses = Executors.newSingleThreadScheduledExecutor();
 
             Kryo kryo = new Kryo();
 
-            DatagramSocket ucs = new DatagramSocket(this.ucp_NbrConfirmation);
             byte[] buf;
             DatagramPacket dp;
 
             while (true){
                 buf = new byte[1500];
                 dp = new DatagramPacket(buf, buf.length);
-                ucs.receive(dp);
+                this.ucs.receive(dp);
 
                 ByteArrayInputStream bStream = new ByteArrayInputStream(buf);
                 Input input = new Input(bStream);
@@ -175,7 +189,7 @@ public class NbrConfirmationHandler implements Runnable {
                 if(!this.ids.contains(header.requestID)) {
 
                     this.ids.add(header.requestID);
-                    ses.schedule(removeID, 5, TimeUnit.SECONDS);
+                    this.ses.schedule(removeID, 5, TimeUnit.SECONDS);
 
                     if (header instanceof NbrConfirmation) {
                         NbrConfirmation nbrc = (NbrConfirmation) header;
@@ -184,7 +198,9 @@ public class NbrConfirmationHandler implements Runnable {
                 }
             }
 
-        } catch (IOException e) {
+        }catch (SocketException se){
+            System.out.println("\t=>NBRCONFIRMATIONHANDLER DATAGRAMSOCKET CLOSED");
+        }catch (IOException e) {
             e.printStackTrace();
         }
     }

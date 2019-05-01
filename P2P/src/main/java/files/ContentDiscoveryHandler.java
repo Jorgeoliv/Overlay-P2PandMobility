@@ -31,6 +31,7 @@ public class ContentDiscoveryHandler implements Runnable{
     private ScheduledExecutorService ses = Executors.newSingleThreadScheduledExecutor();
 
     private ArrayList<String> ids = new ArrayList<String>();
+    private DatagramSocket socket;
 
     public ContentDiscoveryHandler(FileHandler fi, NetworkTables nt, Nodo myNodo, int ucp_Discovery, int ucp_ContentOwner, IDGen idGen){
         this.fi = fi;
@@ -40,6 +41,12 @@ public class ContentDiscoveryHandler implements Runnable{
         this.ucp_Discovery = ucp_Discovery;
         this.ucp_ContentOwner = ucp_ContentOwner;
         this.idGen = idGen;
+        try {
+            this.socket = new DatagramSocket(ucp_Discovery);
+        } catch (SocketException e) {
+            e.printStackTrace();
+        }
+
     }
 
     private synchronized boolean containsRequest(String id){
@@ -111,7 +118,7 @@ public class ContentDiscoveryHandler implements Runnable{
                 this.sendFocusDiscovery(cd, n);
             }
         }
-        ses.schedule(delete(cd.requestID), 60, TimeUnit.SECONDS);
+        this.ses.schedule(delete(cd.requestID), 60, TimeUnit.SECONDS);
 
     }
 
@@ -146,9 +153,13 @@ public class ContentDiscoveryHandler implements Runnable{
             this.ids.remove(0);
     };
 
+    public void kill(){
+        this.ses.shutdownNow();
+        this.socket.close();
+    }
+
     public void run() {
         try {
-            DatagramSocket socket = new DatagramSocket(ucp_Discovery);
 
             byte[] buffer;
             DatagramPacket packet;
@@ -160,7 +171,7 @@ public class ContentDiscoveryHandler implements Runnable{
                 buffer = new byte[1500];
                 packet = new DatagramPacket(buffer, buffer.length);
 
-                socket.receive(packet);
+                this.socket.receive(packet);
 
                 ByteArrayInputStream bStream = new ByteArrayInputStream(buffer);
                 Input input = new Input(bStream);
@@ -169,7 +180,7 @@ public class ContentDiscoveryHandler implements Runnable{
                 if(!this.ids.contains(header.requestID)) {
 
                     this.ids.add(header.requestID);
-                    ses.schedule(removeID, 5, TimeUnit.SECONDS);
+                    this.ses.schedule(removeID, 5, TimeUnit.SECONDS);
 
                     if (header instanceof ContentDiscovery) {
                         ContentDiscovery cd = (ContentDiscovery) header;
@@ -213,11 +224,14 @@ public class ContentDiscoveryHandler implements Runnable{
                                 }
                             }
 
-                            ses.schedule(delete(requestID), 60, TimeUnit.SECONDS);
+                            this.ses.schedule(delete(requestID), 60, TimeUnit.SECONDS);
                         }
                     }
                 }
             }
+        }
+        catch (SocketException se){
+            System.out.println("\t=>CONTENTDISCOVERYHANDLER DATAGRAMSOCKET CLOSED");
         }
         catch (Exception e) {
             e.printStackTrace();

@@ -10,10 +10,8 @@ import mensagens.Pong;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
-import java.net.MulticastSocket;
+import java.net.*;
+import java.sql.SQLOutput;
 import java.util.ArrayList;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -21,6 +19,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class PingHandler implements Runnable{
+
+    private boolean run = true;
+
     private int softcap;
     private int hardcap;
 
@@ -45,6 +46,7 @@ public class PingHandler implements Runnable{
     private IDGen idGen;
 
     private ArrayList<String> ids = new ArrayList<String>();
+    private ScheduledExecutorService ses;
 
     public PingHandler(int softcap, int hardcap, NetworkHandler nh, IDGen idGen, Nodo myNode, InetAddress ip, int mcport, int ucport, int ttl, NetworkTables nt){
         this.softcap = softcap;
@@ -76,7 +78,7 @@ public class PingHandler implements Runnable{
             e.printStackTrace();
         }
 
-
+        this.ses = Executors.newSingleThreadScheduledExecutor();
     }
 
     private Runnable sendPing = () -> {
@@ -215,9 +217,15 @@ public class PingHandler implements Runnable{
     }
 
     private Runnable removeID = () ->{
-      if(!this.ids.isEmpty())
+        if(!this.ids.isEmpty())
           this.ids.remove(0);
     };
+
+    public void kill(){
+        this.run = false;
+        this.ses.shutdownNow();
+        this.mcs.close();
+    }
 
     public void run(){
         try{
@@ -226,16 +234,15 @@ public class PingHandler implements Runnable{
             Kryo kryo = new Kryo();
             DatagramPacket dp;
 
-            ScheduledExecutorService ses = Executors.newSingleThreadScheduledExecutor();
-
-            ses.scheduleWithFixedDelay(sendPing, 0, 10, TimeUnit.SECONDS);
-            ses.scheduleWithFixedDelay(emptyPingTray, 7, 5, TimeUnit.SECONDS);
+            this.ses.scheduleWithFixedDelay(sendPing, 0, 10, TimeUnit.SECONDS);
+            this.ses.scheduleWithFixedDelay(emptyPingTray, 7, 5, TimeUnit.SECONDS);
             InetAddress myIP = InetAddress.getByName(this.myNode.ip);
 
-            while(true){
+            while(this.run){
                 buf = new byte[1500];
                 dp = new DatagramPacket(buf, 1500);
-                mcs.receive(dp);
+                this.mcs.receive(dp);
+
                 //Filtragem por IP
 
                 if (!dp.getAddress().equals(myIP)) {
@@ -246,7 +253,7 @@ public class PingHandler implements Runnable{
 
                     if(!this.ids.contains(header.requestID)) {
                         this.ids.add(header.requestID);
-                        ses.schedule(removeID,15,TimeUnit.SECONDS);
+                        this.ses.schedule(removeID,15,TimeUnit.SECONDS);
                         if (header instanceof Ping) {
                             Ping ping = (Ping) header;
                             this.trayLock.lock();
@@ -257,7 +264,11 @@ public class PingHandler implements Runnable{
                     }
                 }
             }
-        } catch (IOException e) {
+        }
+        catch (SocketException se){
+            System.out.println("\t=>PING MULTICASSOCKET CLOSED");
+        }
+        catch (IOException e) {
             e.printStackTrace();
         }
     }

@@ -11,6 +11,7 @@ import java.io.ByteArrayOutputStream;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -27,6 +28,8 @@ public class QuitHandler implements Runnable {
     private Nodo myNode;
 
     private ArrayList<String> ids = new ArrayList<String>();
+    private ScheduledExecutorService ses;
+    private DatagramSocket ucs;
 
     public QuitHandler(NetworkHandler nh, NetworkTables nt, int ucp_Quit, IDGen idGen, Nodo myNode){
         this.ucp_Quit = ucp_Quit;
@@ -37,6 +40,12 @@ public class QuitHandler implements Runnable {
         this.idGen = idGen;
         this.myNode = myNode;
 
+        this.ses = Executors.newSingleThreadScheduledExecutor();
+        try {
+            this.ucs = new DatagramSocket(this.ucp_Quit);
+        } catch (SocketException e) {
+            e.printStackTrace();
+        }
     }
 
     public void broadCastQuit(){
@@ -102,14 +111,15 @@ public class QuitHandler implements Runnable {
             this.ids.remove(0);
     };
 
+    public void kill(){
+        this.ses.shutdownNow();
+        this.ucs.close();
+    }
+
     public void run() {
 
         try {
-            ScheduledExecutorService ses = Executors.newSingleThreadScheduledExecutor();
-
             Kryo kryo = new Kryo();
-
-            DatagramSocket ucs = new DatagramSocket(this.ucp_Quit);
 
             byte[] buf;
             DatagramPacket dp;
@@ -117,7 +127,7 @@ public class QuitHandler implements Runnable {
             while (true){
                 buf = new byte[1500];
                 dp = new DatagramPacket(buf, buf.length);
-                ucs.receive(dp);
+                this.ucs.receive(dp);
 
                 ByteArrayInputStream bStream = new ByteArrayInputStream(buf);
                 Input input = new Input(bStream);
@@ -127,13 +137,16 @@ public class QuitHandler implements Runnable {
                 if (!this.ids.contains(header.requestID)) {
 
                     this.ids.add(header.requestID);
-                    ses.schedule(removeID, 5, TimeUnit.SECONDS);
+                    this.ses.schedule(removeID, 5, TimeUnit.SECONDS);
                     if (header instanceof Quit) {
                         Quit quit = (Quit) header;
                         processQuit(quit);
                     }
                 }
             }
+        }
+        catch (SocketException se){
+            System.out.println("\t=>QUITHANDLER DATAGRAMSOCKET CLOSED");
         }
         catch (Exception e){
             e.printStackTrace();

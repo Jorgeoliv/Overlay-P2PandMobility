@@ -61,6 +61,7 @@ public class NetworkHandler implements Runnable{
     private AliveHandler aliveHandler;
     private QuitHandler quitHandler;
 
+    private ArrayList<Thread> threads;
 
     public NetworkHandler(FileTables ft) throws UnknownHostException {
         this.idgen = new IDGen(8);
@@ -88,6 +89,7 @@ public class NetworkHandler implements Runnable{
         this.aliveHandler = new AliveHandler(this, this.nt, this.myNode, this.ucp_Alive, this.idgen);
         this.quitHandler = new QuitHandler(this, this.nt, this.ucp_Quit, this.idgen, this.myNode);
 
+        this.threads = new ArrayList<Thread>();
     }
 
     public void run() {
@@ -97,6 +99,7 @@ public class NetworkHandler implements Runnable{
         System.out.println("\n--------------------------------------------\n");
         try {
             t = new Thread(this.pingHandler);
+            this.threads.add(t);
             t.start();
             System.out.println("\t=> PINGHANDLER CRIADO");
         }
@@ -107,6 +110,7 @@ public class NetworkHandler implements Runnable{
 
         try {
             t = new Thread(this.pongHandler);
+            this.threads.add(t);
             t.start();
             System.out.println("\t=> PONGHANDLER CRIADO");
         }
@@ -117,6 +121,7 @@ public class NetworkHandler implements Runnable{
 
         try {
             t = new Thread(this.nbrcHandler);
+            this.threads.add(t);
             t.start();
             System.out.println("\t=> NBRCONFIRMATIONHANDLER CRIADO");
         }
@@ -127,6 +132,7 @@ public class NetworkHandler implements Runnable{
 
         try {
             t = new Thread(this.addNbrHandler);
+            this.threads.add(t);
             t.start();
             System.out.println("\t=> ADDNBRHANDLER CRIADO");
         }
@@ -137,6 +143,7 @@ public class NetworkHandler implements Runnable{
 
         try {
             t = new Thread(this.aliveHandler);
+            this.threads.add(t);
             t.start();
             System.out.println("\t=> ALIVEHANDLER CRIADO");
         }
@@ -147,6 +154,7 @@ public class NetworkHandler implements Runnable{
 
         try {
             t = new Thread(this.quitHandler);
+            this.threads.add(t);
             t.start();
             System.out.println("\t=> QUITHANDLER CRIADO");
         }
@@ -274,6 +282,10 @@ public class NetworkHandler implements Runnable{
         return res;
     }
 
+    public void sendBroadcastQuit(){
+        this.quitHandler.broadCastQuit();
+    }
+
     public void sendQuit() {
         ArrayList<Nodo> nbrN1 = this.nt.getNbrsN1();
         HashMap <String, TreeSet <Nodo>> nbrN2 = this.nt.getNbrN2();
@@ -293,4 +305,26 @@ public class NetworkHandler implements Runnable{
         if(toRemove != null)
             this.quitHandler.sendQuit(toRemove);
     }
+
+    public void kill() {
+        try {
+            Thread.sleep(1000);
+
+            this.quitHandler.kill();
+            this.addNbrHandler.kill();
+            this.aliveHandler.kill();
+            this.nbrcHandler.kill();
+            this.pingHandler.kill();
+            this.pongHandler.kill();
+
+            Thread.sleep(100);
+
+            this.ses.shutdownNow();
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        System.out.println("NETWORKHANDLER KILLED");
+    }
+
 }

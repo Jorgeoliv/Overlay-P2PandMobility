@@ -74,10 +74,13 @@ public class FileHandler implements Runnable {
 
     private boolean drawMenu = true;
 
+    private ArrayList<Thread> threads;
+
     public FileHandler(){
         this.fileTables = new FileTables();
         this.idGen = new IDGen(8);
         this.cdResponses = new HashMap<String, ArrayList<PairNodoFileInfo>>();
+        this.threads = new ArrayList<Thread>();
     }
 
 
@@ -160,6 +163,7 @@ public class FileHandler implements Runnable {
 
         try {
             t = new Thread(this.contentDiscoveryHandler);
+            this.threads.add(t);
             t.start();
             System.out.println("\t=> CONTENTDISCOVERYHANDLER CRIADO");
         }
@@ -170,6 +174,7 @@ public class FileHandler implements Runnable {
 
         try {
             t = new Thread(this.updateHandler);
+            this.threads.add(t);
             t.start();
             System.out.println("\t=> UPDATEHANDLER CRIADO");
         }
@@ -180,6 +185,7 @@ public class FileHandler implements Runnable {
 
         try {
             t = new Thread(this.contentOwnerHandler);
+            this.threads.add(t);
             t.start();
             System.out.println("\t=> CONTENTOWNER CRIADO");
         }
@@ -190,6 +196,7 @@ public class FileHandler implements Runnable {
 
         try {
             t = new Thread(this.filePushHandler);
+            this.threads.add(t);
             t.start();
             System.out.println("\t=> FILEPUSHHANDLER CRIADO");
         }
@@ -200,6 +207,7 @@ public class FileHandler implements Runnable {
 
         try {
             t = new Thread(this.filePullHandler);
+            this.threads.add(t);
             t.start();
             System.out.println("\t=> FILEPULLHANDLER CRIADO");
         }
@@ -248,5 +256,24 @@ public class FileHandler implements Runnable {
 
     public boolean getDrawMenu(){
         return this.drawMenu;
+    }
+
+    public void kill() {
+        try {
+
+            this.filePullHandler.kill();
+            this.contentOwnerHandler.kill();
+            this.contentDiscoveryHandler.kill();
+            this.updateHandler.kill();
+            this.filePushHandler.kill();
+
+            Thread.sleep(100);
+
+            this.ses.shutdownNow();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        System.out.println("FILEHANDLER KILLED");
     }
 }

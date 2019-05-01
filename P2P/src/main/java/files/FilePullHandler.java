@@ -13,12 +13,17 @@ import java.io.ByteArrayOutputStream;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 public class FilePullHandler implements Runnable{
+
+    private boolean run = true;
+
+    private ScheduledExecutorService ses;
     private Nodo myNode;
 
     private FilePushHandler fph;
@@ -28,6 +33,7 @@ public class FilePullHandler implements Runnable{
     private int pps = 100;
 
     private ArrayList<String> ids = new ArrayList<String>();
+    private DatagramSocket ds;
 
     public FilePullHandler(int ucp_FilePull, FilePushHandler fph, IDGen idGen, Nodo myNode){
         this.myNode = myNode;
@@ -35,6 +41,13 @@ public class FilePullHandler implements Runnable{
         this.ucp_FilePullHandler = ucp_FilePull;
         this.fph = fph;
         this.idGen = idGen;
+        this.ses = Executors.newSingleThreadScheduledExecutor();
+
+        try {
+            this.ds = new DatagramSocket(this.ucp_FilePullHandler);
+        } catch (SocketException e) {
+            e.printStackTrace();
+        }
 
     }
 
@@ -89,21 +102,24 @@ public class FilePullHandler implements Runnable{
             this.ids.remove(0);
     };
 
+    public void kill(){
+        this.run = false;
+        this.ses.shutdownNow();
+        this.ds.close();
+    }
+
     public void run() {
         try{
-            ScheduledExecutorService ses = Executors.newSingleThreadScheduledExecutor();
 
             Kryo kryo = new Kryo();
             byte[] buf;
             DatagramPacket dp;
 
-            DatagramSocket ds = new DatagramSocket(this.ucp_FilePullHandler);
-
-            while(true){
+            while(this.run){
                 buf = new byte[1500];
                 dp = new DatagramPacket(buf, buf.length);
 
-                ds.receive(dp);
+                this.ds.receive(dp);
 
                 ByteArrayInputStream bStream = new ByteArrayInputStream(buf);
                 Input input = new Input(bStream);
@@ -113,7 +129,7 @@ public class FilePullHandler implements Runnable{
                 if(!this.ids.contains(header.requestID)) {
 
                     this.ids.add(header.requestID);
-                    ses.schedule(removeID, 5, TimeUnit.SECONDS);
+                    this.ses.schedule(removeID, 5, TimeUnit.SECONDS);
 
                     if (header instanceof FilePull) {
                         FilePull filepull = (FilePull) header;
@@ -121,6 +137,9 @@ public class FilePullHandler implements Runnable{
                     }
                 }
             }
+        }
+        catch (SocketException se){
+            System.out.println("\t=>FILEPULLHANDLER DATAGRAMSOCKET CLOSED");
         }
         catch(Exception e){
             e.printStackTrace();

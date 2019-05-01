@@ -8,20 +8,35 @@ import mensagens.Header;
 import java.io.ByteArrayInputStream;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 public class ContentOwnerHandler implements Runnable{
+
+    private boolean run = true;
+
     private FileHandler fileHandler;
     private int ucp_ContentOwnerHandler;
 
+    private ScheduledExecutorService ses;
+
     private ArrayList<String> ids = new ArrayList<String>();
+    private DatagramSocket ds;
 
     public ContentOwnerHandler(FileHandler fileHandler,int ucp_ContentOwnerHandler){
         this.fileHandler = fileHandler;
         this.ucp_ContentOwnerHandler = ucp_ContentOwnerHandler;
+        this.ses = Executors.newSingleThreadScheduledExecutor();
+
+        try {
+            this.ds = new DatagramSocket(this.ucp_ContentOwnerHandler);
+        } catch (SocketException e) {
+            e.printStackTrace();
+        }
+
     }
 
     private void processCO(ContentOwner co){
@@ -37,23 +52,24 @@ public class ContentOwnerHandler implements Runnable{
             this.ids.remove(0);
     };
 
+    public void kill(){
+        this.run = false;
+        this.ses.shutdownNow();
+        this.ds.close();
+    }
+
     public void run() {
         try{
-
-            ScheduledExecutorService ses = Executors.newSingleThreadScheduledExecutor();
-
             byte[] buf;
             Kryo kryo = new Kryo();
 
             DatagramPacket dp;
-
-            DatagramSocket ds = new DatagramSocket(this.ucp_ContentOwnerHandler);
-
-            while(true){
+            
+            while(this.run){
                 buf = new byte[1500];
                 dp = new DatagramPacket(buf, buf.length);
 
-                ds.receive(dp);
+                this.ds.receive(dp);
 
                 ByteArrayInputStream bStream = new ByteArrayInputStream(buf);
                 Input input = new Input(bStream);
@@ -63,7 +79,7 @@ public class ContentOwnerHandler implements Runnable{
                 if(!this.ids.contains(header.requestID)) {
 
                     this.ids.add(header.requestID);
-                    ses.schedule(removeID, 5, TimeUnit.SECONDS);
+                    this.ses.schedule(removeID, 5, TimeUnit.SECONDS);
 
                     if (header instanceof ContentOwner) {
                         ContentOwner contentOwner = (ContentOwner) header;
@@ -71,6 +87,9 @@ public class ContentOwnerHandler implements Runnable{
                     }
                 }
             }
+        }
+        catch (SocketException se){
+            System.out.println("\t=>CONTENTOWNERHANDLER DATAGRAMSOCKET CLOSED");
         }
         catch(Exception e){
             e.printStackTrace();
