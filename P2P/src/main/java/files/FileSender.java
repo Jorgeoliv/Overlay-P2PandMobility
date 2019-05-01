@@ -24,9 +24,8 @@ public class FileSender implements Runnable{
 
     private DatagramSocket ds;
     private InetAddress ipToSend;
-    private int ucp_FilePushHandler;
 
-    public FileSender(int portToSend, ArrayList<FileChunk> fc, int pps, String id, String hash, Nodo myNode, String ip, int ucp_FilePushHandler){
+    public FileSender(int portToSend, ArrayList<FileChunk> fc, int pps, String id, String hash, Nodo myNode, String ip){
         this.pps = pps;
 
         this.portToSend = portToSend;
@@ -34,7 +33,6 @@ public class FileSender implements Runnable{
         this.id = id;
         this.hash = hash;
         this.myNode = myNode;
-        this.ucp_FilePushHandler = ucp_FilePushHandler;
 
         try {
             this.ipToSend = InetAddress.getByName(ip);

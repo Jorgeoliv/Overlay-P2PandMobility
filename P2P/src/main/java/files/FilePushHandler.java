@@ -54,10 +54,6 @@ public class FilePushHandler implements Runnable{
         this.ft = ft;
     }
 
-    private int shortToInt(short s){
-        return s - Short.MIN_VALUE;
-    }
-
     public void sendFile(FilePull fp) {
 
         String id = this.idGen.getID("");
@@ -76,8 +72,8 @@ public class FilePushHandler implements Runnable{
         else {
             ArrayList<Integer> aux = new ArrayList<Integer>();
 
-            for(short s : fp.missingFileChunks)
-                aux.add(shortToInt(s));
+            for(int s : fp.missingFileChunks)
+                aux.add(s);
 
             fcArray = f.getMissingFileChunks(aux);
             System.out.println("\t\tTIVE QUE IR BUSCAR ALGUNS DOS FILECHUNKS");
@@ -101,7 +97,7 @@ public class FilePushHandler implements Runnable{
 
             i = 0;
             for (int port : fp.portas) {
-                fsPointer = new FileSender(port, fileChunks.get(i++), fp.pps, id, fp.fi.hash, this.myNode, fp.origin.ip, this.ucp_FilePushHandler);
+                fsPointer = new FileSender(port, fileChunks.get(i++), fp.pps, id, fp.fi.hash, this.myNode, fp.origin.ip);
                 t = new Thread(fsPointer);
                 t.start();
             }
@@ -112,7 +108,7 @@ public class FilePushHandler implements Runnable{
             int pos = rand.nextInt(fp.portas.length);
             int porta = fp.portas[pos];
 
-            fsPointer = new FileSender(porta, fcArray, fp.pps, id, fp.fi.hash, this.myNode, fp.origin.ip, this.ucp_FilePushHandler);
+            fsPointer = new FileSender(porta, fcArray, fp.pps, id, fp.fi.hash, this.myNode, fp.origin.ip);
             t = new Thread(fsPointer);
             t.start();
         }
@@ -179,26 +175,22 @@ public class FilePushHandler implements Runnable{
         this.fileInfos.remove(h);
     }
 
-    private short intToShort(int fcID){
-        return (short) (fcID + Short.MIN_VALUE);
-    }
-
     private void sendTimeoutPackets(String h) {
 
         ArrayList<Integer> mfc = this.ficheiros.get(h).getMissingFileChunks();
-        short[] mfcGroup;
-        int mfcGroupSize = 600;
+        int[] mfcGroup;
+        int mfcGroupSize = 425;
 
         while(!mfc.isEmpty()) {
 
             int mfcSize = mfc.size();
             if (mfcSize > mfcGroupSize)
-                mfcGroup = new short[mfcGroupSize];
+                mfcGroup = new int[mfcGroupSize];
             else
-                mfcGroup = new short[mfcSize];
+                mfcGroup = new int[mfcSize];
 
             for(int i = 0; (i < mfcGroupSize) && !mfc.isEmpty(); i++){
-                mfcGroup[i] = intToShort(mfc.get(0));
+                mfcGroup[i] = mfc.get(0);
                 mfc.remove(0);
             }
 
