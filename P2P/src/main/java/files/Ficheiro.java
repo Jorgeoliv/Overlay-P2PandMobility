@@ -1,5 +1,6 @@
 package files;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -104,15 +105,29 @@ public class Ficheiro {
     }
 
     private void writeFileToFolder(String folder){
-        String folderPath = "NODE_" + this.nodeID + "/" + folder;
-        File ficheiro = new File(folderPath);
+        String folderToWritePath = "NODE_" + this.nodeID + "/" + folder + "/" + this.fileName;
+        String folderToReadPath = "NODE_" + this.nodeID + "/tmp/" + this.fileName;
+
+        FileChunk filechunk;
+        int i = 0;
 
         try {
-            Path file = Paths.get(folderPath + "/" + this.fileName);
-            Files.write(file, this.fileAsBytes);
+            Path p;
+            FileOutputStream outputStream = new FileOutputStream(folderToWritePath, true);
+
+            while (i < this.numberOfChunks) {
+                p = Paths.get(folderToReadPath + "/" + i + ".filechunk");
+                filechunk = new FileChunk(Files.readAllBytes(p), i);
+
+                outputStream.write(filechunk.getFileChunk());
+
+                i++;
+            }
+            outputStream.close();
         }
-        catch (Exception e) {
+        catch (Exception e){
             e.printStackTrace();
+            System.out.println("ERRO AO JUNTAR OS FILECHUNKS");
         }
     }
 
@@ -120,11 +135,17 @@ public class Ficheiro {
         this.fileLock.lock();
 
         for(FileChunk fc: fcs) {
-            this.fileChunks[fc.getPlace()] = fc;
-            this.missingFileChunks.remove(new Integer(fc.getPlace()));
-            this.numberOfChunksInArray++;
-            this.fileSize += fc.getFileChunk().length;
+            if(this.missingFileChunks.contains(fc.getPlace())) {
+                this.fileChunks[fc.getPlace()] = fc;
+                this.missingFileChunks.remove(new Integer(fc.getPlace()));
+                this.numberOfChunksInArray++;
+                this.fileSize += fc.getFileChunk().length;
+            }
         }
+
+        FileChunk[] aux = fcs.toArray(new FileChunk[0]);
+
+        writeFileChunksToFolder("/tmp/", aux, fcs.size());
 
         if(this.numberOfChunksInArray == this.numberOfChunks) {
             this.full = true;
@@ -134,9 +155,7 @@ public class Ficheiro {
         }
         this.fileLock.unlock();
 
-        FileChunk[] aux = fcs.toArray(new FileChunk[0]);
 
-        writeFileChunksToFolder("/tmp/", aux, fcs.size());
 
         return this.full;
     }

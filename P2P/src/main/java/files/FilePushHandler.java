@@ -17,7 +17,7 @@ import java.util.Random;
 public class FilePushHandler implements Runnable{
     private Nodo myNode;
 
-    private int timeoutTime = 1000;
+    private int timeoutTime = 2500;
 
     private int ucp_FilePushHandler;
     private int ucp_FilePullHandler;
@@ -182,7 +182,8 @@ public class FilePushHandler implements Runnable{
         int totalNumOfFileChunks = f.getNumberOfChunks();
 
         //PERCENTAGEM DE PACOTES QUE TENHO
-        int percentage = mfc.size() * 100 / totalNumOfFileChunks;
+        int percentage = (totalNumOfFileChunks - mfc.size()) * 100 / totalNumOfFileChunks;
+        System.out.println("TENHO ESTA PERCENTAGEM " + mfc.size() + " *100/ " +totalNumOfFileChunks + " =======> " + percentage);
 
         //OBTER AS PORTAS QUE ESTAO A RECEBER O FICHEIRO
         int[] portas = new int[this.fileReceivers.get(h).size()];
@@ -205,9 +206,15 @@ public class FilePushHandler implements Runnable{
             byte[] serializedTimeoutPacket = bStream.toByteArray();
 
             try {
-                System.out.println("ENVIEI O TIMEOUTPACKET " + "\n\t" + this.fileOwners.get(h).ip + "\n\t" + this.ucp_FilePullHandler + "\n\t" + this.fileInfos.get(h).hash + "\n\t" + "mfc.size = null");
+                DatagramSocket ds = new DatagramSocket();
                 DatagramPacket packet = new DatagramPacket(serializedTimeoutPacket, serializedTimeoutPacket.length, InetAddress.getByName(this.fileOwners.get(h).ip), this.ucp_FilePullHandler);
-                (new DatagramSocket()).send(packet);
+
+                ds.send(packet);
+                Thread.sleep(50);
+                ds.send(packet);
+                Thread.sleep(50);
+                ds.send(packet);
+                System.out.println("ENVIEI O TIMEOUTPACKET " + "\n\t" + this.fileOwners.get(h).ip + "\n\t" + this.ucp_FilePullHandler + "\n\t" + this.fileInfos.get(h).hash + "\n\t" + "mfc.size = null");
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -278,7 +285,7 @@ public class FilePushHandler implements Runnable{
                     if (packets == 0 && !filePointer.getFull()) {
                         to = this.timeouts.get(h) + 1;
                         this.timeouts.put(h, to);
-                        System.out.println("TIMEOUT NA TRANSFERÊNCIA DE " + filePointer.getFileName());
+                        System.out.println("TIMEOUT NA TRANSFERÊNCIA DE " + filePointer.getFileName() + "\n\tPackets: " + packets + "\n\tFULL? " + filePointer.getFull());
                     }
                     else {
                         if (filePointer.getFull()) {
