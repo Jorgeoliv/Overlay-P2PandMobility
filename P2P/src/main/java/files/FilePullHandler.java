@@ -14,7 +14,9 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 public class FilePullHandler implements Runnable{
     private Nodo myNode;
@@ -25,6 +27,8 @@ public class FilePullHandler implements Runnable{
 
     private int pps = 100;
 
+    private ArrayList<String> ids = new ArrayList<String>();
+
     public FilePullHandler(int ucp_FilePull, FilePushHandler fph, IDGen idGen, Nodo myNode){
         this.myNode = myNode;
 
@@ -34,21 +38,11 @@ public class FilePullHandler implements Runnable{
 
     }
 
-    private void processFPH(DatagramPacket dp) {
-        byte[] buf;
-        Kryo kryo = new Kryo();
-        buf = dp.getData();
-        ByteArrayInputStream bStream = new ByteArrayInputStream(buf);
-        Input input = new Input(bStream);
-        Header header = (Header) kryo.readClassAndObject(input);
-        input.close();
+    private void processFPH(FilePull fp) {
 
-        if(header instanceof FilePull) {
-            FilePull fp = (FilePull) header;
-            System.out.println("RECEBI O FILEPULL " + "\n\t" + fp.fi.name + "\n\t" + fp.fi.hash);
-            System.out.println("O MISSING FILECHUNKS ARRAY É " + fp.missingFileChunks);
-            this.fph.sendFile(fp);
-        }
+        System.out.println("RECEBI O FILEPULL " + "\n\t" + fp.fi.name + "\n\t" + fp.fi.hash);
+        System.out.println("O MISSING FILECHUNKS ARRAY É " + fp.missingFileChunks);
+        this.fph.sendFile(fp);
     }
 
     public void send(PairNodoFileInfo choice) {
@@ -73,8 +67,15 @@ public class FilePullHandler implements Runnable{
         byte[] serializedPing = bStream.toByteArray();
         System.out.println("É ISTO QUE QUERO VER!!!!!!!!!!!!!!!!!!!!!!" + serializedPing.length);
         try {
+            DatagramSocket ds = new DatagramSocket();
             DatagramPacket packet = new DatagramPacket(serializedPing, serializedPing.length, InetAddress.getByName(choice.nodo.ip), this.ucp_FilePullHandler);
-            (new DatagramSocket()).send(packet);
+
+            ds.send(packet);
+            Thread.sleep(50);
+            ds.send(packet);
+            Thread.sleep(50);
+            ds.send(packet);
+
             System.out.println("ENVIEI O FILEPULL " + "\n\t" + choice.nodo.ip + "\n\t" + this.ucp_FilePullHandler + "\n\t" + choice.fileInfo.hash);
             this.fph.startReceivers(choice.fileInfo.hash);
         }
@@ -83,22 +84,42 @@ public class FilePullHandler implements Runnable{
         }
     }
 
+    private Runnable removeID = () ->{
+        if(!this.ids.isEmpty())
+            this.ids.remove(0);
+    };
+
     public void run() {
         try{
+            ScheduledExecutorService ses = Executors.newSingleThreadScheduledExecutor();
 
-
+            Kryo kryo = new Kryo();
             byte[] buf;
-            DatagramPacket filepull;
+            DatagramPacket dp;
 
             DatagramSocket ds = new DatagramSocket(this.ucp_FilePullHandler);
 
             while(true){
                 buf = new byte[1500];
-                filepull = new DatagramPacket(buf, buf.length);
+                dp = new DatagramPacket(buf, buf.length);
 
-                ds.receive(filepull);
+                ds.receive(dp);
 
-                processFPH(filepull);
+                ByteArrayInputStream bStream = new ByteArrayInputStream(buf);
+                Input input = new Input(bStream);
+                Header header = (Header) kryo.readClassAndObject(input);
+                input.close();
+
+                if(!this.ids.contains(header.requestID)) {
+
+                    this.ids.add(header.requestID);
+                    ses.schedule(removeID, 5, TimeUnit.SECONDS);
+
+                    if (header instanceof FilePull) {
+                        FilePull filepull = (FilePull) header;
+                        processFPH(filepull);
+                    }
+                }
             }
         }
         catch(Exception e){

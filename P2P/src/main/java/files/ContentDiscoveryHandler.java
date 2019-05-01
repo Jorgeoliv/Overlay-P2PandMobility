@@ -30,7 +30,7 @@ public class ContentDiscoveryHandler implements Runnable{
     private TreeSet<String> discoveryRequest = new TreeSet<>();
     private ScheduledExecutorService ses = Executors.newSingleThreadScheduledExecutor();
 
-    public ContentDiscoveryHandler(){}
+    private ArrayList<String> ids = new ArrayList<String>();
 
     public ContentDiscoveryHandler(FileHandler fi, NetworkTables nt, Nodo myNodo, int ucp_Discovery, int ucp_ContentOwner, IDGen idGen){
         this.fi = fi;
@@ -77,10 +77,16 @@ public class ContentDiscoveryHandler implements Runnable{
 
             byte[] serializedMessage = bStream.toByteArray();
 
+            DatagramSocket ds = new DatagramSocket();
             DatagramPacket packet = new DatagramPacket(serializedMessage, serializedMessage.length, InetAddress.getByName(n.ip), this.ucp_Discovery);
-            new DatagramSocket().send(packet);
-            System.out.println("ENVIEI UM FOCUS DISCOVERY");
 
+            ds.send(packet);
+            Thread.sleep(50);
+            ds.send(packet);
+            Thread.sleep(50);
+            ds.send(packet);
+
+            System.out.println("ENVIEI FOCUS DISCOVERY");
         }
         catch (Exception e) {
             e.printStackTrace();
@@ -119,15 +125,26 @@ public class ContentDiscoveryHandler implements Runnable{
 
             byte[] serializedMessage = bStream.toByteArray();
 
+            DatagramSocket ds = new DatagramSocket();
             DatagramPacket packet = new DatagramPacket(serializedMessage, serializedMessage.length, InetAddress.getByName(dest.ip), this.ucp_ContentOwner);
-            (new DatagramSocket()).send(packet);
-            System.out.println("ENVIEI UM OWNER");
 
+            ds.send(packet);
+            Thread.sleep(50);
+            ds.send(packet);
+            Thread.sleep(50);
+            ds.send(packet);
+
+            System.out.println("ENVIEI OWNER");
         }
         catch (Exception e) {
             e.printStackTrace();
         }
     }
+
+    private Runnable removeID = () ->{
+        if(!this.ids.isEmpty())
+            this.ids.remove(0);
+    };
 
     public void run() {
         try {
@@ -149,54 +166,56 @@ public class ContentDiscoveryHandler implements Runnable{
                 Input input = new Input(bStream);
                 Header header = (Header) kryo.readClassAndObject(input);
                 input.close();
+                if(!this.ids.contains(header.requestID)) {
 
-                if(header instanceof ContentDiscovery){
-                    ContentDiscovery cd = (ContentDiscovery) header;
+                    this.ids.add(header.requestID);
+                    ses.schedule(removeID, 5, TimeUnit.SECONDS);
 
-                    String requestID = cd.requestID;
-                    if(!containsRequest(requestID)){
-                        addRequest(requestID);
+                    if (header instanceof ContentDiscovery) {
+                        ContentDiscovery cd = (ContentDiscovery) header;
 
-                        System.out.println("Recebi um content discovery que pede o ficheiro: " + cd.fileName);
+                        String requestID = cd.requestID;
+                        if (!containsRequest(requestID)) {
+                            addRequest(requestID);
 
-                        String filename = cd.fileName;
-                        //Primeiro verificar se eu tenho o ficheiro <- Depois podemos sacar o ficheiro logo e verificar se é null
-                        if(this.ft.itsMyFile(filename)){
-                            System.out.println("\tSou eu o Nodo " + this.myNodo + " que tem o ficheiro: " + filename);
-                            FileInfo fileToSend = this.ft.getMyFile(filename);
-                            ContentOwner co = new ContentOwner(this.idGen.getID(""), this.myNodo, fileToSend, cd.requestID);
-                            this.sendOwner(co, cd.requester);
-                        }
-                        else{
-                            //Depois vou verificar se algum dos meus vizinhos tem o ficheiro
-                            HashSet<Nodo> fileInNbr = this.ft.nbrWithFile(filename);
-                            //VOu me colocar a mim como antecessor
-                            cd.antecessor = myNodo;
-                            cd.route.add(myNodo.id);
+                            System.out.println("Recebi um content discovery que pede o ficheiro: " + cd.fileName);
 
-                            if(fileInNbr != null){
-                                //Só preciso de enviar o DiscoveryContent para os meus vizinhos do hashset ...
-                                System.out.println("\tO ficheiro está num dos meus vizinhos ...");
-                                cd.ttl = 1;
-                                for(Nodo n: fileInNbr){
-                                    this.sendFocusDiscovery(cd, n);
-                                }
-                            }
-                            else{
-                                //Preciso de enviar o discoveryContent para todos os vizinhos desde que o ttl ainda seja maior do que zero...
-                                cd.ttl--;
-                                System.out.println("Não sei onde é que está o ficheiro ...");
-                                if(cd.ttl != 0){
-                                    ArrayList<Nodo> nodos = nt.getNbrsN1();
-                                    for(Nodo n: nodos)
+                            String filename = cd.fileName;
+                            //Primeiro verificar se eu tenho o ficheiro <- Depois podemos sacar o ficheiro logo e verificar se é null
+                            if (this.ft.itsMyFile(filename)) {
+                                System.out.println("\tSou eu o Nodo " + this.myNodo + " que tem o ficheiro: " + filename);
+                                FileInfo fileToSend = this.ft.getMyFile(filename);
+                                ContentOwner co = new ContentOwner(this.idGen.getID(""), this.myNodo, fileToSend, cd.requestID);
+                                this.sendOwner(co, cd.requester);
+                            } else {
+                                //Depois vou verificar se algum dos meus vizinhos tem o ficheiro
+                                HashSet<Nodo> fileInNbr = this.ft.nbrWithFile(filename);
+                                //VOu me colocar a mim como antecessor
+                                cd.antecessor = myNodo;
+                                cd.route.add(myNodo.id);
+
+                                if (fileInNbr != null) {
+                                    //Só preciso de enviar o DiscoveryContent para os meus vizinhos do hashset ...
+                                    System.out.println("\tO ficheiro está num dos meus vizinhos ...");
+                                    cd.ttl = 1;
+                                    for (Nodo n : fileInNbr) {
                                         this.sendFocusDiscovery(cd, n);
+                                    }
+                                } else {
+                                    //Preciso de enviar o discoveryContent para todos os vizinhos desde que o ttl ainda seja maior do que zero...
+                                    cd.ttl--;
+                                    System.out.println("Não sei onde é que está o ficheiro ...");
+                                    if (cd.ttl != 0) {
+                                        ArrayList<Nodo> nodos = nt.getNbrsN1();
+                                        for (Nodo n : nodos)
+                                            this.sendFocusDiscovery(cd, n);
+                                    }
                                 }
                             }
+
+                            ses.schedule(delete(requestID), 60, TimeUnit.SECONDS);
                         }
-
-                        ses.schedule(delete(requestID), 60, TimeUnit.SECONDS);
                     }
-
                 }
             }
         }

@@ -124,6 +124,7 @@ public class Ficheiro {
                 i++;
             }
             outputStream.close();
+            System.out.println("FICHEIRO MONTADO COM SUCESSO");
         }
         catch (Exception e){
             e.printStackTrace();

@@ -98,13 +98,14 @@ public class PingHandler implements Runnable{
 
         byte[] serializedPing = bStream.toByteArray();
 
-        DatagramPacket packet = new DatagramPacket(serializedPing, serializedPing.length, this.groupIP, this.mcport);
-
-
         try {
-            new MulticastSocket().send(packet);
+
+            MulticastSocket ms = new MulticastSocket();
+            DatagramPacket packet = new DatagramPacket(serializedPing, serializedPing.length, this.groupIP, this.mcport);
+
+            ms.send(packet);
             Thread.sleep(100);
-            new MulticastSocket().send(packet);
+            ms.send(packet);
             //System.out.println("PING "+ id + " ENVIADO\n");
         } catch (Exception e) {
             e.printStackTrace();

@@ -183,7 +183,7 @@ public class FilePushHandler implements Runnable{
 
         //PERCENTAGEM DE PACOTES QUE TENHO
         int percentage = (totalNumOfFileChunks - mfc.size()) * 100 / totalNumOfFileChunks;
-        System.out.println("TENHO ESTA PERCENTAGEM " + mfc.size() + " *100/ " +totalNumOfFileChunks + " =======> " + percentage);
+        System.out.println("TENHO ESTA PERCENTAGEM  =======> " + percentage + "%");
 
         //OBTER AS PORTAS QUE ESTAO A RECEBER O FICHEIRO
         int[] portas = new int[this.fileReceivers.get(h).size()];
@@ -251,9 +251,17 @@ public class FilePushHandler implements Runnable{
                 byte[] serializedTimeoutPacket = bStream.toByteArray();
 
                 try {
-                    System.out.println("ENVIEI O TIMEOUTPACKET " + "\n\t" + this.fileOwners.get(h).ip + "\n\t" + this.ucp_FilePullHandler + "\n\t" + this.fileInfos.get(h).hash + "\n\t" + "mfc.size = " + mfcGroup.length + " => " + serializedTimeoutPacket.length + " bytes");
+
+                    DatagramSocket ds = new DatagramSocket();
                     DatagramPacket packet = new DatagramPacket(serializedTimeoutPacket, serializedTimeoutPacket.length, InetAddress.getByName(this.fileOwners.get(h).ip), this.ucp_FilePullHandler);
-                    (new DatagramSocket()).send(packet);
+
+                    ds.send(packet);
+                    Thread.sleep(50);
+                    ds.send(packet);
+                    Thread.sleep(50);
+                    ds.send(packet);
+
+                    System.out.println("ENVIEI O TIMEOUTPACKET " + "\n\t" + this.fileOwners.get(h).ip + "\n\t" + this.ucp_FilePullHandler + "\n\t" + this.fileInfos.get(h).hash + "\n\t" + "mfc.size = " + mfcGroup.length + " => " + serializedTimeoutPacket.length + " bytes");
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
