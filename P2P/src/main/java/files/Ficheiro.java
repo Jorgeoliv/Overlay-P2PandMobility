@@ -79,6 +79,8 @@ public class Ficheiro {
         int i;
         String folderPath = "NODE_" + this.nodeID + "/" + folder + "/" + this.fileName;
         File ficheiro = new File(folderPath);
+        File filePointer;
+        String path;
 
         while((!ficheiro.exists() && !ficheiro.isDirectory()) && !ficheiro.mkdir());
 
@@ -86,8 +88,14 @@ public class Ficheiro {
         for(i = 0; i < size; i++){
             try {
                 FileChunk fc = fcs[i];
-                file = Paths.get(folderPath + "/" + fc.getPlace() + ".filechunk");
-                Files.write(file, fc.getFileChunk());
+                path = folderPath + "/" + fc.getPlace() + ".filechunk";
+                filePointer = new File(path);
+
+                //SO VAI ESCREVER O FICHEIRO SE ELE NAO EXISTIR
+                if(!filePointer.exists()) {
+                    file = Paths.get(path);
+                    Files.write(file, fc.getFileChunk());
+                }
             }
                 catch (Exception e) {
                 e.printStackTrace();

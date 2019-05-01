@@ -176,33 +176,24 @@ public class FilePushHandler implements Runnable{
     }
 
     private void sendTimeoutPackets(String h) {
+        //INFO RELATIVA AO FICHEIRO
+        Ficheiro f = this.ficheiros.get(h);
+        ArrayList<Integer> mfc = f.getMissingFileChunks();
+        int totalNumOfFileChunks = f.getNumberOfChunks();
 
-        ArrayList<Integer> mfc = this.ficheiros.get(h).getMissingFileChunks();
-        int[] mfcGroup;
-        int mfcGroupSize = 425;
+        //PERCENTAGEM DE PACOTES QUE TENHO
+        int percentage = mfc.size() * 100 / totalNumOfFileChunks;
 
-        while(!mfc.isEmpty()) {
+        //OBTER AS PORTAS QUE ESTAO A RECEBER O FICHEIRO
+        int[] portas = new int[this.fileReceivers.get(h).size()];
+        int j = 0;
+        for (FileReceiver fr : this.fileReceivers.get(h)) {
+            portas[j++] = fr.port;
+        }
 
-            int mfcSize = mfc.size();
-            if (mfcSize > mfcGroupSize)
-                mfcGroup = new int[mfcGroupSize];
-            else
-                mfcGroup = new int[mfcSize];
-
-            for(int i = 0; (i < mfcGroupSize) && !mfc.isEmpty(); i++){
-                mfcGroup[i] = mfc.get(0);
-                mfc.remove(0);
-            }
-
-            System.out.println("FALTAM " + this.ficheiros.get(h).getNumberOfMissingFileChunks() + " de " + this.ficheiros.get(h).getNumberOfChunks());
-
-            int[] portas = new int[this.fileReceivers.get(h).size()];
-            int j = 0;
-            for (FileReceiver fr : this.fileReceivers.get(h)) {
-                portas[j++] = fr.port;
-            }
-
-            FilePull fp = new FilePull(this.idGen.getID(""), this.myNode, this.fileInfos.get(h), portas, this.TimeOutpps, mfcGroup);
+        if(percentage < 40){
+            //CASO NAO TENHA PELO MENOS ESTA PERCENTAGEM IREI PEDIR O FICHEIRO TODO DE NOVO
+            FilePull fp = new FilePull(this.idGen.getID(""), this.myNode, this.fileInfos.get(h), portas, this.TimeOutpps, null);
 
             ByteArrayOutputStream bStream = new ByteArrayOutputStream();
             Output output = new Output(bStream);
@@ -214,11 +205,51 @@ public class FilePushHandler implements Runnable{
             byte[] serializedTimeoutPacket = bStream.toByteArray();
 
             try {
-                System.out.println("ENVIEI O TIMEOUTPACKET " + "\n\t" + this.fileOwners.get(h).ip + "\n\t" + this.ucp_FilePullHandler + "\n\t" + this.fileInfos.get(h).hash + "\n\t" + "mfc.size = " + mfcGroup.length + " => " + serializedTimeoutPacket.length + " bytes");
+                System.out.println("ENVIEI O TIMEOUTPACKET " + "\n\t" + this.fileOwners.get(h).ip + "\n\t" + this.ucp_FilePullHandler + "\n\t" + this.fileInfos.get(h).hash + "\n\t" + "mfc.size = null");
                 DatagramPacket packet = new DatagramPacket(serializedTimeoutPacket, serializedTimeoutPacket.length, InetAddress.getByName(this.fileOwners.get(h).ip), this.ucp_FilePullHandler);
                 (new DatagramSocket()).send(packet);
             } catch (Exception e) {
                 e.printStackTrace();
+            }
+        }
+        else {
+
+            int[] mfcGroup;
+            int mfcGroupSize = 425;
+
+            while (!mfc.isEmpty()) {
+
+                int mfcSize = mfc.size();
+                if (mfcSize > mfcGroupSize)
+                    mfcGroup = new int[mfcGroupSize];
+                else
+                    mfcGroup = new int[mfcSize];
+
+                for (int i = 0; (i < mfcGroupSize) && !mfc.isEmpty(); i++) {
+                    mfcGroup[i] = mfc.get(0);
+                    mfc.remove(0);
+                }
+
+                System.out.println("FALTAM " + this.ficheiros.get(h).getNumberOfMissingFileChunks() + " de " + this.ficheiros.get(h).getNumberOfChunks());
+
+                FilePull fp = new FilePull(this.idGen.getID(""), this.myNode, this.fileInfos.get(h), portas, this.TimeOutpps, mfcGroup);
+
+                ByteArrayOutputStream bStream = new ByteArrayOutputStream();
+                Output output = new Output(bStream);
+
+                Kryo kryo = new Kryo();
+                kryo.writeClassAndObject(output, fp);
+                output.close();
+
+                byte[] serializedTimeoutPacket = bStream.toByteArray();
+
+                try {
+                    System.out.println("ENVIEI O TIMEOUTPACKET " + "\n\t" + this.fileOwners.get(h).ip + "\n\t" + this.ucp_FilePullHandler + "\n\t" + this.fileInfos.get(h).hash + "\n\t" + "mfc.size = " + mfcGroup.length + " => " + serializedTimeoutPacket.length + " bytes");
+                    DatagramPacket packet = new DatagramPacket(serializedTimeoutPacket, serializedTimeoutPacket.length, InetAddress.getByName(this.fileOwners.get(h).ip), this.ucp_FilePullHandler);
+                    (new DatagramSocket()).send(packet);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
         }
     }
