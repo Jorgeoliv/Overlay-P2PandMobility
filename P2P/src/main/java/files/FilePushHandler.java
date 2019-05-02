@@ -73,26 +73,29 @@ public class FilePushHandler implements Runnable{
 
         for (byte ta : toAdd){
             toAddAux = (int)ta - Byte.MIN_VALUE;
-            System.out.println("THIS HERE => " + toAddAux);
-            if(toAddAux == 0){
-                //System.out.println("TO ADD ERA 0");
-                currentID += (maxValue * 8);
-            }
-            else{
-                for(pointer = 0; pointer < 8; pointer ++) {
-                    if (toAddAux % 2 == 0) {
-                        //System.out.println("TO ADD ERA PAR");
-                        currentID += maxValue;
-                    } else {
-                        //System.out.println("TO ADD ERA IMPAR");
-                        currentID += ((int) inc[i++]) - Byte.MIN_VALUE;
-                        res.add(currentID);
-                    }
+            //System.out.println("THIS HERE => " + toAddAux);
+
+            for(pointer = 0; pointer < 8 && i < inc.length; pointer ++) {
+                if (toAddAux % 2 == 0) {
+                    //System.out.println("TO ADD ERA PAR");
+                    currentID += maxValue;
                 }
+                else {
+                    //System.out.println("TO ADD ERA IMPAR |" + "inc[" + i + "] = " + inc[i]);
+                    currentID += ((int) inc[i++]) - Byte.MIN_VALUE;
+                    res.add(currentID);
+                }
+                toAddAux /=2;
             }
+/*            if(pointer == 8)
+                System.out.println("POINTER");
+            else
+                System.out.println("INC SIZE | POINTER => " + pointer);*/
+
         }
 
-        System.out.println(res);
+
+        //System.out.println(res);
         return res;
     }
 
@@ -216,12 +219,12 @@ public class FilePushHandler implements Runnable{
 
     private FCIDStruct getFCIDStruct(ArrayList<Integer> mfcGroup){
 
-        System.out.println(mfcGroup);
+        //System.out.println(mfcGroup);
 
         int referenceID = mfcGroup.get(0);
         int currentID = referenceID;
         int counter = 0;
-        ArrayList<Byte> toAdd = new ArrayList<Byte>();
+        ArrayList<Integer> toAdd = new ArrayList<Integer>();
         int toAddAux = 0;
         int pointer = 0;
 
@@ -234,7 +237,7 @@ public class FilePushHandler implements Runnable{
         for(int id : mfcGroup){
             while(currentID + dif < id){
                 if(pointer == 8) {
-                    toAdd.add((byte)(toAddAux + Byte.MIN_VALUE));
+                    toAdd.add(toAddAux);
                     //System.out.println("TO ADD => (int)" + toAddAux + " (byte)" + (byte)(toAddAux + Byte.MIN_VALUE));
                     pointer = 0;
                     toAddAux = 0;
@@ -244,7 +247,7 @@ public class FilePushHandler implements Runnable{
                 currentID +=  dif;
             }
             if(pointer == 8) {
-                toAdd.add((byte)(toAddAux + Byte.MIN_VALUE));
+                toAdd.add(toAddAux);
                 //System.out.println("TO ADD => (int)" + toAddAux + " (byte)" + (byte)(toAddAux + Byte.MIN_VALUE));
                 pointer = 0;
                 toAddAux = 0;
@@ -257,68 +260,63 @@ public class FilePushHandler implements Runnable{
             currentID = id;
             counter++;
         }
-
         if(pointer == 8) {
-            toAdd.add((byte) (toAddAux + Byte.MIN_VALUE));
-            System.out.println("TO ADD => (int)" + toAddAux + " (byte)" + (byte) (toAddAux + Byte.MIN_VALUE) + "\n\tpointer => " + pointer);
+            toAdd.add(toAddAux);
+            //System.out.println("TO ADD => (int)" + toAddAux + "\n\tpointer => " + pointer);
         }
 
         ArrayList<Byte> invertedToAdd = new ArrayList<Byte>();
-        byte invertedToAddAux = 0, aux = 127;
+        int invertedToAddAux, aux=-10000000;
+        byte auxb = 0;
 
-        for(byte b : toAdd){
+        for(int b : toAdd){
             //System.out.println("ANTES => " + b);
             invertedToAddAux = 0;
-            if(b != 0) {
-                if(b != 127) {
-                    for (int i = 0; i < 8; i++) {
-                        if (b % 2 == 0)
-                            invertedToAddAux *= 2;
-                        else {
-                            invertedToAddAux++;
-                            invertedToAddAux *= 2;
-                        }
-                         b /=2;
-                    }
-                }
-                else
-                    invertedToAddAux = 127;
+
+            for (int i = 0; i < 8; i++) {
+                invertedToAddAux *= 2;
+                if (b % 2 == 1)
+                    invertedToAddAux++;
+                 b /=2;
             }
 
             //System.out.println("DEPOIS => " + invertedToAddAux);
-            invertedToAdd.add(invertedToAddAux);
             aux = invertedToAddAux;
+            auxb = (byte)(invertedToAddAux - Byte.MIN_VALUE);
+            invertedToAdd.add((byte)(invertedToAddAux - Byte.MIN_VALUE));
         }
 
-        byte lastPointer = (byte) (toAddAux + Byte.MIN_VALUE);
-        if(pointer != 8){
+        if(pointer < 8){
+            //System.out.println("TO ADD => (int)" + toAddAux + "\n\tpointer => " + pointer);
             invertedToAddAux = 0;
-            System.out.println("TO ADD => (int)" + toAddAux + " (byte)" + (byte) (toAddAux + Byte.MIN_VALUE) + "\n\tpointer => " + pointer);
-            for (int i = 0; i < pointer; i++) {
-                if (lastPointer% 2 == 0)
-                    invertedToAddAux *= 2;
-                else {
-                    invertedToAddAux++;
-                    invertedToAddAux *= 2;
-                }
-                lastPointer /=2;
-            }
-            invertedToAdd.add(invertedToAddAux);
-            aux = invertedToAddAux;
-        }
-        System.out.println("FICOU COM ESTE VALOR => " + aux);
 
+            for (int i = 0; i < pointer; i++) {
+                invertedToAddAux *= 2;
+                if (toAddAux % 2 == 1)
+                    invertedToAddAux++;
+                toAddAux /=2;
+
+            }
+            aux = invertedToAddAux;
+            auxb = (byte)(invertedToAddAux - Byte.MIN_VALUE);
+            invertedToAdd.add((byte)(invertedToAddAux - Byte.MIN_VALUE));
+        }
+
+        //System.out.println("INVERTED => " + aux + "\nIN BYTE => " + auxb);
+        //System.out.println("\tINC SIZE => " + inc.size() + "\n\tTO ADD SIZE => " + toAdd.size() + "\n\tINVERTED TO ADO SIZ => " + invertedToAdd.size() + "\n\tPOINTER => " + pointer);
         byte[] toAddArray = new byte[invertedToAdd.size()];
         for(int i = 0; i < invertedToAdd.size(); i++)
             toAddArray [i] = invertedToAdd.get(i);
 
         byte[] incArray = new byte[inc.size()];
-        for(int i = 0; i < inc.size(); i++)
+        for(int i = 0; i < inc.size(); i++) {
+            //System.out.println("inc[" + i + "] = " + inc.get(i));
             incArray[i] = inc.get(i);
+        }
 
         FCIDStruct structPointer = new FCIDStruct(referenceID, toAddArray, incArray);
 
-        System.out.println("TENHO " + counter + " IDS");
+        System.out.println("TENHO " + counter +1 + " IDS");
         return structPointer;
     }
 
@@ -369,7 +367,7 @@ public class FilePushHandler implements Runnable{
         else {
 
             ArrayList<Integer> mfcGroup = new ArrayList<Integer>();
-            int mfcGroupSize = 1097;
+            int mfcGroupSize = 1000;
 
             while (!mfc.isEmpty()) {
 

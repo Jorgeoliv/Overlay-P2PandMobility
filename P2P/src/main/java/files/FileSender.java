@@ -76,7 +76,7 @@ public class FileSender implements Runnable{
                 counter++;
                 Thread.sleep(1000/this.pps);
 
-                if(tam < 100){
+                if(tam <= 1500){
                     sendFileChunk(this.fcToSend.get(i));
                     counter++;
                     Thread.sleep(1000/this.pps);
