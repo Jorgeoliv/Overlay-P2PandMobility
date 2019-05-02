@@ -108,43 +108,35 @@ public class FilePushHandler implements Runnable{
         Ficheiro f = this.ft.getFicheiro(fp.fi.name);
         System.out.println("NUMERO DE FILECHUNKS " + f.getNumberOfChunks() + "\n\n");
 
-        int numOfFileChunks;
-        FileChunk[] fc = null;
         ArrayList<FileChunk> fcArray = null;
 
-        if(fp.missingFileChunks == null){
-            fc = f.getFileChunks();
-            System.out.println("TIVE QUE IR BUSCAR OS FILECHUNKS TODOS");
-            numOfFileChunks = f.getNumberOfChunks();
-        }
-        else {
+        if(fp.missingFileChunks != null){
+
             ArrayList<Integer> aux = getIDsFromFCIDStruct(fp.missingFileChunks);
 
             fcArray = f.getMissingFileChunks(aux);
             System.out.println("\t\tTIVE QUE IR BUSCAR ALGUNS DOS FILECHUNKS");
-            numOfFileChunks = aux.size();
         }
-        ArrayList<ArrayList<FileChunk>> fileChunks = new ArrayList<ArrayList<FileChunk>>();
 
         FileSender fsPointer;
         Thread t;
-        //verificar o numero de threads
-
-        int i, nfcReceivers = fp.portas.length;
 
         if(fp.missingFileChunks == null) {
-            //mais que 1 thread pois são muitos pacotes
-            for (i = 0; i < nfcReceivers; i++)
-                fileChunks.add(new ArrayList<FileChunk>());
 
-            for (i = 0; i < numOfFileChunks; i++)
-                fileChunks.get(i % nfcReceivers).add(fc[i]);
+            int nfcReceivers = fp.portas.length;
+            ArrayList<FileChunk> fileChunks = new ArrayList<FileChunk>();
 
-            i = 0;
-            for (int port : fp.portas) {
-                fsPointer = new FileSender(port, fileChunks.get(i++), fp.pps, id, fp.fi.hash, this.myNode, fp.origin.ip);
+            int packetsPerThread = (int) Math.ceil(fp.fi.numOfFileChunks / nfcReceivers);
+            int pointer = 0, portPointer = 0;
+
+            while(pointer < fp.fi.numOfFileChunks){
+                fileChunks = f.getFileChunks(pointer, packetsPerThread);
+
+                fsPointer = new FileSender(fp.portas[portPointer++], fileChunks, fp.pps, id, fp.fi.hash, this.myNode, fp.origin.ip);
                 t = new Thread(fsPointer);
                 t.start();
+
+                pointer += packetsPerThread;
             }
         }
         else{

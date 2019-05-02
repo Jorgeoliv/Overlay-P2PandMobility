@@ -148,21 +148,19 @@ public class Ficheiro {
         return res;
     }
 
-    public FileChunk[] getFileChunks(){
-
+    public ArrayList<FileChunk> getFileChunks(int start, int len){
+        start += Integer.MIN_VALUE;
         String tmpFolder = "NODE_" + this.nodeID + "/tmp/" + this.fileName;
 
         File ficheiro = new File (tmpFolder);
-        FileChunk [] fChunks = null;
+        ArrayList<FileChunk> fChunks = null;
 
         try {
             if(ficheiro.exists() && ficheiro.isDirectory()){
-                fChunks = new FileChunk[this.numberOfChunks];
-                int i;
-                int maxID = this.numberOfChunks + Integer.MIN_VALUE;
+                fChunks = new ArrayList<FileChunk>();
 
-                for(i = 0; i < this.numberOfChunks; i++){
-                    fChunks[i] = new FileChunk(Files.readAllBytes(Paths.get(tmpFolder + "/" + (i + Integer.MIN_VALUE) + ".filechunk")), (i+ Integer.MIN_VALUE));
+                for(int i = 0; i < len; i++, start++){
+                    fChunks.add(new FileChunk(Files.readAllBytes(Paths.get(tmpFolder + "/" + start + ".filechunk")), start));
                 }
 
             }
