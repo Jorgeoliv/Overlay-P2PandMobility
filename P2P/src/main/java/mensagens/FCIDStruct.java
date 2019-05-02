@@ -1,15 +1,15 @@
 package mensagens;
 
 public class FCIDStruct{
-    public byte order;
-    public FCIDStruct[] group;
-    public byte[] ids;
+    public int referenceID;
+    public byte[] toAdd;
+    public byte[] inc;
 
     public FCIDStruct(){}
 
-    public FCIDStruct(byte order, FCIDStruct[] group, byte[] ids){
-        this.order = order;
-        this.group = group;
-        this.ids = ids;
+    public FCIDStruct(int referenceID , byte[] toAdd, byte[] inc){
+        this.referenceID = referenceID ;
+        this.toAdd = toAdd;
+        this.inc = inc;
     }
 }

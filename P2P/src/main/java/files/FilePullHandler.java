@@ -54,7 +54,6 @@ public class FilePullHandler implements Runnable{
     private void processFPH(FilePull fp) {
 
         System.out.println("RECEBI O FILEPULL " + "\n\t" + fp.fi.name + "\n\t" + fp.fi.hash);
-        System.out.println("O MISSING FILECHUNKS ARRAY É " + fp.missingFileChunks);
         this.fph.sendFile(fp);
     }
 

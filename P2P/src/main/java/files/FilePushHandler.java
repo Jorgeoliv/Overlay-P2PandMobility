@@ -57,21 +57,45 @@ public class FilePushHandler implements Runnable{
 
         this.ft = ft;
     }
-    private ArrayList<Integer> getIDsFromFCIDStruct(FCIDStruct[] fcIDS){
+    private ArrayList<Integer> getIDsFromFCIDStruct(FCIDStruct fcIDS){
         ArrayList<Integer> res = new ArrayList<Integer>();
 
-        for(FCIDStruct fcidsSP : fcIDS){
-            for(FCIDStruct fcidsP : fcidsSP.group){
-                for(byte id : fcidsP.ids){
-                    int idInt = ((int)id + 128) + (((int)fcidsP.order + 128) * 256) + (((int)fcidsSP.order + 128) * 256);
-                    //System.out.println(idInt + " => " + "[" + fcidsSP.order + "]" + "[" + fcidsP.order + "]" + "[" + id + "]");
-                    res.add(idInt);
+        int currentID = fcIDS.referenceID;
+        byte[] toAdd = fcIDS.toAdd;
+        byte[] inc = fcIDS.inc;
+
+        int maxValue = Byte.MAX_VALUE - Byte.MIN_VALUE;
+
+        res.add(currentID);
+        int i = 0;
+        int toAddAux = 0;
+        int pointer;
+
+        for (byte ta : toAdd){
+            toAddAux = (int)ta - Byte.MIN_VALUE;
+            System.out.println("THIS HERE => " + toAddAux);
+            if(toAddAux == 0){
+                //System.out.println("TO ADD ERA 0");
+                currentID += (maxValue * 8);
+            }
+            else{
+                for(pointer = 0; pointer < 8; pointer ++) {
+                    if (toAddAux % 2 == 0) {
+                        //System.out.println("TO ADD ERA PAR");
+                        currentID += maxValue;
+                    } else {
+                        //System.out.println("TO ADD ERA IMPAR");
+                        currentID += ((int) inc[i++]) - Byte.MIN_VALUE;
+                        res.add(currentID);
+                    }
                 }
             }
         }
 
+        System.out.println(res);
         return res;
     }
+
     public void sendFile(FilePull fp) {
 
         String id = this.idGen.getID("");
@@ -83,7 +107,7 @@ public class FilePushHandler implements Runnable{
         FileChunk[] fc = null;
         ArrayList<FileChunk> fcArray = null;
 
-        if(fp.missingFileChunks == null) {
+        if(fp.missingFileChunks == null){
             fc = f.getFileChunks();
             System.out.println("TIVE QUE IR BUSCAR OS FILECHUNKS TODOS");
             numOfFileChunks = f.getNumberOfChunks();
@@ -190,64 +214,111 @@ public class FilePushHandler implements Runnable{
         this.fileInfos.remove(h);
     }
 
-    private FCIDStruct[] getFCIDStruct(ArrayList<Integer> mfcGroup){
-        FCIDStruct[] structPointer;
+    private FCIDStruct getFCIDStruct(ArrayList<Integer> mfcGroup){
 
-        HashMap<Byte, HashMap<Byte, ArrayList<Byte>>> fcIDS = new HashMap<Byte, HashMap<Byte, ArrayList<Byte>>>();
+        System.out.println(mfcGroup);
 
-        HashMap<Byte, ArrayList<Byte>> partHashMap;
-        ArrayList<Byte> idArrayList;
+        int referenceID = mfcGroup.get(0);
+        int currentID = referenceID;
+        int counter = 0;
+        ArrayList<Byte> toAdd = new ArrayList<Byte>();
+        int toAddAux = 0;
+        int pointer = 0;
 
-        byte superPartPointer;
-        byte partPointer;
-        byte idPointer;
+        ArrayList<Byte> inc = new ArrayList<Byte>();
 
-        for(int i : mfcGroup){
-            idPointer = (byte)((i % 256) + Byte.MIN_VALUE);
-            partPointer = (byte)(((i/256) % 256) + Byte.MIN_VALUE);
-            superPartPointer = (byte)(((partPointer / 256)) + Byte.MIN_VALUE);
-            //System.out.println(i + " => " + "[" + superPartPointer + "]" + "[" + partPointer + "]" + "[" + idPointer + "]");
+        mfcGroup.remove(0);
 
-            if(!fcIDS.containsKey(superPartPointer)){
-                partHashMap = new HashMap<Byte, ArrayList<Byte>>();
+        int dif = Byte.MAX_VALUE - Byte.MIN_VALUE;
+
+        for(int id : mfcGroup){
+            while(currentID + dif < id){
+                if(pointer == 8) {
+                    toAdd.add((byte)(toAddAux + Byte.MIN_VALUE));
+                    //System.out.println("TO ADD => (int)" + toAddAux + " (byte)" + (byte)(toAddAux + Byte.MIN_VALUE));
+                    pointer = 0;
+                    toAddAux = 0;
+                }
+                pointer++;
+                toAddAux *= 2;
+                currentID +=  dif;
             }
-            else {
-                partHashMap = fcIDS.get(superPartPointer);
+            if(pointer == 8) {
+                toAdd.add((byte)(toAddAux + Byte.MIN_VALUE));
+                //System.out.println("TO ADD => (int)" + toAddAux + " (byte)" + (byte)(toAddAux + Byte.MIN_VALUE));
+                pointer = 0;
+                toAddAux = 0;
             }
-
-            if(!partHashMap.containsKey(partPointer)){
-                idArrayList = new ArrayList<Byte>();
-            }
-            else {
-                idArrayList = partHashMap.get(partPointer);
-            }
-
-            idArrayList.add(idPointer);
-            partHashMap.put(partPointer, idArrayList);
-            fcIDS.put(superPartPointer, partHashMap);
+            pointer++;
+            toAddAux *= 2;
+            toAddAux++;
+            //System.out.println("INC TO ADD => " + (byte)(id - currentID + Byte.MIN_VALUE));
+            inc.add((byte)(id - currentID + Byte.MIN_VALUE));
+            currentID = id;
+            counter++;
         }
 
-        structPointer = new FCIDStruct[fcIDS.size()];
-        byte[] idsPointer;
-        FCIDStruct [] aux1;
-        int j = 0, k = 0;
-
-        for(byte spPointer : fcIDS.keySet()){
-            partHashMap = fcIDS.get(spPointer);
-            aux1 = new FCIDStruct[partHashMap.size()];
-            for(byte pPointer : partHashMap.keySet()){
-                idArrayList = partHashMap.get(pPointer);
-
-                idsPointer = new byte[idArrayList.size()];
-                for(int i = 0; i < idArrayList.size(); i++)
-                    idsPointer[i] = idArrayList.get(i);
-
-                aux1[j++] = new FCIDStruct(pPointer, null, idsPointer);
-            }
-            j = 0;
-            structPointer[k++] = new FCIDStruct(spPointer, aux1, null);
+        if(pointer == 8) {
+            toAdd.add((byte) (toAddAux + Byte.MIN_VALUE));
+            System.out.println("TO ADD => (int)" + toAddAux + " (byte)" + (byte) (toAddAux + Byte.MIN_VALUE) + "\n\tpointer => " + pointer);
         }
 
+        ArrayList<Byte> invertedToAdd = new ArrayList<Byte>();
+        byte invertedToAddAux = 0, aux = 127;
+
+        for(byte b : toAdd){
+            //System.out.println("ANTES => " + b);
+            invertedToAddAux = 0;
+            if(b != 0) {
+                if(b != 127) {
+                    for (int i = 0; i < 8; i++) {
+                        if (b % 2 == 0)
+                            invertedToAddAux *= 2;
+                        else {
+                            invertedToAddAux++;
+                            invertedToAddAux *= 2;
+                        }
+                         b /=2;
+                    }
+                }
+                else
+                    invertedToAddAux = 127;
+            }
+
+            //System.out.println("DEPOIS => " + invertedToAddAux);
+            invertedToAdd.add(invertedToAddAux);
+            aux = invertedToAddAux;
+        }
+
+        byte lastPointer = (byte) (toAddAux + Byte.MIN_VALUE);
+        if(pointer != 8){
+            invertedToAddAux = 0;
+            System.out.println("TO ADD => (int)" + toAddAux + " (byte)" + (byte) (toAddAux + Byte.MIN_VALUE) + "\n\tpointer => " + pointer);
+            for (int i = 0; i < pointer; i++) {
+                if (lastPointer% 2 == 0)
+                    invertedToAddAux *= 2;
+                else {
+                    invertedToAddAux++;
+                    invertedToAddAux *= 2;
+                }
+                lastPointer /=2;
+            }
+            invertedToAdd.add(invertedToAddAux);
+            aux = invertedToAddAux;
+        }
+        System.out.println("FICOU COM ESTE VALOR => " + aux);
+
+        byte[] toAddArray = new byte[invertedToAdd.size()];
+        for(int i = 0; i < invertedToAdd.size(); i++)
+            toAddArray [i] = invertedToAdd.get(i);
+
+        byte[] incArray = new byte[inc.size()];
+        for(int i = 0; i < inc.size(); i++)
+            incArray[i] = inc.get(i);
+
+        FCIDStruct structPointer = new FCIDStruct(referenceID, toAddArray, incArray);
+
+        System.out.println("TENHO " + counter + " IDS");
         return structPointer;
     }
 
@@ -298,7 +369,7 @@ public class FilePushHandler implements Runnable{
         else {
 
             ArrayList<Integer> mfcGroup = new ArrayList<Integer>();
-            int mfcGroupSize = 300;
+            int mfcGroupSize = 1097;
 
             while (!mfc.isEmpty()) {
 
@@ -308,7 +379,7 @@ public class FilePushHandler implements Runnable{
                     mfc.remove(0);
                 }
 
-                FCIDStruct[] fcIDS = getFCIDStruct(mfcGroup);
+                FCIDStruct fcIDS = getFCIDStruct(mfcGroup);
 
                 System.out.println("FALTAM " + this.ficheiros.get(h).getNumberOfMissingFileChunks() + " de " + this.ficheiros.get(h).getNumberOfChunks());
 
