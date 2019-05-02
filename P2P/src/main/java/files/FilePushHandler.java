@@ -38,8 +38,9 @@ public class FilePushHandler implements Runnable{
     private int TimeOutpps = 200;
 
     private FileTables ft;
+    private final FileHandler fh;
 
-    public FilePushHandler(int ucp_FilePushHandler, int ucp_FilePullHandler, FileTables ft, IDGen idGen, Nodo myNode){
+    public FilePushHandler(int ucp_FilePushHandler, int ucp_FilePullHandler, FileTables ft, FileHandler fh, IDGen idGen, Nodo myNode){
         this.myNode = myNode;
 
         this.ucp_FilePushHandler = ucp_FilePushHandler;
@@ -56,6 +57,7 @@ public class FilePushHandler implements Runnable{
         this.timeouts = new HashMap<String, Integer>();
 
         this.ft = ft;
+        this.fh = fh;
     }
     private ArrayList<Integer> getIDsFromFCIDStruct(FCIDStruct fcIDS){
         ArrayList<Integer> res = new ArrayList<Integer>();
@@ -440,12 +442,14 @@ public class FilePushHandler implements Runnable{
                     if (packets == 0 && !filePointer.getFull()) {
                         to = this.timeouts.get(h) + 1;
                         this.timeouts.put(h, to);
-                        System.out.println("TIMEOUT NA TRANSFERÊNCIA DE " + filePointer.getFileName() + "\n\tPackets: " + packets + "\n\tFULL? " + filePointer.getFull());
+                        System.out.println("TIMEOUT NA TRANSFERÊNCIA DE " + filePointer.getFileName());
                     }
                     else {
                         if (filePointer.getFull()) {
                             System.out.println("TRANSFERÊNCIA DE " + filePointer.getFileName() + " CONCLUIDA\n");
                             toRemove.add(h);
+
+                            this.fh.sendUpdate(this.ft.addFicheiroToMyContent(this.fileInfos.get(h), this.ficheiros.get(h)));
                         }
                         else
                             this.timeouts.put(h, 0);
@@ -456,8 +460,6 @@ public class FilePushHandler implements Runnable{
                         if (to >= 3) {
                             System.out.println("ENVIAR MENSAGENS DE TIMEOUT");
                             sendTimeoutPackets(h);
-                            System.out.println("MENSAGENS DE TIMEOUT ENVIADAS");
-
                         }
 
                         if (to >= 10) {

@@ -240,6 +240,16 @@ public class FileTables {
         return fi;
     }
 
+    public ArrayList<FileInfo> addFicheiroToMyContent (FileInfo fi, Ficheiro f){
+        this.myContent.put(fi.name, fi);
+        ArrayList<FileInfo> res = new ArrayList<FileInfo>();
+        res.add(fi);
+
+        this.myFiles.put(fi.name, f);
+
+        return res;
+    }
+
     public Ficheiro getFicheiro(String name){
         Ficheiro f = null;
 
