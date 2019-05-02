@@ -4,7 +4,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.concurrent.locks.ReentrantLock;
 
 
@@ -15,8 +14,6 @@ public class Ficheiro {
     private String fileName;
     private String filePath;
     private int datagramMaxSize;
-
-    //private FileChunk [] fileChunks;
 
     private int numberOfChunks;
     private int numberOfChunksInArray;
@@ -34,7 +31,8 @@ public class Ficheiro {
         this.numberOfChunks = numberOfChunks;
         this.numberOfChunksInArray = 0;
         this.missingFileChunks = new ArrayList<Integer>();
-        for(int i = 0; i < this.numberOfChunks; i++)
+        int maxID = this.numberOfChunks + Integer.MIN_VALUE;
+        for(int i = Integer.MIN_VALUE; i < maxID; i++)
             this.missingFileChunks.add(i);
 
         this.fileSize = 0;
@@ -98,8 +96,8 @@ public class Ficheiro {
             FileOutputStream outputStream = new FileOutputStream(folderToWritePath, true);
 
             while (i < this.numberOfChunks) {
-                p = Paths.get(folderToReadPath + "/" + i + ".filechunk");
-                filechunk = new FileChunk(Files.readAllBytes(p), i);
+                p = Paths.get(folderToReadPath + "/" + (i + Integer.MIN_VALUE) + ".filechunk");
+                filechunk = new FileChunk(Files.readAllBytes(p), (i + Integer.MIN_VALUE));
 
                 outputStream.write(filechunk.getFileChunk());
 
@@ -118,6 +116,7 @@ public class Ficheiro {
         this.fileLock.lock();
 
         for(FileChunk fc: fcs) {
+            //System.out.println("ID!!! => " + fc.getPlace());
             if(this.missingFileChunks.contains(fc.getPlace())) {
                 this.missingFileChunks.remove(new Integer(fc.getPlace()));
                 this.numberOfChunksInArray++;
@@ -127,7 +126,7 @@ public class Ficheiro {
 
         FileChunk[] aux = fcs.toArray(new FileChunk[0]);
 
-        writeFileChunksToFolder("/tmp/", aux, fcs.size());
+        writeFileChunksToFolder("tmp", aux, fcs.size());
 
         if(this.numberOfChunksInArray == this.numberOfChunks) {
             this.full = true;
@@ -135,24 +134,18 @@ public class Ficheiro {
         }
         this.fileLock.unlock();
 
-
-
         return this.full;
     }
 
     private FileChunk[] createFileChunks(ArrayList<byte[]> fileAsBytesChunks, int id){
         int noc = fileAsBytesChunks.size();
-        int fcID = id - noc;
+        int fcID = id - noc + Integer.MIN_VALUE;
         FileChunk[] res = new FileChunk[noc];
 
         for (int i = 0; i < noc; i++)
             res[i] = new FileChunk(fileAsBytesChunks.get(i), fcID++);
 
         return res;
-    }
-
-    public long getFileSize(){
-        return this.fileSize;
     }
 
     public FileChunk[] getFileChunks(){
@@ -166,9 +159,10 @@ public class Ficheiro {
             if(ficheiro.exists() && ficheiro.isDirectory()){
                 fChunks = new FileChunk[this.numberOfChunks];
                 int i;
+                int maxID = this.numberOfChunks + Integer.MIN_VALUE;
 
                 for(i = 0; i < this.numberOfChunks; i++){
-                    fChunks[i] = new FileChunk(Files.readAllBytes(Paths.get(tmpFolder + "/" + i + ".filechunk")), i);
+                    fChunks[i] = new FileChunk(Files.readAllBytes(Paths.get(tmpFolder + "/" + (i + Integer.MIN_VALUE) + ".filechunk")), (i+ Integer.MIN_VALUE));
                 }
 
             }
@@ -178,10 +172,6 @@ public class Ficheiro {
         }
 
         return fChunks;
-    }
-
-    public int getNumberOfChunks(){
-        return this.numberOfChunks;
     }
 
     private void loadFile(){
@@ -252,5 +242,13 @@ public class Ficheiro {
 
     public int getNumberOfMissingFileChunks(){
         return this.missingFileChunks.size();
+    }
+
+    public int getNumberOfChunks(){
+        return this.numberOfChunks;
+    }
+
+    public long getFileSize(){
+        return this.fileSize;
     }
 }
