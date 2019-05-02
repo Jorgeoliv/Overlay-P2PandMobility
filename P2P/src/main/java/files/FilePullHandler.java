@@ -30,7 +30,7 @@ public class FilePullHandler implements Runnable{
     private IDGen idGen;
     private int ucp_FilePullHandler;
 
-    private int pps = 100;
+    private int pps = 200;
 
     private ArrayList<String> ids = new ArrayList<String>();
     private DatagramSocket ds;

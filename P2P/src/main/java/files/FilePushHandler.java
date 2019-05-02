@@ -2,6 +2,7 @@ package files;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Output;
+import mensagens.FCIDStruct;
 import mensagens.FilePull;
 import network.IDGen;
 import network.Nodo;
@@ -34,7 +35,7 @@ public class FilePushHandler implements Runnable{
     private HashMap<String, ArrayList <Thread>> fileReceiversThreads;
     private HashMap<String, Integer> timeouts;
 
-    private int TimeOutpps = 100;
+    private int TimeOutpps = 200;
 
     private FileTables ft;
 
@@ -56,7 +57,21 @@ public class FilePushHandler implements Runnable{
 
         this.ft = ft;
     }
+    private ArrayList<Integer> getIDsFromFCIDStruct(FCIDStruct[] fcIDS){
+        ArrayList<Integer> res = new ArrayList<Integer>();
 
+        for(FCIDStruct fcidsSP : fcIDS){
+            for(FCIDStruct fcidsP : fcidsSP.group){
+                for(byte id : fcidsP.ids){
+                    int idInt = ((int)id + 128) + (((int)fcidsP.order + 128) * 256) + (((int)fcidsSP.order + 128) * 256);
+                    //System.out.println(idInt + " => " + "[" + fcidsSP.order + "]" + "[" + fcidsP.order + "]" + "[" + id + "]");
+                    res.add(idInt);
+                }
+            }
+        }
+
+        return res;
+    }
     public void sendFile(FilePull fp) {
 
         String id = this.idGen.getID("");
@@ -67,16 +82,14 @@ public class FilePushHandler implements Runnable{
         int numOfFileChunks;
         FileChunk[] fc = null;
         ArrayList<FileChunk> fcArray = null;
+
         if(fp.missingFileChunks == null) {
             fc = f.getFileChunks();
             System.out.println("TIVE QUE IR BUSCAR OS FILECHUNKS TODOS");
             numOfFileChunks = f.getNumberOfChunks();
         }
         else {
-            ArrayList<Integer> aux = new ArrayList<Integer>();
-
-            for(int s : fp.missingFileChunks)
-                aux.add(s);
+            ArrayList<Integer> aux = getIDsFromFCIDStruct(fp.missingFileChunks);
 
             fcArray = f.getMissingFileChunks(aux);
             System.out.println("\t\tTIVE QUE IR BUSCAR ALGUNS DOS FILECHUNKS");
@@ -165,8 +178,6 @@ public class FilePushHandler implements Runnable{
     }
 
     public void clean(String h){
-        /*for(Thread t : this.fileReceiversThreads.get(h))
-            t.interrupt();*/
 
         for(FileReceiver fr : this.fileReceivers.get(h))
             fr.kill();
@@ -177,6 +188,67 @@ public class FilePushHandler implements Runnable{
         this.timeouts.remove(h);
         this.ficheiros.remove(h);
         this.fileInfos.remove(h);
+    }
+
+    private FCIDStruct[] getFCIDStruct(ArrayList<Integer> mfcGroup){
+        FCIDStruct[] structPointer;
+
+        HashMap<Byte, HashMap<Byte, ArrayList<Byte>>> fcIDS = new HashMap<Byte, HashMap<Byte, ArrayList<Byte>>>();
+
+        HashMap<Byte, ArrayList<Byte>> partHashMap;
+        ArrayList<Byte> idArrayList;
+
+        byte superPartPointer;
+        byte partPointer;
+        byte idPointer;
+
+        for(int i : mfcGroup){
+            idPointer = (byte)((i % 256) + Byte.MIN_VALUE);
+            partPointer = (byte)(((i/256) % 256) + Byte.MIN_VALUE);
+            superPartPointer = (byte)(((partPointer / 256)) + Byte.MIN_VALUE);
+            //System.out.println(i + " => " + "[" + superPartPointer + "]" + "[" + partPointer + "]" + "[" + idPointer + "]");
+
+            if(!fcIDS.containsKey(superPartPointer)){
+                partHashMap = new HashMap<Byte, ArrayList<Byte>>();
+            }
+            else {
+                partHashMap = fcIDS.get(superPartPointer);
+            }
+
+            if(!partHashMap.containsKey(partPointer)){
+                idArrayList = new ArrayList<Byte>();
+            }
+            else {
+                idArrayList = partHashMap.get(partPointer);
+            }
+
+            idArrayList.add(idPointer);
+            partHashMap.put(partPointer, idArrayList);
+            fcIDS.put(superPartPointer, partHashMap);
+        }
+
+        structPointer = new FCIDStruct[fcIDS.size()];
+        byte[] idsPointer;
+        FCIDStruct [] aux1;
+        int j = 0, k = 0;
+
+        for(byte spPointer : fcIDS.keySet()){
+            partHashMap = fcIDS.get(spPointer);
+            aux1 = new FCIDStruct[partHashMap.size()];
+            for(byte pPointer : partHashMap.keySet()){
+                idArrayList = partHashMap.get(pPointer);
+
+                idsPointer = new byte[idArrayList.size()];
+                for(int i = 0; i < idArrayList.size(); i++)
+                    idsPointer[i] = idArrayList.get(i);
+
+                aux1[j++] = new FCIDStruct(pPointer, null, idsPointer);
+            }
+            j = 0;
+            structPointer[k++] = new FCIDStruct(spPointer, aux1, null);
+        }
+
+        return structPointer;
     }
 
     private void sendTimeoutPackets(String h) {
@@ -225,25 +297,22 @@ public class FilePushHandler implements Runnable{
         }
         else {
 
-            int[] mfcGroup;
-            int mfcGroupSize = 425;
+            ArrayList<Integer> mfcGroup = new ArrayList<Integer>();
+            int mfcGroupSize = 300;
 
             while (!mfc.isEmpty()) {
 
-                int mfcSize = mfc.size();
-                if (mfcSize > mfcGroupSize)
-                    mfcGroup = new int[mfcGroupSize];
-                else
-                    mfcGroup = new int[mfcSize];
-
+                //Adição dos ids dos filechunks à estrutura de dados a ser enviada
                 for (int i = 0; (i < mfcGroupSize) && !mfc.isEmpty(); i++) {
-                    mfcGroup[i] = mfc.get(0);
+                    mfcGroup.add(mfc.get(0));
                     mfc.remove(0);
                 }
 
+                FCIDStruct[] fcIDS = getFCIDStruct(mfcGroup);
+
                 System.out.println("FALTAM " + this.ficheiros.get(h).getNumberOfMissingFileChunks() + " de " + this.ficheiros.get(h).getNumberOfChunks());
 
-                FilePull fp = new FilePull(this.idGen.getID(""), this.myNode, this.fileInfos.get(h), portas, this.TimeOutpps, mfcGroup);
+                FilePull fp = new FilePull(this.idGen.getID(""), this.myNode, this.fileInfos.get(h), portas, this.TimeOutpps, fcIDS);
 
                 ByteArrayOutputStream bStream = new ByteArrayOutputStream();
                 Output output = new Output(bStream);
@@ -265,7 +334,8 @@ public class FilePushHandler implements Runnable{
                     Thread.sleep(50);
                     ds.send(packet);
 
-                    System.out.println("ENVIEI O TIMEOUTPACKET " + "\n\t" + this.fileOwners.get(h).ip + "\n\t" + this.ucp_FilePullHandler + "\n\t" + this.fileInfos.get(h).hash + "\n\t" + "mfc.size = " + mfcGroup.length + " => " + serializedTimeoutPacket.length + " bytes");
+                    System.out.println("ENVIEI O TIMEOUTPACKET " + "\n\t" + this.fileOwners.get(h).ip + "\n\t" + this.ucp_FilePullHandler + "\n\t" + this.fileInfos.get(h).hash + "\n\t" + "mfc.size = " + mfcGroup.size() + " => " + serializedTimeoutPacket.length + " bytes");
+                    mfcGroup.clear();
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
