@@ -1,7 +1,5 @@
 package files;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -15,9 +13,10 @@ public class Ficheiro {
     private File file;
     private String nodeID;
     private String fileName;
+    private String filePath;
+    private int datagramMaxSize;
 
-    private byte [] fileAsBytes;
-    private FileChunk [] fileChunks;
+    //private FileChunk [] fileChunks;
 
     private int numberOfChunks;
     private int numberOfChunksInArray;
@@ -38,42 +37,25 @@ public class Ficheiro {
         for(int i = 0; i < this.numberOfChunks; i++)
             this.missingFileChunks.add(i);
 
-        this.fileChunks = new FileChunk[numberOfChunks];
         this.fileSize = 0;
         this.full = false;
         this.fileLock = new ReentrantLock();
     }
 
-    public Ficheiro (String path, String id, String name, long datagramMaxSize){
+    public Ficheiro (String path, String id, String name, int datagramMaxSize){
         this.file = new File(path);
         this.nodeID = id;
         this.fileName = name;
+        this.filePath = path;
+        this.datagramMaxSize = datagramMaxSize;
 
         this.fileSize = this.file.length();
-        this.fileAsBytes = new byte[(int) this.fileSize];
-        try{
-            this.fileAsBytes = Files.readAllBytes(Paths.get(path));
-        }
-        catch(Exception e){e.printStackTrace();}
         this.numberOfChunks = (int) Math.ceil((double)this.fileSize/(double)datagramMaxSize);
 
-        byte [][] fileAsBytesChunks = separate(numberOfChunks, datagramMaxSize);
-        this.fileChunks = createFileChunks(numberOfChunks, fileAsBytesChunks);
 
-        try {
-            writeFileChunksToFolder("tmp", this.fileChunks, this.numberOfChunks);
-            cleanSpace();
-        }
-        catch (Exception e){
-            e.printStackTrace();
-        }
+        loadFile();
 
         this.full = true;
-    }
-
-    private void cleanSpace(){
-        this.fileAsBytes = null;
-        this.fileChunks = null;
     }
 
     private void writeFileChunksToFolder(String folder, FileChunk[] fcs, int size){
@@ -137,7 +119,6 @@ public class Ficheiro {
 
         for(FileChunk fc: fcs) {
             if(this.missingFileChunks.contains(fc.getPlace())) {
-                this.fileChunks[fc.getPlace()] = fc;
                 this.missingFileChunks.remove(new Integer(fc.getPlace()));
                 this.numberOfChunksInArray++;
                 this.fileSize += fc.getFileChunk().length;
@@ -150,9 +131,7 @@ public class Ficheiro {
 
         if(this.numberOfChunksInArray == this.numberOfChunks) {
             this.full = true;
-            fileReconstructor(new ArrayList<FileChunk>(Arrays.asList(this.fileChunks)));
             writeFileToFolder("files");
-            cleanSpace();
         }
         this.fileLock.unlock();
 
@@ -161,11 +140,13 @@ public class Ficheiro {
         return this.full;
     }
 
-    private FileChunk[] createFileChunks(int noc, byte[][] fileAsBytesChunks){
+    private FileChunk[] createFileChunks(ArrayList<byte[]> fileAsBytesChunks, int id){
+        int noc = fileAsBytesChunks.size();
+        int fcID = id - noc;
         FileChunk[] res = new FileChunk[noc];
 
         for (int i = 0; i < noc; i++)
-            res[i] = new FileChunk(fileAsBytesChunks[i], i);
+            res[i] = new FileChunk(fileAsBytesChunks.get(i), fcID++);
 
         return res;
     }
@@ -203,41 +184,32 @@ public class Ficheiro {
         return this.numberOfChunks;
     }
 
-    private byte[][] separate(int numberOfChunks, long datagramMaxSize){
+    private void loadFile(){
 
-        byte[][] res = new byte [this.numberOfChunks][];
-        int i, j = 0;
-        long count = 0;
-        long packetSize, a;
+        try {
+            FileInputStream fis = new FileInputStream(this.filePath);
 
-        while (count < this.fileSize){
-            if ((a = this.fileSize - count) > datagramMaxSize)
-                packetSize = datagramMaxSize;
-            else
-                packetSize = a;
+            int i = 0;
+            int read = 1;
+            ArrayList<byte[]> info = new ArrayList<byte[]>();
+            byte[] buffer;
+            FileChunk[] fileChunks;
 
-            res[j] = new byte[(int)packetSize];
+            while(i < this.numberOfChunks){
 
-            for (i = 0; i < packetSize; i++, count++)
-                res[j][i] = this.fileAsBytes[(int)count];
-
-            j++;
+                for(int j = 0; j < 10000 && i < this.numberOfChunks && read != 0; i++, j++){
+                    buffer = new byte[this.datagramMaxSize];
+                    read = fis.read(buffer);
+                    info.add(buffer);
+                }
+                fileChunks = createFileChunks(info, i);
+                writeFileChunksToFolder("tmp", fileChunks, info.size());
+            }
         }
-
-        return res;
-    }
-
-    private void fileReconstructor(ArrayList<FileChunk> fc){
-
-        int i, tam = fc.size(), auxTam = 0;
-        this.fileAsBytes = new byte[Math.toIntExact(fileSize)];
-        byte [] arrayPointer;
-
-        for (i = 0; i < tam; i++){
-
-            arrayPointer = fc.get(i).getFileChunk();
-            System.arraycopy(arrayPointer, 0, this.fileAsBytes, auxTam , arrayPointer.length);
-            auxTam += arrayPointer.length;
+        catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
