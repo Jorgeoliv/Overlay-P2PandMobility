@@ -265,7 +265,7 @@ public class PingHandler implements Runnable{
             DatagramPacket dp;
 
             this.ses.scheduleWithFixedDelay(sendPing, 0, 4, TimeUnit.SECONDS);
-            this.ses.scheduleWithFixedDelay(emptyPingTray, 1, 2, TimeUnit.SECONDS);
+            this.ses.scheduleWithFixedDelay(emptyPingTray, 3, 4, TimeUnit.SECONDS);
             InetAddress myIP = InetAddress.getByName(this.myNode.ip);
 
             while(this.run){

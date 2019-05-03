@@ -77,7 +77,7 @@ public class FilePullHandler implements Runnable{
         output.close();
 
         byte[] serializedPing = bStream.toByteArray();
-        System.out.println("É ISTO QUE QUERO VER!!!!!!!!!!!!!!!!!!!!!!" + serializedPing.length);
+        //System.out.println("É ISTO QUE QUERO VER!!!!!!!!!!!!!!!!!!!!!!" + serializedPing.length);
         try {
             DatagramSocket ds = new DatagramSocket();
             DatagramPacket packet = new DatagramPacket(serializedPing, serializedPing.length, InetAddress.getByName(choice.nodo.ip), this.ucp_FilePullHandler);

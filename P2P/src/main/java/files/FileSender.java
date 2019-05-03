@@ -6,6 +6,7 @@ import mensagens.FilePush;
 import network.Nodo;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
@@ -75,6 +76,13 @@ public class FileSender implements Runnable{
             DatagramPacket packet = new DatagramPacket(serializedPing, serializedPing.length, this.ipToSend, this.portToSend);
 
             this.ds.send(packet);
+        }
+        catch (IOException e) {
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException ex) {
+                ex.printStackTrace();
+            }
         }
         catch (Exception e){
             e.printStackTrace();

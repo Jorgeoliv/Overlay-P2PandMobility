@@ -72,6 +72,12 @@ public class NbrConfirmationHandler implements Runnable {
             //Vou adicionar os ficheiros dos vizinhos bem como a hash da sua tabela
             this.nh.ft.addContentForOneNbr(nbrc.fileInfos, nbrc.origin, nbrc.hash);
 
+            if(valid) {
+                //System.out.println("VOU REGISTAR O ADDNBR E REMOVER DA LISTA DE NBR VÁLIDOS");
+                this.nh.registerNode(nbrc.requestID, nbrc.origin);
+                this.nh.removeAddNbr(nbrc.IDresponse);
+            }
+
             //falta adicionar o conteudo do vizinho
             System.out.println("=============================================>New NBR Added\n\tID => " + nbrc.origin.id + "\n\tIP => " + nbrc.origin.ip);
             if(nbrc.added){
@@ -81,11 +87,7 @@ public class NbrConfirmationHandler implements Runnable {
                 sendNbrConfirmation(nbrc);
             }
 
-            if(valid) {
-                //System.out.println("VOU REGISTAR O ADDNBR E REMOVER DA LISTA DE NBR VÁLIDOS");
-                this.nh.registerNode(nbrc.requestID, nbrc.origin);
-                this.nh.removeAddNbr(nbrc.IDresponse);
-            }
+
         }
         else
             System.out.println("COMBINAÇÃO ID NODO INEXISTENTE (NBRCONFIRMATION)\n\tID => " + nbrc.origin.id + "\n\tIP => " + nbrc.origin.ip);

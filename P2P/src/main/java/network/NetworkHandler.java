@@ -239,7 +239,7 @@ public class NetworkHandler implements Runnable{
     public void registerNode(String id, Nodo node){
         this.nodeLock.lock();
         this.idNodo.put(id, node.id);
-        //this.ses.schedule(removeNodeR(id, node),30, TimeUnit.SECONDS);
+        this.ses.schedule(removeNodeR(id, node),30, TimeUnit.SECONDS);
         this.nodeLock.unlock();
     }
 
@@ -288,7 +288,7 @@ public class NetworkHandler implements Runnable{
     public void addInConv(Nodo node){
         this.inPingConvLock.lock();
         this.inPingConv.add(node);
-        //this.ses.schedule(remInConvR(node),30, TimeUnit.SECONDS);
+        this.ses.schedule(remInConvR(node),30, TimeUnit.SECONDS);
         this.inPingConvLock.unlock();
     }
 

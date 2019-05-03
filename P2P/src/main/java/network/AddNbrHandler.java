@@ -116,7 +116,7 @@ public class AddNbrHandler implements Runnable{
             }
         }
 
-        System.out.println("SENT NBRCONFIRMATION(ADDNBR)");
+        //System.out.println("SENT NBRCONFIRMATION(ADDNBR)");
     }
 
     private void printAddNbr(AddNbr addNbr) {
@@ -184,6 +184,7 @@ public class AddNbrHandler implements Runnable{
                                 e.printStackTrace();
                             }
                         }
+                        System.out.println("ENVIEI ADD NBR");
                     }
                     else
                         System.out.println("NÃO PRECISO DE ADICIONAR ESTE NODO COMO VIZINHO!!");
