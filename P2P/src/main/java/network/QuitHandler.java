@@ -19,6 +19,8 @@ import java.util.concurrent.TimeUnit;
 
 public class QuitHandler implements Runnable {
 
+    private boolean run = true;
+
     private int ucp_Quit;
 
     private NetworkHandler nh;
@@ -103,7 +105,7 @@ public class QuitHandler implements Runnable {
             this.nh.ft.rmNbr(quit.origin.id);
         }
         else
-            System.out.println("COMBINAÇÃO ID NODO INEXISTENTE");
+            System.out.println("COMBINAÇÃO ID NODO INEXISTENTE(QUIT)");
     }
 
     private Runnable removeID = () ->{
@@ -112,6 +114,7 @@ public class QuitHandler implements Runnable {
     };
 
     public void kill(){
+        this.run = false;
         this.ses.shutdownNow();
         this.ucs.close();
     }
@@ -124,7 +127,7 @@ public class QuitHandler implements Runnable {
             byte[] buf;
             DatagramPacket dp;
 
-            while (true){
+            while(this.run){
                 buf = new byte[1500];
                 dp = new DatagramPacket(buf, buf.length);
                 this.ucs.receive(dp);
@@ -137,7 +140,7 @@ public class QuitHandler implements Runnable {
                 if (!this.ids.contains(header.requestID)) {
 
                     this.ids.add(header.requestID);
-                    this.ses.schedule(removeID, 5, TimeUnit.SECONDS);
+                    this.ses.schedule(removeID, 60, TimeUnit.SECONDS);
                     if (header instanceof Quit) {
                         Quit quit = (Quit) header;
                         processQuit(quit);

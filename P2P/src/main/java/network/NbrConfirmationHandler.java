@@ -21,6 +21,8 @@ import java.util.concurrent.TimeUnit;
 
 public class NbrConfirmationHandler implements Runnable {
 
+    private boolean run = true;
+
     private NetworkHandler nh;
 
     private Nodo myNode;
@@ -71,7 +73,7 @@ public class NbrConfirmationHandler implements Runnable {
             this.nh.ft.addContentForOneNbr(nbrc.fileInfos, nbrc.origin, nbrc.hash);
 
             //falta adicionar o conteudo do vizinho
-            System.out.println("=============================================>New NBR Added");
+            System.out.println("=============================================>New NBR Added\n\tID => " + nbrc.origin.id + "\n\tIP => " + nbrc.origin.ip);
             if(nbrc.added){
                 sendEmergencyAlive(nbrc);
             }
@@ -86,7 +88,7 @@ public class NbrConfirmationHandler implements Runnable {
             }
         }
         else
-            System.out.println("COMBINAÇÃO ID NODO INEXISTENTE");
+            System.out.println("COMBINAÇÃO ID NODO INEXISTENTE (NBRCONFIRMATION)\n\tID => " + nbrc.origin.id + "\n\tIP => " + nbrc.origin.ip);
     }
 
     private void printNbrConfirmation(NbrConfirmation nbrc) {
@@ -110,25 +112,38 @@ public class NbrConfirmationHandler implements Runnable {
 
         EmergencyAlive ealive = new EmergencyAlive(nbrc.IDresponse, this.myNode, this.nt.getNbrsN1(),nbrc.requestID, false);
 
-        try {
             ByteArrayOutputStream bStream = new ByteArrayOutputStream();
             Output output = new Output(bStream);
             kryo.writeClassAndObject(output, ealive);
             output.close();
 
             byte[] serializedMessage = bStream.toByteArray();
-            DatagramSocket ds = new DatagramSocket();
-            DatagramPacket packet = new DatagramPacket(serializedMessage, serializedMessage.length, InetAddress.getByName(nbrc.origin.ip), this.ucp_Alive);
 
-            ds.send(packet);
-            Thread.sleep(50);
-            ds.send(packet);
-            Thread.sleep(50);
-            ds.send(packet);
-            //System.out.println("EMERGENCY ALIVE ENVIADO\n");
-        }
-        catch (Exception e) {
-            e.printStackTrace();
+        boolean twoPackets = true;
+        int tries = 0;
+        while(twoPackets && tries < 2) {
+            try {
+                DatagramSocket ds = new DatagramSocket();
+                DatagramPacket packet = new DatagramPacket(serializedMessage, serializedMessage.length, InetAddress.getByName(nbrc.origin.ip), this.ucp_Alive);
+
+                ds.send(packet);
+                tries++;
+                Thread.sleep(50);
+                ds.send(packet);
+                twoPackets = true;
+                Thread.sleep(50);
+                ds.send(packet);
+
+            } catch (IOException e) {
+                System.out.println("\t=======>Network is unreachable");
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException ex) {
+                    ex.printStackTrace();
+                }
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -144,17 +159,31 @@ public class NbrConfirmationHandler implements Runnable {
 
         byte[] serializedNbrConfirmation = bStream.toByteArray();
 
-        try {
-            DatagramSocket ds = new DatagramSocket();
-            DatagramPacket packet = new DatagramPacket(serializedNbrConfirmation, serializedNbrConfirmation.length, InetAddress.getByName(nbrc.origin.ip), this.ucp_NbrConfirmation);
-            ds.send(packet);
-            Thread.sleep(50);
-            ds.send(packet);
-            Thread.sleep(50);
-            ds.send(packet);
-            //System.out.println("NBRCONFIRMATION RESPONSE ENVIADO\n");
-        } catch (Exception e) {
-            e.printStackTrace();
+        boolean twoPackets = true;
+        int tries = 0;
+        while(twoPackets && tries < 2) {
+            try {
+                DatagramSocket ds = new DatagramSocket();
+                DatagramPacket packet = new DatagramPacket(serializedNbrConfirmation, serializedNbrConfirmation.length, InetAddress.getByName(nbrc.origin.ip), this.ucp_NbrConfirmation);
+
+                ds.send(packet);
+                tries++;
+                Thread.sleep(50);
+                ds.send(packet);
+                twoPackets = true;
+                Thread.sleep(50);
+                ds.send(packet);
+
+            } catch (IOException e) {
+                System.out.println("\t=======>Network is unreachable");
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException ex) {
+                    ex.printStackTrace();
+                }
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -164,6 +193,7 @@ public class NbrConfirmationHandler implements Runnable {
     };
 
     public void kill(){
+        this.run = false;
         this.ses.shutdownNow();
         this.ucs.close();
     }
@@ -176,7 +206,7 @@ public class NbrConfirmationHandler implements Runnable {
             byte[] buf;
             DatagramPacket dp;
 
-            while (true){
+            while(this.run){
                 buf = new byte[1500];
                 dp = new DatagramPacket(buf, buf.length);
                 this.ucs.receive(dp);
@@ -189,7 +219,7 @@ public class NbrConfirmationHandler implements Runnable {
                 if(!this.ids.contains(header.requestID)) {
 
                     this.ids.add(header.requestID);
-                    this.ses.schedule(removeID, 5, TimeUnit.SECONDS);
+                    this.ses.schedule(removeID, 60, TimeUnit.SECONDS);
 
                     if (header instanceof NbrConfirmation) {
                         NbrConfirmation nbrc = (NbrConfirmation) header;

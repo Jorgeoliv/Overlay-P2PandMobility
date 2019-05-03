@@ -20,6 +20,8 @@ import java.util.concurrent.TimeUnit;
 
 public class ContentDiscoveryHandler implements Runnable{
 
+    private boolean run = true;
+
     private int ucp_Discovery;
     private int ucp_ContentOwner;
     private FileTables ft;
@@ -154,6 +156,7 @@ public class ContentDiscoveryHandler implements Runnable{
     };
 
     public void kill(){
+        this.run = false;
         this.ses.shutdownNow();
         this.socket.close();
     }
@@ -167,7 +170,7 @@ public class ContentDiscoveryHandler implements Runnable{
 
             Kryo kryo = new Kryo();
 
-            while (true) {
+            while(this.run) {
                 buffer = new byte[1500];
                 packet = new DatagramPacket(buffer, buffer.length);
 
@@ -180,7 +183,7 @@ public class ContentDiscoveryHandler implements Runnable{
                 if(!this.ids.contains(header.requestID)) {
 
                     this.ids.add(header.requestID);
-                    this.ses.schedule(removeID, 5, TimeUnit.SECONDS);
+                    this.ses.schedule(removeID, 60, TimeUnit.SECONDS);
 
                     if (header instanceof ContentDiscovery) {
                         ContentDiscovery cd = (ContentDiscovery) header;

@@ -22,6 +22,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class PongHandler implements Runnable {
+    private boolean run = true;
+
     private NetworkHandler nh;
 
     private int softcap;
@@ -150,17 +152,29 @@ public class PongHandler implements Runnable {
 
         byte[] serializedNbrConfirmation = bStream.toByteArray();
 
-
-        try {
-            DatagramPacket packet = new DatagramPacket(serializedNbrConfirmation, serializedNbrConfirmation.length, InetAddress.getByName(pong.origin.ip), this.ucp_NbrConfirmation);
-            this.ucs.send(packet);
-            Thread.sleep(50);
-            this.ucs.send(packet);
-            Thread.sleep(50);
-            this.ucs.send(packet);
-            //System.out.println("NBRCNFIRMATION ENVIADO\n");
-        } catch (Exception e) {
-            e.printStackTrace();
+        boolean twoPackets = true;
+        int tries = 0;
+        while(twoPackets && tries < 2) {
+            try {
+                DatagramPacket packet = new DatagramPacket(serializedNbrConfirmation, serializedNbrConfirmation.length, InetAddress.getByName(pong.origin.ip), this.ucp_NbrConfirmation);
+                this.ucs.send(packet);
+                tries++;
+                Thread.sleep(50);
+                this.ucs.send(packet);
+                twoPackets = true;
+                Thread.sleep(50);
+                this.ucs.send(packet);
+                //System.out.println("NBRCNFIRMATION ENVIADO\n");
+            } catch (IOException e) {
+                System.out.println("\t=======>Network is unreachable");
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException ex) {
+                    ex.printStackTrace();
+                }
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -170,19 +184,20 @@ public class PongHandler implements Runnable {
     };
 
     public void kill(){
+        this.run = false;
         this.ses.shutdownNow();
         this.ucsR.close();
     }
 
     public void run(){
         try {
-            this.ses.scheduleWithFixedDelay(emptyPongTray, 0, 2, TimeUnit.SECONDS);
+            this.ses.scheduleWithFixedDelay(emptyPongTray, 0, 1, TimeUnit.SECONDS);
 
             Kryo kryo = new Kryo();
             byte[] buf;
             DatagramPacket dp;
 
-            while (true){
+            while(this.run){
                 buf = new byte[1500];
                 dp = new DatagramPacket(buf, 1500);
                 this.ucsR.receive(dp);
@@ -195,7 +210,7 @@ public class PongHandler implements Runnable {
                 if(!this.ids.contains(header.requestID)) {
 
                     this.ids.add(header.requestID);
-                    this.ses.schedule(removeID, 5, TimeUnit.SECONDS);
+                    this.ses.schedule(removeID, 60, TimeUnit.SECONDS);
 
                     if (header instanceof Pong) {
                         Pong pong = (Pong) header;

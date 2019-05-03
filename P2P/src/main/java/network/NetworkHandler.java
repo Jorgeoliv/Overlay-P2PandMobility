@@ -225,9 +225,21 @@ public class NetworkHandler implements Runnable{
         this.addNbrsLock.unlock();
     }
 
+    private Runnable removeNodeR(String id, Nodo node){
+        Runnable r = new Runnable() {
+            @Override
+            public void run() {
+                removeNode(id, node);
+            }
+        };
+
+        return r;
+    }
+
     public void registerNode(String id, Nodo node){
         this.nodeLock.lock();
         this.idNodo.put(id, node.id);
+        //this.ses.schedule(removeNodeR(id, node),30, TimeUnit.SECONDS);
         this.nodeLock.unlock();
     }
 
@@ -241,7 +253,7 @@ public class NetworkHandler implements Runnable{
     }
 
     public boolean isNodePresent(Nodo node) {
-        boolean res = false;
+        boolean res;
         this.nodeLock.lock();
         res = this.idNodo.containsValue(node.id);
         this.nodeLock.unlock();
@@ -262,9 +274,21 @@ public class NetworkHandler implements Runnable{
         this.nodeLock.unlock();
     }
 
+    private Runnable remInConvR( Nodo node){
+        Runnable r = new Runnable() {
+            @Override
+            public void run() {
+                remInConv(node);
+            }
+        };
+
+        return r;
+    }
+
     public void addInConv(Nodo node){
         this.inPingConvLock.lock();
         this.inPingConv.add(node);
+        //this.ses.schedule(remInConvR(node),30, TimeUnit.SECONDS);
         this.inPingConvLock.unlock();
     }
 

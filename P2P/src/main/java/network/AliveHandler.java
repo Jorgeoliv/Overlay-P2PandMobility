@@ -99,23 +99,38 @@ public class AliveHandler implements Runnable {
         Kryo kryo = new Kryo();
 
         for(Nodo n: myNbrs){
-            try {
-                DatagramSocket socket = new DatagramSocket();
                 ByteArrayOutputStream bStream = new ByteArrayOutputStream();
-                Output output = new Output(bStream);
-                kryo.writeClassAndObject(output, a);
-                output.close();
+            Output output = new Output(bStream);
+            kryo.writeClassAndObject(output, a);
+            output.close();
 
-                byte[] serializedMessage = bStream.toByteArray();
+            byte[] serializedMessage = bStream.toByteArray();
 
-                DatagramPacket packet = new DatagramPacket(serializedMessage, serializedMessage.length, InetAddress.getByName(n.ip), this.ucp_Alive);
-                socket.send(packet);
-                Thread.sleep(100);
-                socket.send(packet);
+            boolean twoPackets = true;
+            int tries = 0;
+            while(twoPackets && tries < 2) {
+                try {
+                    DatagramSocket ds = new DatagramSocket();
+                    DatagramPacket packet = new DatagramPacket(serializedMessage, serializedMessage.length, InetAddress.getByName(n.ip), this.ucp_Alive);
 
-            }
-            catch (Exception e) {
-                e.printStackTrace();
+                    ds.send(packet);
+                    tries++;
+                    Thread.sleep(50);
+                    ds.send(packet);
+                    twoPackets = true;
+                    Thread.sleep(50);
+                    ds.send(packet);
+
+                } catch (IOException e) {
+                    System.out.println("\t=======>Network is unreachable");
+                    try {
+                        Thread.sleep(500);
+                    } catch (InterruptedException ex) {
+                        ex.printStackTrace();
+                    }
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             }
         }
     };
@@ -146,7 +161,7 @@ public class AliveHandler implements Runnable {
                 }
             }
             else
-                System.out.println("NÃO EXISTE RELAÇÃO ENTRE O ID E O NODO DA MSG");
+                System.out.println("NÃO EXISTE RELAÇÃO ENTRE O ID E O NODO DA MSG\n\tID => " + ealive.origin.id + "\n\tIP => " + ealive.origin.ip);
         }
         else
             System.out.println("Nodo Desconhecido");
@@ -173,26 +188,39 @@ public class AliveHandler implements Runnable {
 
         EmergencyAlive ealive = new EmergencyAlive(ea.IDresponse, this.myNode, this.nt.getNbrsN1(),ea.requestID, true);
 
-        try {
-            ByteArrayOutputStream bStream = new ByteArrayOutputStream();
-            Output output = new Output(bStream);
-            kryo.writeClassAndObject(output, ealive);
-            output.close();
 
-            byte[] serializedMessage = bStream.toByteArray();
+        ByteArrayOutputStream bStream = new ByteArrayOutputStream();
+        Output output = new Output(bStream);
+        kryo.writeClassAndObject(output, ealive);
+        output.close();
 
-            DatagramSocket ds = new DatagramSocket();
-            DatagramPacket packet = new DatagramPacket(serializedMessage, serializedMessage.length, InetAddress.getByName(ea.origin.ip), this.ucp_Alive);
+        byte[] serializedMessage = bStream.toByteArray();
 
-            ds.send(packet);
-            Thread.sleep(50);
-            ds.send(packet);
-            Thread.sleep(50);
-            ds.send(packet);
-            //System.out.println("EMERGENCY ALIVE ENVIADO\n");
-        }
-        catch (Exception e) {
-            e.printStackTrace();
+        boolean twoPackets = true;
+        int tries = 0;
+        while(twoPackets && tries < 2) {
+            try {
+                DatagramSocket ds = new DatagramSocket();
+                DatagramPacket packet = new DatagramPacket(serializedMessage, serializedMessage.length, InetAddress.getByName(ea.origin.ip), this.ucp_Alive);
+
+                ds.send(packet);
+                tries++;
+                Thread.sleep(50);
+                ds.send(packet);
+                twoPackets = true;
+                Thread.sleep(50);
+                ds.send(packet);
+
+            } catch (IOException e) {
+                System.out.println("\t=======>Network is unreachable");
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException ex) {
+                    ex.printStackTrace();
+                }
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -235,7 +263,7 @@ public class AliveHandler implements Runnable {
                 if (!this.ids.contains(header.requestID)) {
 
                     this.ids.add(header.requestID);
-                    this.ses.schedule(removeID, 30, TimeUnit.SECONDS);
+                    this.ses.schedule(removeID, 60, TimeUnit.SECONDS);
 
                     if (header instanceof Alive) {
                         this.aliveTrayLock.lock();

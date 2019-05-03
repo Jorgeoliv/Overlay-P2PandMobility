@@ -11,7 +11,6 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.*;
-import java.sql.SQLOutput;
 import java.util.ArrayList;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -100,14 +99,35 @@ public class PingHandler implements Runnable{
 
         byte[] serializedPing = bStream.toByteArray();
 
+
+        boolean twoPackets = true;
+        int tries = 0;
+        while(twoPackets && tries < 2) {
+            try {
+                MulticastSocket ms = new MulticastSocket();
+                DatagramPacket packet = new DatagramPacket(serializedPing, serializedPing.length, this.groupIP, this.mcport);
+
+                ms.send(packet);
+                tries++;
+                Thread.sleep(100);
+                ms.send(packet);
+                twoPackets = false;
+
+            } catch (IOException e) {
+                System.out.println("\t=======>Network is unreachable");
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException ex) {
+                    ex.printStackTrace();
+                }
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
         try {
 
-            MulticastSocket ms = new MulticastSocket();
-            DatagramPacket packet = new DatagramPacket(serializedPing, serializedPing.length, this.groupIP, this.mcport);
 
-            ms.send(packet);
-            Thread.sleep(100);
-            ms.send(packet);
             //System.out.println("PING "+ id + " ENVIADO\n");
         } catch (Exception e) {
             e.printStackTrace();
@@ -163,16 +183,28 @@ public class PingHandler implements Runnable{
         byte[] serializedPong = bStream.toByteArray();
 
 
-        try {
-            DatagramPacket packet = new DatagramPacket(serializedPong, serializedPong.length, InetAddress.getByName(ping.origin.ip), this.ucport);
-            this.ucs.send(packet);
-            Thread.sleep(50);
-            this.ucs.send(packet);
-            Thread.sleep(50);
-            this.ucs.send(packet);
-            //System.out.println("PONG ENVIADO\n");
-        } catch (Exception e) {
-            e.printStackTrace();
+        boolean twoPackets = true;
+        int tries = 0;
+        while(twoPackets && tries < 2) {
+            try {
+                DatagramPacket packet = new DatagramPacket(serializedPong, serializedPong.length, InetAddress.getByName(ping.origin.ip), this.ucport);
+                this.ucs.send(packet);
+                tries++;
+                Thread.sleep(50);
+                this.ucs.send(packet);
+                twoPackets = true;
+                Thread.sleep(50);
+                this.ucs.send(packet);
+            } catch (IOException e) {
+                System.out.println("\t=======>Network is unreachable");
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException ex) {
+                    ex.printStackTrace();
+                }
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -207,8 +239,6 @@ public class PingHandler implements Runnable{
                 }
             }
         }
-        else
-            //System.out.println("JÁ É MEU VIZINHO");
 
         if(decision && myNN1+1 > this.hardcap)
             this.nh.sendQuit();
@@ -234,8 +264,8 @@ public class PingHandler implements Runnable{
             Kryo kryo = new Kryo();
             DatagramPacket dp;
 
-            this.ses.scheduleWithFixedDelay(sendPing, 0, 10, TimeUnit.SECONDS);
-            this.ses.scheduleWithFixedDelay(emptyPingTray, 7, 5, TimeUnit.SECONDS);
+            this.ses.scheduleWithFixedDelay(sendPing, 0, 4, TimeUnit.SECONDS);
+            this.ses.scheduleWithFixedDelay(emptyPingTray, 1, 2, TimeUnit.SECONDS);
             InetAddress myIP = InetAddress.getByName(this.myNode.ip);
 
             while(this.run){
@@ -253,7 +283,7 @@ public class PingHandler implements Runnable{
 
                     if(!this.ids.contains(header.requestID)) {
                         this.ids.add(header.requestID);
-                        this.ses.schedule(removeID,15,TimeUnit.SECONDS);
+                        this.ses.schedule(removeID,60,TimeUnit.SECONDS);
                         if (header instanceof Ping) {
                             Ping ping = (Ping) header;
                             this.trayLock.lock();

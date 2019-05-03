@@ -15,6 +15,8 @@ public class FileSender implements Runnable{
 
     private Nodo myNode;
 
+    private Ficheiro f;
+
     private int pps;
     private int portToSend;
     private ArrayList<FileChunk> fcToSend;
@@ -22,17 +24,30 @@ public class FileSender implements Runnable{
     private String id;
     private String hash;
 
+    private int startID;
+    private int len;
+    private int pPT;
+    private ArrayList<Integer> mfc;
+
     private DatagramSocket ds;
     private InetAddress ipToSend;
 
-    public FileSender(int portToSend, ArrayList<FileChunk> fc, int pps, String id, String hash, Nodo myNode, String ip){
-        this.pps = pps;
+    public FileSender(Ficheiro f, int portToSend, int startID, int len, int pPT, ArrayList<Integer> mfc, int pps, String id, String hash, Nodo myNode, String ip){
+        this.myNode = myNode;
 
+        this.f = f;
+
+        this.pps = pps;
         this.portToSend = portToSend;
-        this.fcToSend = fc;
+        this.fcToSend = new ArrayList<FileChunk>();
+
         this.id = id;
         this.hash = hash;
-        this.myNode = myNode;
+
+        this.startID = startID;
+        this.len = len;
+        this.pPT = pPT;
+        this.mfc = mfc;
 
         try {
             this.ipToSend = InetAddress.getByName(ip);
@@ -67,25 +82,67 @@ public class FileSender implements Runnable{
     }
 
     public void run() {
-        int i;
-        int tam = this.fcToSend.size();
+        boolean flag = true;
         int counter = 0;
-        try {
-            for (i = 0; i < tam; i++) {
-                sendFileChunk(this.fcToSend.get(i));
-                counter++;
-                Thread.sleep(1000/this.pps);
+        int read = 0;
 
-                if(tam <= 1500){
-                    sendFileChunk(this.fcToSend.get(i));
+        ArrayList<FileChunk> tmp;
+
+        if(this.mfc == null) {
+            if(this.len < this.pPT) {
+                this.fcToSend = this.f.getFileChunks(this.startID, this.len);
+                this.startID += len;
+                read += len;
+            }
+            else{
+                this.fcToSend = this.f.getFileChunks(this.startID, this.pPT);
+                this.startID = this.pPT;
+                read += this.pPT;
+            }
+        }
+        else {
+            this.fcToSend = this.f.getMissingFileChunks(this.mfc);
+        }
+
+        int tam = fcToSend.size();
+
+        while (this.fcToSend.size() > 0){
+            try {
+                sendFileChunk(this.fcToSend.get(0));
+                counter++;
+                Thread.sleep(1000 / this.pps);
+
+                if ((this.mfc != null) && (tam < 1500)) {
+                    sendFileChunk(this.fcToSend.get(0));
                     counter++;
-                    Thread.sleep(1000/this.pps);
+                    Thread.sleep(1000 / this.pps);
+                }
+
+                this.fcToSend.remove(0);
+
+                if((this.mfc == null) && flag &&  (this.fcToSend.size() < 500)){
+
+                    if(counter + this.len < this.pPT){
+                        //System.out.println("VOU LER " + this.len + " | " + this.startID);
+                        tmp = this.f.getFileChunks(startID, this.len);
+                        this.startID += this.len;
+                        read += this.len;
+                    }
+                    else {
+                        //System.out.println("VOU LER " + (this.pPT - read) + " | " + this.startID);
+                        tmp = this.f.getFileChunks(startID, this.pPT - read);
+                        read += this.pPT - read;
+                        this.startID += this.pPT - read;
+                        flag = false;
+                    }
+                    this.fcToSend.addAll(tmp);
+                    tmp = null;
                 }
             }
-            System.out.println("Enviei " + counter + " FILECHUNKS");
+             catch (Exception e){
+                e.printStackTrace();
+            }
         }
-        catch (Exception e){
-            e.printStackTrace();
-        }
+        System.out.println("Enviei " + counter + " FILECHUNKS");
     }
 }

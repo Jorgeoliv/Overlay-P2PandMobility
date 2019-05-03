@@ -110,42 +110,35 @@ public class FilePushHandler implements Runnable{
 
         ArrayList<FileChunk> fcArray = null;
 
-        if(fp.missingFileChunks != null){
-
-            ArrayList<Integer> aux = getIDsFromFCIDStruct(fp.missingFileChunks);
-
-            fcArray = f.getMissingFileChunks(aux);
-            System.out.println("\t\tTIVE QUE IR BUSCAR ALGUNS DOS FILECHUNKS");
-        }
-
         FileSender fsPointer;
         Thread t;
 
         if(fp.missingFileChunks == null) {
 
             int nfcReceivers = fp.portas.length;
-            ArrayList<FileChunk> fileChunks = new ArrayList<FileChunk>();
 
             int packetsPerThread = (int) Math.ceil(fp.fi.numOfFileChunks / nfcReceivers);
-            int pointer = 0, portPointer = 0;
 
-            while(pointer < fp.fi.numOfFileChunks){
-                fileChunks = f.getFileChunks(pointer, packetsPerThread);
+            int startPointer = 0, len = 1000, portPointer = 0;
 
-                fsPointer = new FileSender(fp.portas[portPointer++], fileChunks, fp.pps, id, fp.fi.hash, this.myNode, fp.origin.ip);
+            while(startPointer < nfcReceivers){
+
+                //MANDAR SO O PRIMEIRO PACOTE, QUANTOS DEVE DE LER, E QUANTOS É QUE DEVE DE LER DE CADA VEZ
+                fsPointer = new FileSender(f, fp.portas[portPointer++], startPointer * packetsPerThread, len, packetsPerThread, null, fp.pps, id, fp.fi.hash, this.myNode, fp.origin.ip);
                 t = new Thread(fsPointer);
                 t.start();
-
-                pointer += packetsPerThread;
+                startPointer++;
             }
         }
         else{
             //menos threads porque são pacotes que estao a ser pedidos novamente (max 250 para ja)
+            ArrayList<Integer> aux = getIDsFromFCIDStruct(fp.missingFileChunks);
+
             Random rand = new Random();
             int pos = rand.nextInt(fp.portas.length);
             int porta = fp.portas[pos];
 
-            fsPointer = new FileSender(porta, fcArray, fp.pps, id, fp.fi.hash, this.myNode, fp.origin.ip);
+            fsPointer = new FileSender(f, porta, 0, 0, 0, aux, fp.pps, id, fp.fi.hash, this.myNode, fp.origin.ip);
             t = new Thread(fsPointer);
             t.start();
         }

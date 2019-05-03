@@ -79,7 +79,7 @@ public class ContentOwnerHandler implements Runnable{
                 if(!this.ids.contains(header.requestID)) {
 
                     this.ids.add(header.requestID);
-                    this.ses.schedule(removeID, 5, TimeUnit.SECONDS);
+                    this.ses.schedule(removeID, 60, TimeUnit.SECONDS);
 
                     if (header instanceof ContentOwner) {
                         ContentOwner contentOwner = (ContentOwner) header;

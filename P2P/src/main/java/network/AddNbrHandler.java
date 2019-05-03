@@ -19,6 +19,8 @@ import java.util.concurrent.TimeUnit;
 
 public class AddNbrHandler implements Runnable{
 
+    private boolean run = true;
+
     private int softcap;
     private int hardcap;
 
@@ -87,19 +89,34 @@ public class AddNbrHandler implements Runnable{
         byte[] serializedNbrConfirmation = bStream.toByteArray();
 
 
-        try {
-            DatagramSocket ds = new DatagramSocket();
-            DatagramPacket packet = new DatagramPacket(serializedNbrConfirmation, serializedNbrConfirmation.length, InetAddress.getByName(addNbr.origin.ip), this.ucp_NbrConfirmation);
+        boolean twoPackets = true;
+        int tries = 0;
+        while(twoPackets && tries < 2) {
+            try {
+                DatagramSocket ds = new DatagramSocket();
+                DatagramPacket packet = new DatagramPacket(serializedNbrConfirmation, serializedNbrConfirmation.length, InetAddress.getByName(addNbr.origin.ip), this.ucp_NbrConfirmation);
 
-            ds.send(packet);
-            Thread.sleep(50);
-            ds.send(packet);
-            Thread.sleep(50);
-            ds.send(packet);
-            //System.out.println("NBRCONFIRMATION ENVIADO\n");
-        } catch (Exception e) {
-            e.printStackTrace();
+                ds.send(packet);
+                tries++;
+                Thread.sleep(50);
+                ds.send(packet);
+                twoPackets = true;
+                Thread.sleep(50);
+                ds.send(packet);
+
+            } catch (IOException e) {
+                System.out.println("\t=======>Network is unreachable");
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException ex) {
+                    ex.printStackTrace();
+                }
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
+
+        System.out.println("SENT NBRCONFIRMATION(ADDNBR)");
     }
 
     private void printAddNbr(AddNbr addNbr) {
@@ -140,17 +157,32 @@ public class AddNbrHandler implements Runnable{
                         output.close();
 
                         byte[] serializedAddNbr = bStream.toByteArray();
-                        try {
-                            DatagramSocket ds = new DatagramSocket();
-                            DatagramPacket packet = new DatagramPacket(serializedAddNbr, serializedAddNbr.length, InetAddress.getByName(nN2.ip), this.ucp_AddNbr);
-                            ds.send(packet);
-                            Thread.sleep(50);
-                            ds.send(packet);
-                            Thread.sleep(50);
-                            ds.send(packet);
-                            //System.out.println("ADDNBR ENVIADO PARA " + nN2.ip + "\n");
-                        } catch (Exception e) {
-                            e.printStackTrace();
+
+                        boolean twoPackets = true;
+                        int tries = 0;
+                        while(twoPackets && tries < 2) {
+                            try {
+                                DatagramSocket ds = new DatagramSocket();
+                                DatagramPacket packet = new DatagramPacket(serializedAddNbr, serializedAddNbr.length, InetAddress.getByName(nN2.ip), this.ucp_AddNbr);
+
+                                ds.send(packet);
+                                tries++;
+                                Thread.sleep(50);
+                                ds.send(packet);
+                                twoPackets = true;
+                                Thread.sleep(50);
+                                ds.send(packet);
+
+                            } catch (IOException e) {
+                                System.out.println("\t=======>Network is unreachable");
+                                try {
+                                    Thread.sleep(500);
+                                } catch (InterruptedException ex) {
+                                    ex.printStackTrace();
+                                }
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
                         }
                     }
                     else
@@ -167,6 +199,7 @@ public class AddNbrHandler implements Runnable{
     };
 
     public void kill(){
+        this.run = false;
         this.ses.shutdownNow();
         this.ucs.close();
     }
@@ -176,12 +209,12 @@ public class AddNbrHandler implements Runnable{
             Kryo kryo = new Kryo();
 
 
-            this.ses.scheduleWithFixedDelay(sendAddNbr, 20, 20, TimeUnit.SECONDS);
+            this.ses.scheduleWithFixedDelay(sendAddNbr, 20, 10, TimeUnit.SECONDS);
 
             byte[] buf;
             DatagramPacket dp;
 
-            while (true){
+            while(this.run){
                 buf = new byte[1500];
                 dp = new DatagramPacket(buf, buf.length);
                 this.ucs.receive(dp);
@@ -194,7 +227,7 @@ public class AddNbrHandler implements Runnable{
                 if (!this.ids.contains(header.requestID)) {
 
                     this.ids.add(header.requestID);
-                    this.ses.schedule(removeID, 5, TimeUnit.SECONDS);
+                    this.ses.schedule(removeID, 60, TimeUnit.SECONDS);
 
                     if (header instanceof AddNbr) {
                         AddNbr addNbr = (AddNbr) header;
