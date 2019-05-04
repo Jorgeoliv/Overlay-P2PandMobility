@@ -16,6 +16,7 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.util.ArrayList;
+import java.util.Random;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -32,6 +33,7 @@ public class FilePullHandler implements Runnable{
     private int ucp_FilePullHandler;
 
     private int pps = 200;
+    private int len = 4000;
 
     private ArrayList<String> ids = new ArrayList<String>();
     private DatagramSocket ds;
@@ -58,6 +60,79 @@ public class FilePullHandler implements Runnable{
         this.fph.sendFile(fp);
     }
 
+    public void sendToMultipleNodes(PairNodoFileInfo choice, int[] portas){
+        Random rand = new Random();
+
+        ArrayList<Nodo> nodesToSend;
+
+        int packetsPerNode = (int) Math.ceil(choice.fileInfo.numOfFileChunks / choice.nodo.size());
+
+        int numOfNodes = packetsPerNode / this.len;
+
+        if (numOfNodes == 0)
+            numOfNodes = 1;
+        if (numOfNodes > choice.nodo.size())
+            numOfNodes = choice.nodo.size();
+
+        int pos;
+        if(numOfNodes <= choice.nodo.size()){
+            nodesToSend = new ArrayList<Nodo>();
+            while(nodesToSend.size() < numOfNodes) {
+                pos = rand.nextInt(choice.nodo.size());
+                nodesToSend.add(choice.nodo.get(pos));
+                choice.nodo.remove(pos);
+            }
+        }
+        else
+            nodesToSend = choice.nodo;
+
+        for(int i = 0; i < numOfNodes; i++){
+            FilePull fp = new FilePull(this.idGen.getID(""), this.myNode, choice.fileInfo, portas, this.pps, null, packetsPerNode * i, this.len);
+
+            ByteArrayOutputStream bStream = new ByteArrayOutputStream();
+            Output output = new Output(bStream);
+
+            Kryo kryo = new Kryo();
+            kryo.writeClassAndObject(output, fp);
+            output.close();
+
+            byte[] serializedPing = bStream.toByteArray();
+            //System.out.println("É ISTO QUE QUERO VER!!!!!!!!!!!!!!!!!!!!!!" + serializedPing.length);
+
+            boolean twoPackets = false;
+            int tries = 0;
+            int failures = 0;
+
+            while (!twoPackets && tries < 2 && failures < 10) {
+                try {
+                    DatagramSocket ds = new DatagramSocket();
+                    DatagramPacket packet = new DatagramPacket(serializedPing, serializedPing.length, InetAddress.getByName(nodesToSend.get(i).ip), this.ucp_FilePullHandler);
+
+                    ds.send(packet);
+                    tries++;
+                    Thread.sleep(50);
+                    ds.send(packet);
+                    twoPackets = true;
+                    Thread.sleep(50);
+                    ds.send(packet);
+
+                    //System.out.println("ENVIEI O FILEPULL " + "\n\t" + choice.nodo.ip + "\n\t" + this.ucp_FilePullHandler + "\n\t" + choice.fileInfo.hash);
+                    this.fph.startReceivers(choice.fileInfo.hash);
+                } catch (IOException e) {
+                    System.out.println("\t=======>Network is unreachable");
+                    failures++;
+                    try {
+                        Thread.sleep(500);
+                    } catch (InterruptedException ex) {
+                        //ex.printStackTrace();
+                    }
+                } catch (InterruptedException e) {
+                    //e.printStackTrace();
+                }
+            }
+        }
+    }
+
     public void send(PairNodoFileInfo choice) {
         this.fph.registerFile(choice.fileInfo, choice.nodo);
 
@@ -68,47 +143,54 @@ public class FilePullHandler implements Runnable{
         for(int i = 0; i < ports.size(); i++)
             portas[i] = ports.get(i);
 
-        FilePull fp = new FilePull(this.idGen.getID(""), this.myNode, choice.fileInfo, portas, this.pps, null);
+        if(choice.nodo.size()> 1) {
+            System.out.println("MUITOS NODOS");
+            sendToMultipleNodes(choice, portas);
+        }
+        else {
+            System.out.println("SO 1 NODO");
+            FilePull fp = new FilePull(this.idGen.getID(""), this.myNode, choice.fileInfo, portas, this.pps, null, 0, -1);
 
-        ByteArrayOutputStream bStream = new ByteArrayOutputStream();
-        Output output = new Output(bStream);
+            ByteArrayOutputStream bStream = new ByteArrayOutputStream();
+            Output output = new Output(bStream);
 
-        Kryo kryo = new Kryo();
-        kryo.writeClassAndObject(output, fp);
-        output.close();
+            Kryo kryo = new Kryo();
+            kryo.writeClassAndObject(output, fp);
+            output.close();
 
-        byte[] serializedPing = bStream.toByteArray();
-        //System.out.println("É ISTO QUE QUERO VER!!!!!!!!!!!!!!!!!!!!!!" + serializedPing.length);
+            byte[] serializedPing = bStream.toByteArray();
+            //System.out.println("É ISTO QUE QUERO VER!!!!!!!!!!!!!!!!!!!!!!" + serializedPing.length);
 
-        boolean twoPackets = false;
-        int tries = 0;
-        int failures = 0;
+            boolean twoPackets = false;
+            int tries = 0;
+            int failures = 0;
 
-        while (!twoPackets && tries < 2 && failures < 10) {
-            try {
-                DatagramSocket ds = new DatagramSocket();
-                DatagramPacket packet = new DatagramPacket(serializedPing, serializedPing.length, InetAddress.getByName(choice.nodo.ip), this.ucp_FilePullHandler);
-
-                ds.send(packet);
-                tries++;
-                Thread.sleep(50);
-                ds.send(packet);
-                twoPackets = true;
-                Thread.sleep(50);
-                ds.send(packet);
-
-                //System.out.println("ENVIEI O FILEPULL " + "\n\t" + choice.nodo.ip + "\n\t" + this.ucp_FilePullHandler + "\n\t" + choice.fileInfo.hash);
-                this.fph.startReceivers(choice.fileInfo.hash);
-            } catch (IOException e) {
-                System.out.println("\t=======>Network is unreachable");
-                failures++;
+            while (!twoPackets && tries < 2 && failures < 10) {
                 try {
-                    Thread.sleep(500);
-                } catch (InterruptedException ex) {
-                    //ex.printStackTrace();
+                    DatagramSocket ds = new DatagramSocket();
+                    DatagramPacket packet = new DatagramPacket(serializedPing, serializedPing.length, InetAddress.getByName(choice.nodo.get(0).ip), this.ucp_FilePullHandler);
+
+                    ds.send(packet);
+                    tries++;
+                    Thread.sleep(50);
+                    ds.send(packet);
+                    twoPackets = true;
+                    Thread.sleep(50);
+                    ds.send(packet);
+
+                    //System.out.println("ENVIEI O FILEPULL " + "\n\t" + choice.nodo.ip + "\n\t" + this.ucp_FilePullHandler + "\n\t" + choice.fileInfo.hash);
+                    this.fph.startReceivers(choice.fileInfo.hash);
+                } catch (IOException e) {
+                    System.out.println("\t=======>Network is unreachable");
+                    failures++;
+                    try {
+                        Thread.sleep(500);
+                    } catch (InterruptedException ex) {
+                        //ex.printStackTrace();
+                    }
+                } catch (InterruptedException e) {
+                    //e.printStackTrace();
                 }
-            } catch (InterruptedException e) {
-                //e.printStackTrace();
             }
         }
     }

@@ -18,9 +18,9 @@ import java.util.concurrent.TimeUnit;
 class PairNodoFileInfo{
 
     FileInfo fileInfo;
-    Nodo nodo;
+    ArrayList<Nodo> nodo;
 
-    public PairNodoFileInfo(FileInfo fileInfo, Nodo nodo) {
+    public PairNodoFileInfo(FileInfo fileInfo, ArrayList<Nodo> nodo) {
         this.fileInfo = fileInfo;
         this.nodo = nodo;
     }
@@ -87,8 +87,6 @@ public class FileHandler implements Runnable {
         boolean sair = false;
         int opcao = 0;
 
-
-
         System.out.println("***** Escolha a fonte *****");
         System.out.print("Opção: ");
 
@@ -109,16 +107,49 @@ public class FileHandler implements Runnable {
         }
 
         return aux.get(opcao-1);
-
     }
 
     private void analisaCD(String id, String file){
         ArrayList<PairNodoFileInfo> aux = cdResponses.get(id);
+        HashMap <String, PairNodoFileInfo> auxHash = new HashMap<String, PairNodoFileInfo>();
+
         if(aux.size() > 0) {
+            HashMap<String, PairNodoFileInfo> sameFile = new HashMap<String, PairNodoFileInfo>();
+            PairNodoFileInfo newPnfi;
+            ArrayList<Nodo> node;
+
             System.out.println("\nA SUA PESQUISA POR " + file + " RETORNOU OS SEGUINTES RESOLTADOS:\n");
             int i = 1;
-            for (PairNodoFileInfo pnfi : aux)
-                System.out.println("\t" + i++ + ") Node " + pnfi.nodo.id + "( ip: " + pnfi.nodo.ip + " )" + "\n\t\tNome => " + pnfi.fileInfo.name + "\n\t\tHash => " + pnfi.fileInfo.hash + "\n\t\tTamanho => " + pnfi.fileInfo.fileSize + " bytes ( " + pnfi.fileInfo.numOfFileChunks + " FileChunks )\n");
+            for (PairNodoFileInfo pnfi : aux) {
+                auxHash.put(pnfi.fileInfo.hash, pnfi);
+                System.out.println("\t" + i++ + ") Node " + pnfi.nodo.get(0).id + "( ip: " + pnfi.nodo.get(0).ip + " )" + "\n\t\tNome => " + pnfi.fileInfo.name + "\n\t\tHash => " + pnfi.fileInfo.hash + "\n\t\tTamanho => " + pnfi.fileInfo.fileSize + " bytes ( " + pnfi.fileInfo.numOfFileChunks + " FileChunks )\n");
+            }
+
+            for(PairNodoFileInfo p : aux){
+
+                if(sameFile.containsKey(p.fileInfo.hash)) {
+                    newPnfi = sameFile.get(p.fileInfo.hash);
+                }
+                else {
+                    newPnfi = new PairNodoFileInfo(p.fileInfo, new ArrayList<Nodo>());
+                }
+                node = newPnfi.nodo;
+                node.addAll(p.nodo);
+                sameFile.put(p.fileInfo.hash, newPnfi);
+
+            }
+
+            for(PairNodoFileInfo p : auxHash.values()){
+                newPnfi = sameFile.get(p.fileInfo.hash);
+                System.out.print("\t" + i++ + ")");
+                for(Nodo n : newPnfi.nodo) {
+                    System.out.println("Node " + n.id + "( ip: " + n.ip + " )");
+                    System.out.print("\t\t");
+                }
+                System.out.print("Nome => " + p.fileInfo.name + "\n\t\tHash => " + p.fileInfo.hash + "\n\t\tTamanho => " + p.fileInfo.fileSize + " bytes ( " + p.fileInfo.numOfFileChunks + " FileChunks )\n");
+            }
+
+            aux.addAll(sameFile.values());
 
             PairNodoFileInfo choice = fileChoice(i, aux);
 
@@ -149,6 +180,8 @@ public class FileHandler implements Runnable {
         this.contentOwnerHandler = new ContentOwnerHandler(this, this.ucp_ContentOwner);
         this.filePushHandler = new FilePushHandler(this.ucp_filePushHandler, this.ucp_filePullHandler, this.fileTables, this, this.idGen, this.myNode);
         this.filePullHandler = new FilePullHandler(this.ucp_filePullHandler, this.filePushHandler, this.idGen, this.myNode);
+
+        this.filePushHandler.setFPLH(this.filePullHandler);
     }
 
     public FileTables getFileTables() {
@@ -230,8 +263,11 @@ public class FileHandler implements Runnable {
     public void registerPair(String cdID, Nodo node, FileInfo fi){
 
         ArrayList<PairNodoFileInfo> aux = this.cdResponses.get(cdID);
+        ArrayList<Nodo> nodePointer;
         if(aux != null) {
-            aux.add(new PairNodoFileInfo(fi, node));
+            nodePointer = new ArrayList<Nodo>();
+            nodePointer.add(node);
+            aux.add(new PairNodoFileInfo(fi, nodePointer));
             this.cdResponses.put(cdID, aux);
         }
         else

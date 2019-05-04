@@ -42,7 +42,7 @@ public class FileReceiver implements Runnable {
                 b = false;
             }
             catch (Exception e) {
-                //System.out.println("ESCOLHI UMA PORTA JÁ EM USO => " + this.port);
+                System.out.println("ESCOLHI UMA PORTA JÁ EM USO => " + this.port);
             }
         }
     }
