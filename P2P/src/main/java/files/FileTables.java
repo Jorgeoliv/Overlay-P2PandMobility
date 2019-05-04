@@ -65,14 +65,14 @@ public class FileTables {
         }
     }
 
-    public String addMyContent(ArrayList<FileInfo> files){
-
+    public String newHash(ArrayList<FileInfo> files){
+        String fileHashs = "";
         rlMyContent.lock();
         try{
             for(FileInfo m: files) {
-                myContent.put(m.hash, m);
+                fileHashs = UUID.nameUUIDFromBytes((m.hash + fileHashs).getBytes()).toString();
             }
-            this.myHash = UUID.randomUUID().toString();
+            this.myHash = UUID.nameUUIDFromBytes((fileHashs + this.myHash).getBytes()).toString();
             return this.myHash;
         }finally {
             rlMyContent.unlock();
@@ -84,8 +84,9 @@ public class FileTables {
 
         rlMyContent.lock();
         try{
-            for(FileInfo m: files)
+            for(FileInfo m: files) {
                 myContent.remove(m);
+            }
             this.myHash = UUID.randomUUID().toString();
             return this.myHash;
         }finally {
@@ -218,6 +219,13 @@ public class FileTables {
         return fi;
     }
 
+    public ArrayList<String> getNBRFileInfo(){
+        this.rlNbrContent.lock();
+        ArrayList<String> fi = new ArrayList<String>(this.nbrContent.keySet());
+        this.rlNbrContent.unlock();
+        return fi;
+    }
+
     public ArrayList<FileInfo> newFicheiro (ArrayList<String> path, String NodeId) {
         ArrayList<FileInfo> fi = new ArrayList<FileInfo>();
         FileInfo aux;
@@ -229,7 +237,7 @@ public class FileTables {
                 String name = auxSplit[auxSplit.length - 1];
                 Ficheiro f = new Ficheiro(p, NodeId, name, FileChunkSize);
                 this.myFiles.put(name, f);
-                aux = new FileInfo(name, UUID.randomUUID().toString(), f.getNumberOfChunks(), f.getFileSize());
+                aux = new FileInfo(name, UUID.nameUUIDFromBytes(f.getFirstChunk().getFileChunk()).toString(), f.getNumberOfChunks(), f.getFileSize());
                 fi.add(aux);
                 this.myContent.put(name, aux);
             }
@@ -242,6 +250,7 @@ public class FileTables {
 
     public ArrayList<FileInfo> addFicheiroToMyContent (FileInfo fi, Ficheiro f){
         this.myContent.put(fi.name, fi);
+
         ArrayList<FileInfo> res = new ArrayList<FileInfo>();
         res.add(fi);
 

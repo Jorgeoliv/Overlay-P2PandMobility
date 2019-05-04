@@ -90,6 +90,25 @@ public class StartP2P {
 
     }
 
+
+    private static void printNBRContent(FileHandler fh) {
+        ArrayList<String> fileNames = fh.getNBRContent();
+        int i = 1;
+
+        for(String name : fileNames){
+            System.out.println("\t" + i++ + "\n\t\t" + "Nome => " + name);
+        }
+    }
+
+    private static void printMyContent(FileHandler fh) {
+        ArrayList<FileInfo> fis = fh.getMyContent();
+        int i = 1;
+
+        for(FileInfo fi :fis){
+            System.out.println("\t" + i++ + ")\n\t\tNome => " + fi.name + "\n\t\tHash => " + fi.hash + "\n\t\tTamanho => " + fi.fileSize + " bytes ( " + fi.numOfFileChunks + " FileChunks )\n");
+        }
+    }
+
     public static void main(String[] args) throws UnknownHostException {
 
         FileHandler fh = new FileHandler();
@@ -117,12 +136,14 @@ public class StartP2P {
                     e.printStackTrace();
                 }
             }
-            System.out.println("*********** MENU ************");
-            System.out.println("*    1 - Upload Ficheiro    *");
-            System.out.println("*    2 - Download Ficheiro  *");
-            System.out.println("*    3 - Consultar Vizinhos *");
-            System.out.println("*    Outro para sair        *");
-            System.out.println("*****************************");
+            System.out.println("*********** MENU ******************");
+            System.out.println("*    1 - Upload Ficheiro          *");
+            System.out.println("*    2 - Download Ficheiro        *");
+            System.out.println("*    3 - Consultar Vizinhos       *");
+            System.out.println("*    4 - Consultar meu Conteúdo   *");
+            System.out.println("*    5 - Conteúdo dos Vizinhos    *");
+            System.out.println("*        Outro para sair          *");
+            System.out.println("***********************************");
             System.out.print("Opção: ");
 
             boolean c = false;
@@ -141,6 +162,8 @@ public class StartP2P {
                 case 1: upload(inP, fh, fh.getFileTables(), nh.getID()); break;
                 case 2: download(inP, fh); break;
                 case 3: printNBR(nh); break;
+                case 4: printMyContent(fh); break;
+                case 5: printNBRContent(fh); break;
                 default: sair = true;
             }
         }

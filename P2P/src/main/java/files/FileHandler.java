@@ -118,7 +118,7 @@ public class FileHandler implements Runnable {
             System.out.println("\nA SUA PESQUISA POR " + file + " RETORNOU OS SEGUINTES RESOLTADOS:\n");
             int i = 1;
             for (PairNodoFileInfo pnfi : aux)
-                System.out.println("\t" + i++ + ") Node " + pnfi.nodo.id + "( ip: " + pnfi.nodo.ip + " )" + "\n\t\tNome => " + pnfi.fileInfo.name + "\n\t\tHash => " + pnfi.fileInfo.hash + "\n\t\tTamanho => " + pnfi.fileInfo.fileSize + " bytes ( " + pnfi.fileInfo.numOfFileChunks + " FileChunks )");
+                System.out.println("\t" + i++ + ") Node " + pnfi.nodo.id + "( ip: " + pnfi.nodo.ip + " )" + "\n\t\tNome => " + pnfi.fileInfo.name + "\n\t\tHash => " + pnfi.fileInfo.hash + "\n\t\tTamanho => " + pnfi.fileInfo.fileSize + " bytes ( " + pnfi.fileInfo.numOfFileChunks + " FileChunks )\n");
 
             PairNodoFileInfo choice = fileChoice(i, aux);
 
@@ -126,7 +126,7 @@ public class FileHandler implements Runnable {
             this.filePullHandler.send(choice);
         }
         else
-            System.out.println("\nA SUA PESQUISA POR " + file + " NÃO RETURNOU NENHUM RESULTADO");
+            System.out.println("\nA SUA PESQUISA POR " + file + " NÃO RETURNOU NENHUM RESULTADO\n");
     }
 
     private Runnable analyseAndDelete(final String id, String file){
@@ -240,7 +240,7 @@ public class FileHandler implements Runnable {
 
     public void sendUpdate(ArrayList<FileInfo> files) {
         String oldHash = this.fileTables.getMyHash();
-        String newHash = this.fileTables.addMyContent(files);
+        String newHash = this.fileTables.newHash(files);
 
         UpdateTable ut = new UpdateTable(this.idGen.getID(""), this.myNode, files, null, oldHash, newHash);
         this.updateHandler.sendUpdate(ut);
@@ -248,6 +248,14 @@ public class FileHandler implements Runnable {
 
     public boolean getDrawMenu(){
         return this.drawMenu;
+    }
+
+    public ArrayList<FileInfo> getMyContent(){
+        return this.fileTables.getFileInfo();
+    }
+
+    public ArrayList<String> getNBRContent(){
+        return this.fileTables.getNBRFileInfo();
     }
 
     public void kill() {

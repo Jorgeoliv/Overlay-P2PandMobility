@@ -249,4 +249,8 @@ public class Ficheiro {
     public long getFileSize(){
         return this.fileSize;
     }
+
+    public FileChunk getFirstChunk(){
+        return getFileChunks(0, 1).get(0);
+    }
 }
