@@ -278,7 +278,7 @@ public class AliveHandler implements Runnable {
 
         }
         catch (SocketException se){
-            System.out.println("\t=>ALIVEHANDLER DATAGRAMSOCKET CLOSED");
+            //System.out.println("\t=>ALIVEHANDLER DATAGRAMSOCKET CLOSED");
         }
         catch (Exception e) {
             e.printStackTrace();

@@ -297,7 +297,7 @@ public class PingHandler implements Runnable{
             }
         }
         catch (SocketException se){
-            System.out.println("\t=>PING MULTICASTSOCKET CLOSED");
+            //System.out.println("\t=>PING MULTICASTSOCKET CLOSED");
         }
         catch (IOException e) {
             e.printStackTrace();

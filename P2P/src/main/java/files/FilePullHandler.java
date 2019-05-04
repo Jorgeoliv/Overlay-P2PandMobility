@@ -30,7 +30,7 @@ public class FilePullHandler implements Runnable{
     private IDGen idGen;
     private int ucp_FilePullHandler;
 
-    private int pps = 200;
+    private int pps = 300;
 
     private ArrayList<String> ids = new ArrayList<String>();
     private DatagramSocket ds;
@@ -138,7 +138,7 @@ public class FilePullHandler implements Runnable{
             }
         }
         catch (SocketException se){
-            System.out.println("\t=>FILEPULLHANDLER DATAGRAMSOCKET CLOSED");
+            //System.out.println("\t=>FILEPULLHANDLER DATAGRAMSOCKET CLOSED");
         }
         catch(Exception e){
             e.printStackTrace();

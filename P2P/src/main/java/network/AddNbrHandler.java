@@ -236,7 +236,7 @@ public class AddNbrHandler implements Runnable{
             }
 
         }catch (SocketException se){
-            System.out.println("\t=>ADDNBRHANDLER DATAGRAMSOCKET CLOSED");
+            //System.out.println("\t=>ADDNBRHANDLER DATAGRAMSOCKET CLOSED");
         }catch (IOException e) {
             e.printStackTrace();
         }

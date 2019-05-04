@@ -234,7 +234,7 @@ public class ContentDiscoveryHandler implements Runnable{
             }
         }
         catch (SocketException se){
-            System.out.println("\t=>CONTENTDISCOVERYHANDLER DATAGRAMSOCKET CLOSED");
+            //System.out.println("\t=>CONTENTDISCOVERYHANDLER DATAGRAMSOCKET CLOSED");
         }
         catch (Exception e) {
             e.printStackTrace();

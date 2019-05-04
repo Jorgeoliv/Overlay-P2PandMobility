@@ -57,7 +57,6 @@ public class FileReceiver implements Runnable {
         try{
             byte[] buffer;
             DatagramPacket dp;
-
             while (this.run){
                 buffer = new byte[1500];
                 dp = new DatagramPacket(buffer, buffer.length);

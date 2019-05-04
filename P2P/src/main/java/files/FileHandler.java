@@ -274,6 +274,6 @@ public class FileHandler implements Runnable {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        System.out.println("FILEHANDLER KILLED");
+        //System.out.println("FILEHANDLER KILLED");
     }
 }

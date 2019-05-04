@@ -227,7 +227,7 @@ public class PongHandler implements Runnable {
 
         }
         catch (SocketException se){
-            System.out.println("\t=>PONG DATAGRAMSOCKET CLOSED");
+            //System.out.println("\t=>PONG DATAGRAMSOCKET CLOSED");
         }
         catch (IOException e) {
             e.printStackTrace();

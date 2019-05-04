@@ -89,7 +89,7 @@ public class ContentOwnerHandler implements Runnable{
             }
         }
         catch (SocketException se){
-            System.out.println("\t=>CONTENTOWNERHANDLER DATAGRAMSOCKET CLOSED");
+            //System.out.println("\t=>CONTENTOWNERHANDLER DATAGRAMSOCKET CLOSED");
         }
         catch(Exception e){
             e.printStackTrace();

@@ -332,7 +332,7 @@ public class NetworkHandler implements Runnable{
         } catch (Exception e) {
             e.printStackTrace();
         }
-        System.out.println("NETWORKHANDLER KILLED");
+        //System.out.println("NETWORKHANDLER KILLED");
     }
 
     public ArrayList<Nodo> getNBRN1(){

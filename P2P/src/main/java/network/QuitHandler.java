@@ -87,7 +87,7 @@ public class QuitHandler implements Runnable {
             Thread.sleep(50);
             ds.send(packet);
 
-            System.out.println("QUIT ENVIADO PARA "+ node.ip + " ENVIADO\n");
+            //System.out.println("QUIT ENVIADO PARA "+ node.ip + " ENVIADO\n");
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -149,7 +149,7 @@ public class QuitHandler implements Runnable {
             }
         }
         catch (SocketException se){
-            System.out.println("\t=>QUITHANDLER DATAGRAMSOCKET CLOSED");
+            //System.out.println("\t=>QUITHANDLER DATAGRAMSOCKET CLOSED");
         }
         catch (Exception e){
             e.printStackTrace();

@@ -35,7 +35,7 @@ public class FilePushHandler implements Runnable{
     private HashMap<String, ArrayList <Thread>> fileReceiversThreads;
     private HashMap<String, Integer> timeouts;
 
-    private int TimeOutpps = 200;
+    private int TimeOutpps = 300;
 
     private FileTables ft;
     private final FileHandler fh;
@@ -157,7 +157,7 @@ public class FilePushHandler implements Runnable{
         ArrayList<FileReceiver> fR = new ArrayList<FileReceiver>();
         ArrayList<Integer> fRPorts = new ArrayList<Integer>();
 
-        int numOfReceivers = numOfFileChunks / 3000;
+        int numOfReceivers = numOfFileChunks / 4000;
 
         if(numOfReceivers == 0)
             numOfReceivers = 1;

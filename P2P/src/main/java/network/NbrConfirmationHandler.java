@@ -231,7 +231,7 @@ public class NbrConfirmationHandler implements Runnable {
             }
 
         }catch (SocketException se){
-            System.out.println("\t=>NBRCONFIRMATIONHANDLER DATAGRAMSOCKET CLOSED");
+            //System.out.println("\t=>NBRCONFIRMATIONHANDLER DATAGRAMSOCKET CLOSED");
         }catch (IOException e) {
             e.printStackTrace();
         }

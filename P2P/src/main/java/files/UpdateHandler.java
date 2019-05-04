@@ -394,7 +394,7 @@ public class UpdateHandler implements Runnable{
 
             }
         }catch (SocketException se){
-                System.out.println("\t=>UPDATEHANDLER DATAGRAMSOCKET CLOSED");
+                //System.out.println("\t=>UPDATEHANDLER DATAGRAMSOCKET CLOSED");
         }catch (UnknownHostException e) {
             e.printStackTrace();
         }catch (IOException e) {
