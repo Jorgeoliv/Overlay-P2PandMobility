@@ -10,6 +10,7 @@ import network.Nodo;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
@@ -30,7 +31,7 @@ public class FilePullHandler implements Runnable{
     private IDGen idGen;
     private int ucp_FilePullHandler;
 
-    private int pps = 300;
+    private int pps = 200;
 
     private ArrayList<String> ids = new ArrayList<String>();
     private DatagramSocket ds;
@@ -78,21 +79,37 @@ public class FilePullHandler implements Runnable{
 
         byte[] serializedPing = bStream.toByteArray();
         //System.out.println("É ISTO QUE QUERO VER!!!!!!!!!!!!!!!!!!!!!!" + serializedPing.length);
-        try {
-            DatagramSocket ds = new DatagramSocket();
-            DatagramPacket packet = new DatagramPacket(serializedPing, serializedPing.length, InetAddress.getByName(choice.nodo.ip), this.ucp_FilePullHandler);
 
-            ds.send(packet);
-            Thread.sleep(50);
-            ds.send(packet);
-            Thread.sleep(50);
-            ds.send(packet);
+        boolean twoPackets = false;
+        int tries = 0;
+        int failures = 0;
 
-            //System.out.println("ENVIEI O FILEPULL " + "\n\t" + choice.nodo.ip + "\n\t" + this.ucp_FilePullHandler + "\n\t" + choice.fileInfo.hash);
-            this.fph.startReceivers(choice.fileInfo.hash);
-        }
-        catch (Exception e){
-            e.printStackTrace();
+        while (!twoPackets && tries < 2 && failures < 10) {
+            try {
+                DatagramSocket ds = new DatagramSocket();
+                DatagramPacket packet = new DatagramPacket(serializedPing, serializedPing.length, InetAddress.getByName(choice.nodo.ip), this.ucp_FilePullHandler);
+
+                ds.send(packet);
+                tries++;
+                Thread.sleep(50);
+                ds.send(packet);
+                twoPackets = true;
+                Thread.sleep(50);
+                ds.send(packet);
+
+                //System.out.println("ENVIEI O FILEPULL " + "\n\t" + choice.nodo.ip + "\n\t" + this.ucp_FilePullHandler + "\n\t" + choice.fileInfo.hash);
+                this.fph.startReceivers(choice.fileInfo.hash);
+            } catch (IOException e) {
+                System.out.println("\t=======>Network is unreachable");
+                failures++;
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException ex) {
+                    //ex.printStackTrace();
+                }
+            } catch (InterruptedException e) {
+                //e.printStackTrace();
+            }
         }
     }
 
@@ -100,6 +117,7 @@ public class FilePullHandler implements Runnable{
         if(!this.ids.isEmpty())
             this.ids.remove(0);
     };
+
 
     public void kill(){
         this.run = false;

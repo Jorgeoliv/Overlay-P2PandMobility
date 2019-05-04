@@ -1,12 +1,7 @@
 package network;
 
 
-import files.ContentDiscoveryHandler;
-import files.FileInfo;
 import files.FileTables;
-import files.UpdateHandler;
-import mensagens.ContentDiscovery;
-import mensagens.UpdateTable;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -30,8 +25,8 @@ public class NetworkHandler implements Runnable{
     private int ucp_Quit = 6008;
 
     //Caps
-    private int SOFTCAP = 4;
-    private int HARDCAP = 10;
+    private int SOFTCAP = 2;
+    private int HARDCAP = 4;
     private TreeSet<Nodo> inPingConv;
 
     //Estruturas de dados externas
@@ -71,7 +66,7 @@ public class NetworkHandler implements Runnable{
         this.validPings = new ArrayList<String>();
         this.validAddNbrs = new ArrayList<String>();
 
-        this.nt = new NetworkTables(this.myNode, ft);
+        this.nt = new NetworkTables(HARDCAP, this.myNode, ft);
         this.ft = ft;
         this.nodeLock = new ReentrantLock();
         this.pingLock = new ReentrantLock();

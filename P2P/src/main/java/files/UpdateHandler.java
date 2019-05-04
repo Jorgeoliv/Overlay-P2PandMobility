@@ -64,7 +64,7 @@ public class UpdateHandler implements Runnable{
     private ArrayList<SupportUpdate> updateSent = new ArrayList<>();
     private ReentrantLock lockUpdate = new ReentrantLock();
 
-    public UpdateHandler(){}
+    private ArrayList<String> ids = new ArrayList<String>();
 
     public UpdateHandler(int ucp_Update, Nodo myNode, FileTables ft, IDGen idGen, NetworkTables nt) {
         this.ucp_Update = ucp_Update;
@@ -167,23 +167,46 @@ public class UpdateHandler implements Runnable{
         }
     };
 
-    private void sendAck(Ack ack, Nodo dest){
+    private void sendAck(Ack ack, Nodo dest) {
         Kryo kryo = new Kryo();
 
-        try {
-            DatagramSocket socket = new DatagramSocket();
-            ByteArrayOutputStream bStream = new ByteArrayOutputStream();
-            Output output = new Output(bStream);
-            kryo.writeClassAndObject(output, ack);
-            output.close();
 
-            byte[] serializedMessage = bStream.toByteArray();
+        ByteArrayOutputStream bStream = new ByteArrayOutputStream();
+        Output output = new Output(bStream);
+        kryo.writeClassAndObject(output, ack);
+        output.close();
 
-            DatagramPacket packet = new DatagramPacket(serializedMessage, serializedMessage.length, InetAddress.getByName(dest.ip), this.ucp_Update);
-            socket.send(packet);
-        }
-        catch (Exception e) {
-            e.printStackTrace();
+        byte[] serializedMessage = bStream.toByteArray();
+
+
+        boolean twoPackets = false;
+        int tries = 0;
+        int failures = 0;
+
+        while (!twoPackets && tries < 2 && failures < 10) {
+            try {
+                DatagramSocket socket = new DatagramSocket();
+                DatagramPacket packet = new DatagramPacket(serializedMessage, serializedMessage.length, InetAddress.getByName(dest.ip), this.ucp_Update);
+
+                socket.send(packet);
+                tries++;
+                Thread.sleep(50);
+                socket.send(packet);
+                twoPackets = true;
+                Thread.sleep(50);
+                socket.send(packet);
+
+            } catch (IOException e) {
+                System.out.println("\t=======>Network is unreachable");
+                failures++;
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException ex) {
+                    //ex.printStackTrace();
+                }
+            } catch (InterruptedException e) {
+                //e.printStackTrace();
+            }
         }
     }
 
@@ -191,20 +214,41 @@ public class UpdateHandler implements Runnable{
         Kryo kryo = new Kryo();
 
         for(Nodo n: myNbrs){
-            try {
-                DatagramSocket socket = new DatagramSocket();
-                ByteArrayOutputStream bStream = new ByteArrayOutputStream();
-                Output output = new Output(bStream);
-                kryo.writeClassAndObject(output, ut);
-                output.close();
 
-                byte[] serializedMessage = bStream.toByteArray();
+            ByteArrayOutputStream bStream = new ByteArrayOutputStream();
+            Output output = new Output(bStream);
+            kryo.writeClassAndObject(output, ut);
+            output.close();
 
-                DatagramPacket packet = new DatagramPacket(serializedMessage, serializedMessage.length, InetAddress.getByName(n.ip), this.ucp_Update);
-                socket.send(packet);
-            }
-            catch (Exception e) {
-                e.printStackTrace();
+            byte[] serializedMessage = bStream.toByteArray();
+            boolean twoPackets = false;
+            int tries = 0;
+            int failures = 0;
+
+            while(!twoPackets && tries < 2 && failures < 10) {
+                try {
+                    DatagramSocket socket = new DatagramSocket();
+                    DatagramPacket packet = new DatagramPacket(serializedMessage, serializedMessage.length, InetAddress.getByName(n.ip), this.ucp_Update);
+
+                    socket.send(packet);
+                    tries++;
+                    Thread.sleep(50);
+                    socket.send(packet);
+                    twoPackets = true;
+                    Thread.sleep(50);
+                    socket.send(packet);
+
+                } catch (IOException e) {
+                    System.out.println("\t=======>Network is unreachable");
+                    failures++;
+                    try {
+                        Thread.sleep(500);
+                    } catch (InterruptedException ex) {
+                        //ex.printStackTrace();
+                    }
+                } catch (InterruptedException e) {
+                    //e.printStackTrace();
+                }
             }
         }
     }
@@ -224,22 +268,48 @@ public class UpdateHandler implements Runnable{
         updateSent.add(su);
         lockUpdate.unlock();
         //System.out.println("Vou enviar um update para os meus vizinhos: " + myNbrs.size());
+        Nodo n;
+        int tam = myNbrs.size();
+        for(int k = 0; k < tam; k++){
+            //System.out.println("TAM => " + tam);
+            //System.out.println("K => " + k);
+            n = myNbrs.get(k);
 
-        for(Nodo n: myNbrs){
-            try {
-                DatagramSocket socket = new DatagramSocket();
-                ByteArrayOutputStream bStream = new ByteArrayOutputStream();
-                Output output = new Output(bStream);
-                kryo.writeClassAndObject(output, ut);
-                output.close();
+            ByteArrayOutputStream bStream = new ByteArrayOutputStream();
+            Output output = new Output(bStream);
+            kryo.writeClassAndObject(output, ut);
+            output.close();
 
-                byte[] serializedMessage = bStream.toByteArray();
+            byte[] serializedMessage = bStream.toByteArray();
 
-                DatagramPacket packet = new DatagramPacket(serializedMessage, serializedMessage.length, InetAddress.getByName(n.ip), this.ucp_Update);
-                socket.send(packet);
-            }
-            catch (Exception e) {
-                e.printStackTrace();
+            boolean twoPackets = false;
+            int tries = 0;
+            int failures = 0;
+
+            while(!twoPackets && tries < 2 && failures < 10) {
+                try {
+                    DatagramSocket socket = new DatagramSocket();
+                    DatagramPacket packet = new DatagramPacket(serializedMessage, serializedMessage.length, InetAddress.getByName(n.ip), this.ucp_Update);
+
+                    socket.send(packet);
+                    tries++;
+                    Thread.sleep(50);
+                    socket.send(packet);
+                    twoPackets = true;
+                    Thread.sleep(50);
+                    socket.send(packet);
+
+                } catch (IOException e) {
+                    System.out.println("\t=======>Network is unreachable");
+                    failures++;
+                    try {
+                        Thread.sleep(500);
+                    } catch (InterruptedException ex) {
+                        //ex.printStackTrace();
+                    }
+                } catch (InterruptedException e) {
+                    //e.printStackTrace();
+                }
             }
         }
 
@@ -254,30 +324,44 @@ public class UpdateHandler implements Runnable{
         for(SupportUpdate su: auxUpdate){
             if(su.nbrs.contains(n)){
                 //se continver quer dizer que não recebeu o ack, logo poderá ser o pacote que falta receber ...
-                try {
-                    Kryo kryo = new Kryo();
-                    DatagramSocket socket = new DatagramSocket();
-                    ByteArrayOutputStream bStream = new ByteArrayOutputStream();
-                    Output output = new Output(bStream);
-                    kryo.writeClassAndObject(output, su.ut);
-                    output.close();
 
-                    byte[] serializedMessage = bStream.toByteArray();
+                Kryo kryo = new Kryo();
+                ByteArrayOutputStream bStream = new ByteArrayOutputStream();
+                Output output = new Output(bStream);
+                kryo.writeClassAndObject(output, su.ut);
+                output.close();
 
-                    //System.out.println("A mandar um EMERGENCYUPDATE para o nodo: " + n.ip);
-                    DatagramPacket packet = new DatagramPacket(serializedMessage, serializedMessage.length, InetAddress.getByName(n.ip), this.ucp_Update);
-                    socket.send(packet);
+                byte[] serializedMessage = bStream.toByteArray();
+                boolean twoPackets = false;
+                int tries = 0;
+                int failures = 0;
 
-                    //Para "garantir" que vai por ordem ...
-                    Thread.sleep(200);
-                } catch (UnknownHostException e) {
-                    e.printStackTrace();
-                } catch (SocketException e) {
-                    e.printStackTrace();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+                while(!twoPackets && tries < 2 && failures < 10) {
+                    try {
+                        //System.out.println("A mandar um EMERGENCYUPDATE para o nodo: " + n.ip);
+                        DatagramSocket socket = new DatagramSocket();
+                        DatagramPacket packet = new DatagramPacket(serializedMessage, serializedMessage.length, InetAddress.getByName(n.ip), this.ucp_Update);
+
+                        socket.send(packet);
+                        tries++;
+                        Thread.sleep(50);
+                        socket.send(packet);
+                        twoPackets = true;
+                        Thread.sleep(50);
+                        socket.send(packet);
+
+                        //Para "garantir" que vai por ordem ...
+                    } catch (IOException e) {
+                        System.out.println("\t=======>Network is unreachable");
+                        failures++;
+                        try {
+                            Thread.sleep(500);
+                        } catch (InterruptedException ex) {
+                            //ex.printStackTrace();
+                        }
+                    } catch (InterruptedException e) {
+                        //e.printStackTrace();
+                    }
                 }
             }
         }
@@ -287,26 +371,50 @@ public class UpdateHandler implements Runnable{
 
         EmergencyUpdate eu = new EmergencyUpdate(this.idGen.getID(""), myNode);
 
-        try {
-            Kryo kryo = new Kryo();
-            DatagramSocket socket = new DatagramSocket();
-            ByteArrayOutputStream bStream = new ByteArrayOutputStream();
-            Output output = new Output(bStream);
-            kryo.writeClassAndObject(output, eu);
-            output.close();
 
-            byte[] serializedMessage = bStream.toByteArray();
+        Kryo kryo = new Kryo();
+        ByteArrayOutputStream bStream = new ByteArrayOutputStream();
+        Output output = new Output(bStream);
+        kryo.writeClassAndObject(output, eu);
+        output.close();
 
-            DatagramPacket packet = new DatagramPacket(serializedMessage, serializedMessage.length, InetAddress.getByName(ut.origin.ip), this.ucp_Update);
-            socket.send(packet);
-        } catch (UnknownHostException e) {
-            e.printStackTrace();
-        } catch (SocketException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
+        byte[] serializedMessage = bStream.toByteArray();
+
+        boolean twoPackets = false;
+        int tries = 0;
+        int failures = 0;
+
+        while(!twoPackets && tries < 2 && failures < 10) {
+            try {
+                DatagramSocket socket = new DatagramSocket();
+                DatagramPacket packet = new DatagramPacket(serializedMessage, serializedMessage.length, InetAddress.getByName(ut.origin.ip), this.ucp_Update);
+
+                socket.send(packet);
+                tries++;
+                Thread.sleep(50);
+                socket.send(packet);
+                twoPackets = true;
+                Thread.sleep(50);
+                socket.send(packet);
+
+            } catch (IOException e) {
+                System.out.println("\t=======>Network is unreachable");
+                failures++;
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException ex) {
+                    //ex.printStackTrace();
+                }
+            } catch (InterruptedException e) {
+                //e.printStackTrace();
+            }
         }
     }
+
+    private Runnable removeID = () ->{
+        if(!this.ids.isEmpty())
+            this.ids.remove(0);
+    };
 
     public void kill(){
         this.run = false;
@@ -335,6 +443,9 @@ public class UpdateHandler implements Runnable{
                 input.close();
 
                 if (header instanceof UpdateTable) {
+                    if(!this.ids.contains(header.requestID)) {
+                        this.ids.add(header.requestID);
+                        this.ses.schedule(removeID,60,TimeUnit.SECONDS);
                     //System.out.println("Recebi um update table");
                     UpdateTable ut = (UpdateTable) header;
                     String nodeID = ut.origin.id;
@@ -364,34 +475,34 @@ public class UpdateHandler implements Runnable{
                         Ack ack = new Ack(this.idGen.getID(""), this.myNode, ut.requestID);
                         sendAck(ack, ut.origin);
                     }
-                } else {
-                    //System.out.println("Recebi um ack!!!");
-                    if (header instanceof Ack) {
-                        //System.out.println("Recebi efetivamente um ack!!!");
-                        Ack ack = (Ack) header;
-                        try {
-                            lockUpdate.lock();
-                            for (int i = 0; i < this.updateSent.size(); i++) {
-                                SupportUpdate su = this.updateSent.get(i);
-                                if (ack.responseID.equals(su.ut.requestID)) {
-                                    //System.out.println("Antes de eliminar da lista: " + su.nbrs);
-                                    su.nbrs.remove(ack.origin);
-                                    //System.out.println("La se foi o ack e o gajo correspondete: " + su.nbrs);
-                                    break;
-                                }
-                            }
-                        } finally {
-                            lockUpdate.unlock();
-                        }
                     } else {
-                        if (header instanceof EmergencyUpdate) {
-                            //System.out.println("RECEBI UM EMERGENCY UPDATE!!");
-                            EmergencyUpdate eu = (EmergencyUpdate) header;
-                            this.sendAgainUpdateTable(eu.origin);
+                        //System.out.println("Recebi um ack!!!");
+                        if (header instanceof Ack) {
+                            //System.out.println("Recebi efetivamente um ack!!!");
+                            Ack ack = (Ack) header;
+                            try {
+                                lockUpdate.lock();
+                                for (int i = 0; i < this.updateSent.size(); i++) {
+                                    SupportUpdate su = this.updateSent.get(i);
+                                    if (ack.responseID.equals(su.ut.requestID)) {
+                                        //System.out.println("Antes de eliminar da lista: " + su.nbrs);
+                                        su.nbrs.remove(ack.origin);
+                                        //System.out.println("La se foi o ack e o gajo correspondete: " + su.nbrs);
+                                        break;
+                                    }
+                                }
+                            } finally {
+                                lockUpdate.unlock();
+                            }
+                        } else {
+                            if (header instanceof EmergencyUpdate) {
+                                //System.out.println("RECEBI UM EMERGENCY UPDATE!!");
+                                EmergencyUpdate eu = (EmergencyUpdate) header;
+                                this.sendAgainUpdateTable(eu.origin);
+                            }
                         }
                     }
                 }
-
             }
         }catch (SocketException se){
                 //System.out.println("\t=>UPDATEHANDLER DATAGRAMSOCKET CLOSED");

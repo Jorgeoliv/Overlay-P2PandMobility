@@ -92,21 +92,28 @@ public class StartP2P {
 
 
     private static void printNBRContent(FileHandler fh) {
+        System.out.println("ESTE É O CONTEÚDO DOS SEUS VIZINHOS");
+        System.out.println("******************************************************************");
         ArrayList<String> fileNames = fh.getNBRContent();
         int i = 1;
 
         for(String name : fileNames){
-            System.out.println("\t" + i++ + "\n\t\t" + "Nome => " + name);
+            System.out.println("\t" + i++ + ")\n\t\t" + "Nome => " + name);
         }
+        System.out.println("******************************************************************");
     }
 
     private static void printMyContent(FileHandler fh) {
+
+        System.out.println("ESTE É O SEU CONTEÚDO");
+        System.out.println("******************************************************************");
         ArrayList<FileInfo> fis = fh.getMyContent();
         int i = 1;
 
         for(FileInfo fi :fis){
             System.out.println("\t" + i++ + ")\n\t\tNome => " + fi.name + "\n\t\tHash => " + fi.hash + "\n\t\tTamanho => " + fi.fileSize + " bytes ( " + fi.numOfFileChunks + " FileChunks )\n");
         }
+        System.out.println("******************************************************************");
     }
 
     public static void main(String[] args) throws UnknownHostException {
@@ -133,7 +140,7 @@ public class StartP2P {
                 try {
                     Thread.sleep(1000);
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    //e.printStackTrace();
                 }
             }
             System.out.println("*********** MENU ******************");

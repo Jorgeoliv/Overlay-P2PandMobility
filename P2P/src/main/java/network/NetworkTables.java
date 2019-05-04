@@ -19,8 +19,10 @@ public class NetworkTables{
     public FileTables ft;
 
     private Nodo myNode;
+    private int hardcap;
 
-    NetworkTables(Nodo myNode, FileTables ft){
+    NetworkTables(int hardcap, Nodo myNode, FileTables ft){
+        this.hardcap = hardcap;
         this.ft = ft;
         this.myNode = myNode;
     }

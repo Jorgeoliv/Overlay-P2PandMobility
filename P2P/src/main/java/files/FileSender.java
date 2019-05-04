@@ -82,7 +82,7 @@ public class FileSender implements Runnable{
             try {
                 Thread.sleep(500);
             } catch (InterruptedException ex) {
-                ex.printStackTrace();
+                //ex.printStackTrace();
             }
         }
         catch (Exception e){

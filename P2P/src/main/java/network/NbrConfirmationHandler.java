@@ -121,9 +121,11 @@ public class NbrConfirmationHandler implements Runnable {
 
             byte[] serializedMessage = bStream.toByteArray();
 
-        boolean twoPackets = true;
+        boolean twoPackets = false;
         int tries = 0;
-        while(twoPackets && tries < 2) {
+        int failures = 0;
+
+        while(!twoPackets && tries < 2 && failures < 10) {
             try {
                 DatagramSocket ds = new DatagramSocket();
                 DatagramPacket packet = new DatagramPacket(serializedMessage, serializedMessage.length, InetAddress.getByName(nbrc.origin.ip), this.ucp_Alive);
@@ -138,13 +140,14 @@ public class NbrConfirmationHandler implements Runnable {
 
             } catch (IOException e) {
                 System.out.println("\t=======>Network is unreachable");
+                failures++;
                 try {
                     Thread.sleep(500);
                 } catch (InterruptedException ex) {
-                    ex.printStackTrace();
+                    //ex.printStackTrace();
                 }
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                //e.printStackTrace();
             }
         }
     }
@@ -161,9 +164,11 @@ public class NbrConfirmationHandler implements Runnable {
 
         byte[] serializedNbrConfirmation = bStream.toByteArray();
 
-        boolean twoPackets = true;
+        boolean twoPackets = false;
         int tries = 0;
-        while(twoPackets && tries < 2) {
+        int failures = 0;
+
+        while(!twoPackets && tries < 2 && failures < 10) {
             try {
                 DatagramSocket ds = new DatagramSocket();
                 DatagramPacket packet = new DatagramPacket(serializedNbrConfirmation, serializedNbrConfirmation.length, InetAddress.getByName(nbrc.origin.ip), this.ucp_NbrConfirmation);
@@ -178,13 +183,14 @@ public class NbrConfirmationHandler implements Runnable {
 
             } catch (IOException e) {
                 System.out.println("\t=======>Network is unreachable");
+                failures++;
                 try {
                     Thread.sleep(500);
                 } catch (InterruptedException ex) {
-                    ex.printStackTrace();
+                    //ex.printStackTrace();
                 }
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                //e.printStackTrace();
             }
         }
     }

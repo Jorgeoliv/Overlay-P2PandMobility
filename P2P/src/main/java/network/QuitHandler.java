@@ -8,6 +8,7 @@ import mensagens.Quit;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
@@ -76,20 +77,34 @@ public class QuitHandler implements Runnable {
 
         byte[] serializedPing = bStream.toByteArray();
 
-        try {
+        boolean twoPackets = false;
+        int tries = 0;
+        int failures = 0;
 
-            DatagramSocket ds = new DatagramSocket();
-            DatagramPacket packet = new DatagramPacket(serializedPing, serializedPing.length, InetAddress.getByName(node.ip), this.ucp_Quit);
+        while (!twoPackets && tries < 2 && failures < 10) {
+            try {
+                DatagramSocket socket = new DatagramSocket();
+                DatagramPacket packet = new DatagramPacket(serializedPing, serializedPing.length, InetAddress.getByName(node.ip), this.ucp_Quit);
 
-            ds.send(packet);
-            Thread.sleep(50);
-            ds.send(packet);
-            Thread.sleep(50);
-            ds.send(packet);
+                socket.send(packet);
+                tries++;
+                Thread.sleep(50);
+                socket.send(packet);
+                twoPackets = true;
+                Thread.sleep(50);
+                socket.send(packet);
 
-            //System.out.println("QUIT ENVIADO PARA "+ node.ip + " ENVIADO\n");
-        } catch (Exception e) {
-            e.printStackTrace();
+            } catch (IOException e) {
+                System.out.println("\t=======>Network is unreachable");
+                failures++;
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException ex) {
+                    //ex.printStackTrace();
+                }
+            } catch (InterruptedException e) {
+                //e.printStackTrace();
+            }
         }
 
     }

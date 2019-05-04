@@ -156,9 +156,11 @@ public class PongHandler implements Runnable {
 
         byte[] serializedNbrConfirmation = bStream.toByteArray();
 
-        boolean twoPackets = true;
+        boolean twoPackets = false;
         int tries = 0;
-        while(twoPackets && tries < 2) {
+        int failures = 0;
+
+        while(!twoPackets && tries < 2 && failures < 10) {
             try {
                 DatagramPacket packet = new DatagramPacket(serializedNbrConfirmation, serializedNbrConfirmation.length, InetAddress.getByName(pong.origin.ip), this.ucp_NbrConfirmation);
                 this.ucs.send(packet);
@@ -171,13 +173,14 @@ public class PongHandler implements Runnable {
                 //System.out.println("NBRCNFIRMATION ENVIADO\n");
             } catch (IOException e) {
                 System.out.println("\t=======>Network is unreachable");
+                failures++;
                 try {
                     Thread.sleep(500);
                 } catch (InterruptedException ex) {
-                    ex.printStackTrace();
+                    //ex.printStackTrace();
                 }
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                //e.printStackTrace();
             }
         }
     }

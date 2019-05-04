@@ -10,6 +10,7 @@ import network.Nodo;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.net.*;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -76,29 +77,45 @@ public class ContentDiscoveryHandler implements Runnable{
 
     private void sendFocusDiscovery(ContentDiscovery cd, Nodo n){
 
-        try {
-            ByteArrayOutputStream bStream = new ByteArrayOutputStream();
-            Output output = new Output(bStream);
 
-            Kryo kryo = new Kryo();
-            kryo.writeClassAndObject(output, cd);
-            output.close();
+        ByteArrayOutputStream bStream = new ByteArrayOutputStream();
+        Output output = new Output(bStream);
 
-            byte[] serializedMessage = bStream.toByteArray();
+        Kryo kryo = new Kryo();
+        kryo.writeClassAndObject(output, cd);
+        output.close();
 
-            DatagramSocket ds = new DatagramSocket();
-            DatagramPacket packet = new DatagramPacket(serializedMessage, serializedMessage.length, InetAddress.getByName(n.ip), this.ucp_Discovery);
+        byte[] serializedMessage = bStream.toByteArray();
 
-            ds.send(packet);
-            Thread.sleep(50);
-            ds.send(packet);
-            Thread.sleep(50);
-            ds.send(packet);
+        boolean twoPackets = false;
+        int tries = 0;
+        int failures = 0;
 
-            //System.out.println("ENVIEI FOCUS DISCOVERY");
-        }
-        catch (Exception e) {
-            e.printStackTrace();
+        while(!twoPackets && tries < 2 && failures < 10) {
+            try {
+                DatagramSocket ds = new DatagramSocket();
+                DatagramPacket packet = new DatagramPacket(serializedMessage, serializedMessage.length, InetAddress.getByName(n.ip), this.ucp_Discovery);
+
+                ds.send(packet);
+                tries++;
+                Thread.sleep(50);
+                ds.send(packet);
+                twoPackets = true;
+                Thread.sleep(50);
+                ds.send(packet);
+
+                //System.out.println("ENVIEI FOCUS DISCOVERY");
+            } catch (IOException e) {
+                System.out.println("\t=======>Network is unreachable");
+                failures++;
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException ex) {
+                    //ex.printStackTrace();
+                }
+            } catch (InterruptedException e) {
+                //e.printStackTrace();
+            }
         }
     }
 
@@ -125,28 +142,44 @@ public class ContentDiscoveryHandler implements Runnable{
     }
 
     private void sendOwner(ContentOwner co, Nodo dest) {
-        try {
-            ByteArrayOutputStream bStream = new ByteArrayOutputStream();
-            Output output = new Output(bStream);
-            Kryo kryo = new Kryo();
-            kryo.writeClassAndObject(output, co);
-            output.close();
 
-            byte[] serializedMessage = bStream.toByteArray();
+        ByteArrayOutputStream bStream = new ByteArrayOutputStream();
+        Output output = new Output(bStream);
+        Kryo kryo = new Kryo();
+        kryo.writeClassAndObject(output, co);
+        output.close();
 
-            DatagramSocket ds = new DatagramSocket();
-            DatagramPacket packet = new DatagramPacket(serializedMessage, serializedMessage.length, InetAddress.getByName(dest.ip), this.ucp_ContentOwner);
+        byte[] serializedMessage = bStream.toByteArray();
 
-            ds.send(packet);
-            Thread.sleep(50);
-            ds.send(packet);
-            Thread.sleep(50);
-            ds.send(packet);
+        boolean twoPackets = false;
+        int tries = 0;
+        int failures = 0;
 
-            //System.out.println("ENVIEI OWNER");
-        }
-        catch (Exception e) {
-            e.printStackTrace();
+        while(!twoPackets && tries < 2 && failures < 10) {
+            try {
+                DatagramSocket ds = new DatagramSocket();
+                DatagramPacket packet = new DatagramPacket(serializedMessage, serializedMessage.length, InetAddress.getByName(dest.ip), this.ucp_ContentOwner);
+
+                ds.send(packet);
+                tries++;
+                Thread.sleep(50);
+                ds.send(packet);
+                twoPackets = true;
+                Thread.sleep(50);
+                ds.send(packet);
+
+                //System.out.println("ENVIEI OWNER");
+            } catch (IOException e) {
+                System.out.println("\t=======>Network is unreachable");
+                failures++;
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException ex) {
+                    //ex.printStackTrace();
+                }
+            } catch (InterruptedException e) {
+                //e.printStackTrace();
+            }
         }
     }
 

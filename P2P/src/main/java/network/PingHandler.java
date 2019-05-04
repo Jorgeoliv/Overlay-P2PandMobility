@@ -100,9 +100,11 @@ public class PingHandler implements Runnable{
         byte[] serializedPing = bStream.toByteArray();
 
 
-        boolean twoPackets = true;
+        boolean twoPackets = false;
         int tries = 0;
-        while(twoPackets && tries < 2) {
+        int failures = 0;
+
+        while(!twoPackets && tries < 2 && failures < 2) {
             try {
                 MulticastSocket ms = new MulticastSocket();
                 DatagramPacket packet = new DatagramPacket(serializedPing, serializedPing.length, this.groupIP, this.mcport);
@@ -111,17 +113,18 @@ public class PingHandler implements Runnable{
                 tries++;
                 Thread.sleep(100);
                 ms.send(packet);
-                twoPackets = false;
+                twoPackets = true;
 
             } catch (IOException e) {
                 System.out.println("\t=======>Network is unreachable");
+                failures++;
                 try {
                     Thread.sleep(500);
                 } catch (InterruptedException ex) {
-                    ex.printStackTrace();
+                    //ex.printStackTrace();
                 }
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                //e.printStackTrace();
             }
         }
 
@@ -184,9 +187,11 @@ public class PingHandler implements Runnable{
         byte[] serializedPong = bStream.toByteArray();
 
 
-        boolean twoPackets = true;
+        boolean twoPackets = false;
         int tries = 0;
-        while(twoPackets && tries < 2) {
+        int failures = 0;
+
+        while(!twoPackets && tries < 2 && failures < 10) {
             try {
                 DatagramPacket packet = new DatagramPacket(serializedPong, serializedPong.length, InetAddress.getByName(ping.origin.ip), this.ucport);
                 this.ucs.send(packet);
@@ -198,13 +203,14 @@ public class PingHandler implements Runnable{
                 this.ucs.send(packet);
             } catch (IOException e) {
                 System.out.println("\t=======>Network is unreachable");
+                failures++;
                 try {
                     Thread.sleep(500);
                 } catch (InterruptedException ex) {
-                    ex.printStackTrace();
+                    //ex.printStackTrace();
                 }
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                //e.printStackTrace();
             }
         }
     }
@@ -222,7 +228,6 @@ public class PingHandler implements Runnable{
             else{
                 // condição 3 SOU VIZINHO DE N2?
                 if(!ping.nbrN2.contains(this.myNode)){
-
                     ArrayList <Nodo> myNbrs = new ArrayList<>(this.myN1Nbrs);
                     myNbrs.addAll(this.myN2Nbrs);
                     ArrayList <Nodo> pingNbrs = new ArrayList<>(ping.nbrN1);
@@ -241,8 +246,9 @@ public class PingHandler implements Runnable{
             }
         }
 
-        if(decision && myNN1+1 > this.hardcap)
+        if(decision && myNN1+1 > this.hardcap) {
             this.nh.sendQuit();
+        }
 
         return decision;
     }

@@ -8,6 +8,7 @@ import network.IDGen;
 import network.Nodo;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
@@ -35,7 +36,7 @@ public class FilePushHandler implements Runnable{
     private HashMap<String, ArrayList <Thread>> fileReceiversThreads;
     private HashMap<String, Integer> timeouts;
 
-    private int TimeOutpps = 300;
+    private int TimeOutpps = 200;
 
     private FileTables ft;
     private final FileHandler fh;
@@ -337,18 +338,34 @@ public class FilePushHandler implements Runnable{
 
             byte[] serializedTimeoutPacket = bStream.toByteArray();
 
-            try {
-                DatagramSocket ds = new DatagramSocket();
-                DatagramPacket packet = new DatagramPacket(serializedTimeoutPacket, serializedTimeoutPacket.length, InetAddress.getByName(this.fileOwners.get(h).ip), this.ucp_FilePullHandler);
+            boolean twoPackets = false;
+            int tries = 0;
+            int failures = 0;
 
-                ds.send(packet);
-                Thread.sleep(50);
-                ds.send(packet);
-                Thread.sleep(50);
-                ds.send(packet);
-                System.out.println("ENVIEI O TIMEOUTPACKET " + "\n\t" + this.fileOwners.get(h).ip + "\n\t" + this.ucp_FilePullHandler + "\n\t" + this.fileInfos.get(h).hash + "\n\t" + "mfc.size = null");
-            } catch (Exception e) {
-                e.printStackTrace();
+            while (!twoPackets && tries < 2 && failures < 10) {
+                try {
+                    DatagramSocket ds = new DatagramSocket();
+                    DatagramPacket packet = new DatagramPacket(serializedTimeoutPacket, serializedTimeoutPacket.length, InetAddress.getByName(this.fileOwners.get(h).ip), this.ucp_FilePullHandler);
+
+                    ds.send(packet);
+                    tries++;
+                    Thread.sleep(50);
+                    ds.send(packet);
+                    twoPackets = true;
+                    Thread.sleep(50);
+                    ds.send(packet);
+                    //System.out.println("ENVIEI O TIMEOUTPACKET " + "\n\t" + this.fileOwners.get(h).ip + "\n\t" + this.ucp_FilePullHandler + "\n\t" + this.fileInfos.get(h).hash + "\n\t" + "mfc.size = null");
+                } catch (IOException e) {
+                    System.out.println("\t=======>Network is unreachable");
+                    failures++;
+                    try {
+                        Thread.sleep(500);
+                    } catch (InterruptedException ex) {
+                        //ex.printStackTrace();
+                    }
+                } catch (InterruptedException e) {
+                    //e.printStackTrace();
+                }
             }
         }
         else {
@@ -379,21 +396,37 @@ public class FilePushHandler implements Runnable{
 
                 byte[] serializedTimeoutPacket = bStream.toByteArray();
 
-                try {
+                boolean twoPackets = false;
+                int tries = 0;
+                int failures = 0;
 
-                    DatagramSocket ds = new DatagramSocket();
-                    DatagramPacket packet = new DatagramPacket(serializedTimeoutPacket, serializedTimeoutPacket.length, InetAddress.getByName(this.fileOwners.get(h).ip), this.ucp_FilePullHandler);
+                while(!twoPackets && tries < 2 && failures < 10) {
+                    try {
 
-                    ds.send(packet);
-                    Thread.sleep(50);
-                    ds.send(packet);
-                    Thread.sleep(50);
-                    ds.send(packet);
+                        DatagramSocket ds = new DatagramSocket();
+                        DatagramPacket packet = new DatagramPacket(serializedTimeoutPacket, serializedTimeoutPacket.length, InetAddress.getByName(this.fileOwners.get(h).ip), this.ucp_FilePullHandler);
 
-                    //System.out.println("ENVIEI O TIMEOUTPACKET " + "\n\t" + this.fileOwners.get(h).ip + "\n\t" + this.ucp_FilePullHandler + "\n\t" + this.fileInfos.get(h).hash + "\n\t" + "mfc.size = " + mfcGroup.size() + " => " + serializedTimeoutPacket.length + " bytes");
-                    mfcGroup.clear();
-                } catch (Exception e) {
-                    e.printStackTrace();
+                        ds.send(packet);
+                        tries++;
+                        Thread.sleep(50);
+                        ds.send(packet);
+                        twoPackets = true;
+                        Thread.sleep(50);
+                        ds.send(packet);
+
+                        //System.out.println("ENVIEI O TIMEOUTPACKET " + "\n\t" + this.fileOwners.get(h).ip + "\n\t" + this.ucp_FilePullHandler + "\n\t" + this.fileInfos.get(h).hash + "\n\t" + "mfc.size = " + mfcGroup.size() + " => " + serializedTimeoutPacket.length + " bytes");
+                        mfcGroup.clear();
+                    } catch (IOException e) {
+                        System.out.println("\t=======>Network is unreachable");
+                        failures++;
+                        try {
+                            Thread.sleep(500);
+                        } catch (InterruptedException ex) {
+                            //ex.printStackTrace();
+                        }
+                    } catch (InterruptedException e) {
+                        //e.printStackTrace();
+                    }
                 }
             }
         }

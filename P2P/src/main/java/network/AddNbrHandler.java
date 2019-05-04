@@ -64,8 +64,12 @@ public class AddNbrHandler implements Runnable{
     private void processAddNbr(AddNbr addnbr) {
 
         //printAddNbr(addNbr);
-        if (this.nt.getNbrsN1().contains(addnbr.intermediary)){
+        ArrayList<Nodo> nbrn1 = this.nt.getNbrsN1();
+
+        if (nbrn1.contains(addnbr.intermediary)){
             if(this.nh.registerNode(addnbr.requestID, addnbr.origin)) {
+                if(nbrn1.size() >= this.hardcap)
+                    this.nh.sendQuit();
                 this.nh.addInConv(addnbr.origin);
                 sendNbrConfirmation(addnbr);
             }
@@ -91,9 +95,11 @@ public class AddNbrHandler implements Runnable{
         byte[] serializedNbrConfirmation = bStream.toByteArray();
 
 
-        boolean twoPackets = true;
+        boolean twoPackets = false;
         int tries = 0;
-        while(twoPackets && tries < 2) {
+        int failures = 0;
+
+        while(!twoPackets && tries < 2 && failures < 10) {
             try {
                 DatagramSocket ds = new DatagramSocket();
                 DatagramPacket packet = new DatagramPacket(serializedNbrConfirmation, serializedNbrConfirmation.length, InetAddress.getByName(addNbr.origin.ip), this.ucp_NbrConfirmation);
@@ -108,13 +114,14 @@ public class AddNbrHandler implements Runnable{
 
             } catch (IOException e) {
                 System.out.println("\t=======>Network is unreachable");
+                failures++;
                 try {
                     Thread.sleep(500);
                 } catch (InterruptedException ex) {
-                    ex.printStackTrace();
+                    //ex.printStackTrace();
                 }
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                //e.printStackTrace();
             }
         }
 
@@ -160,9 +167,11 @@ public class AddNbrHandler implements Runnable{
 
                         byte[] serializedAddNbr = bStream.toByteArray();
 
-                        boolean twoPackets = true;
+                        boolean twoPackets = false;
                         int tries = 0;
-                        while(twoPackets && tries < 2) {
+                        int failures = 0;
+
+                        while(!twoPackets && tries < 2 && failures < 10) {
                             try {
                                 DatagramSocket ds = new DatagramSocket();
                                 DatagramPacket packet = new DatagramPacket(serializedAddNbr, serializedAddNbr.length, InetAddress.getByName(nN2.ip), this.ucp_AddNbr);
@@ -174,16 +183,16 @@ public class AddNbrHandler implements Runnable{
                                 twoPackets = true;
                                 Thread.sleep(50);
                                 ds.send(packet);
-
                             } catch (IOException e) {
                                 System.out.println("\t=======>Network is unreachable");
+                                failures++;
                                 try {
                                     Thread.sleep(500);
                                 } catch (InterruptedException ex) {
-                                    ex.printStackTrace();
+                                    //ex.printStackTrace();
                                 }
                             } catch (InterruptedException e) {
-                                e.printStackTrace();
+                                //e.printStackTrace();
                             }
                         }
                     }
