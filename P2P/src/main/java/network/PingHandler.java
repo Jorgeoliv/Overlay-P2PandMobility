@@ -146,9 +146,10 @@ public class PingHandler implements Runnable{
 
             //printPing(ping);
             if (analisePing(ping)) {
-                this.nh.addInConv(ping.origin);
-                sendPong(ping);
-                this.nh.registerNode(ping.requestID, ping.origin);
+                if(this.nh.registerNode(ping.requestID, ping.origin)) {
+                    this.nh.addInConv(ping.origin);
+                    sendPong(ping);
+                }
             }
         }
 

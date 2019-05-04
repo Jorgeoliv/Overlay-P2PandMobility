@@ -35,9 +35,9 @@ public class FileTables {
     public boolean itsMyFile(String filename){
         try{
             rlMyContent.lock();
-            System.out.println("Sera que é igual o nome do ficheiro?1: " + this.myContent.containsKey(filename));
+/*            System.out.println("Sera que é igual o nome do ficheiro?1: " + this.myContent.containsKey(filename));
             System.out.println("O ficheiro recebido é: " + filename);
-            System.out.println("Os ficheiros que tenho são: " + this.myContent.toString());
+            System.out.println("Os ficheiros que tenho são: " + this.myContent.toString());*/
             return this.myContent.containsKey(filename);
         }finally {
             rlMyContent.unlock();
@@ -47,9 +47,9 @@ public class FileTables {
     public FileInfo getMyFile(String filename){
         try{
             rlMyContent.lock();
-            System.out.println("Sera que é igual o nome do ficheiro?2: " + this.myContent.containsKey(filename));
+            /*System.out.println("Sera que é igual o nome do ficheiro?2: " + this.myContent.containsKey(filename));
             System.out.println("O ficheiro recebido é: " + filename);
-            System.out.println("Os ficheiros que tenho são: " + this.myContent.toString());
+            System.out.println("Os ficheiros que tenho são: " + this.myContent.toString());*/
             return this.myContent.get(filename);
         }finally {
             rlMyContent.unlock();
@@ -111,7 +111,7 @@ public class FileTables {
             rlNbrContent.unlock();
         }
 
-        System.out.println("Conteudo: " + nbrContent.toString());
+        //System.out.println("Conteudo: " + nbrContent.toString());
 
     }
 
@@ -134,7 +134,7 @@ public class FileTables {
             rlNbrContent.unlock();
         }
 
-        System.out.println("ADICIONAR: " + nbrContent);
+        //System.out.println("ADICIONAR: " + nbrContent);
     }
 
     public void rmNbrContent(String filename, ArrayList<Nodo> nodos){
@@ -162,7 +162,7 @@ public class FileTables {
             rlNbrContent.unlock();
         }
 
-        System.out.println("REMOVER: " + nbrContent);
+        //System.out.println("REMOVER: " + nbrContent);
     }
 
     public void rmNbr(String id){
@@ -187,7 +187,7 @@ public class FileTables {
             rlNbrContent.unlock();
         }
 
-        System.out.println("Conteudo depois de eliminar o vizinho: " + nbrContent.toString());
+        //System.out.println("Conteudo depois de eliminar o vizinho: " + nbrContent.toString());
     }
 
     //retorna a hash da tabela de um nodo

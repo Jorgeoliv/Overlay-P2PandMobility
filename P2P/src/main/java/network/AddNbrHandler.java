@@ -65,8 +65,11 @@ public class AddNbrHandler implements Runnable{
 
         //printAddNbr(addNbr);
         if (this.nt.getNbrsN1().contains(addnbr.intermediary)){
-            this.nh.addInConv(addnbr.origin);
-            sendNbrConfirmation(addnbr);
+            if(this.nh.registerNode(addnbr.requestID, addnbr.origin)) {
+                this.nh.addInConv(addnbr.origin);
+                sendNbrConfirmation(addnbr);
+            }
+
         }
         else{
             System.out.println("NODO INTERMEDIÁRIO DESCONHECIDO");
@@ -77,7 +80,6 @@ public class AddNbrHandler implements Runnable{
 
         NbrConfirmation nc = new NbrConfirmation(this.idGen.getID(""), this.myNode, this.nt.getFileInfo(), addNbr.requestID, false,  this.nh.ft.getMyHash());
 
-        this.nh.registerNode(addNbr.requestID, addNbr.origin);
 
         ByteArrayOutputStream bStream = new ByteArrayOutputStream();
         Output output = new Output(bStream);
@@ -184,12 +186,8 @@ public class AddNbrHandler implements Runnable{
                                 e.printStackTrace();
                             }
                         }
-                        System.out.println("ENVIEI ADD NBR");
                     }
-                    else
-                        System.out.println("NÃO PRECISO DE ADICIONAR ESTE NODO COMO VIZINHO!!");
-                } else
-                    System.out.println("SEM VIZINHOS DE NÍVEL 2!!");
+                }
             }
         }
     };

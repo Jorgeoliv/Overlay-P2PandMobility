@@ -41,7 +41,7 @@ public class ContentOwnerHandler implements Runnable{
 
     private void processCO(ContentOwner co){
 
-        System.out.println("RECEBI UM CONTENT OWNER DE " + co.fileInfo.name);
+        //System.out.println("RECEBI UM CONTENT OWNER DE " + co.fileInfo.name);
 
         this.fileHandler.registerPair(co.cdRequestID, co.origin, co.fileInfo);
 

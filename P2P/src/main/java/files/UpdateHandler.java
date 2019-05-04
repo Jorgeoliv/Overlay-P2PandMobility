@@ -83,18 +83,18 @@ public class UpdateHandler implements Runnable{
     }
 
     private synchronized boolean containsRequest(String id){
-        System.out.println("VOU VERIFICAR SE JA CONTEM O REQUEST");
+        //System.out.println("VOU VERIFICAR SE JA CONTEM O REQUEST");
         return updateRequests.contains(id);
     }
 
     private synchronized void removeRequest(String id){
-        System.out.println("ACABEI AGORA DE REMOVER UM REQUEST");
+        //System.out.println("ACABEI AGORA DE REMOVER UM REQUEST");
         updateRequests.remove(id);
-        System.out.println(updateRequests.toString());
+        //System.out.println(updateRequests.toString());
     }
 
     private synchronized void addRequest(String id){
-        System.out.println("ACABEI AGORA DE ADICIONAR UM REQUEST");
+        //System.out.println("ACABEI AGORA DE ADICIONAR UM REQUEST");
         updateRequests.add(id);
     }
 
@@ -117,17 +117,17 @@ public class UpdateHandler implements Runnable{
         ArrayList<SupportUpdate> toRemove = new ArrayList<>();
         ArrayList<SupportUpdate> toRemoveAndAdd = new ArrayList<>();
 
-        System.out.println("VOU ANALISR OS UPDATES!!! " + atualTime);
+        //System.out.println("VOU ANALISR OS UPDATES!!! " + atualTime);
         try {
             lockUpdate.lock();
             for (SupportUpdate su : this.updateSent) {
-                System.out.println("Deixa só ver o tempo do su: " + su.time);
-                System.out.println("Resultado: " + (atualTime - su.time));
+                //System.out.println("Deixa só ver o tempo do su: " + su.time);
+                //System.out.println("Resultado: " + (atualTime - su.time));
                 if (su.nbrs.size() != 0) {
                     if ((atualTime - su.time) > 60000) {
                         //Quer dizer que já passou mais de um minuto e que nem todos receberam os acks
-                        System.out.println("Vou ter de enviar novamente o update: " + su.ut);
-                        System.out.println("Para os vizinhos: " + su.nbrs);
+                        //System.out.println("Vou ter de enviar novamente o update: " + su.ut);
+                        //System.out.println("Para os vizinhos: " + su.nbrs);
                         sendUpdate(su.ut, su.nbrs);
                         su.time = System.currentTimeMillis();
                         toRemoveAndAdd.add(su);
@@ -136,7 +136,7 @@ public class UpdateHandler implements Runnable{
                         break;
                     }
                 } else {
-                    System.out.println("Todos os acks recebidos para: " + su.ut);
+                    //System.out.println("Todos os acks recebidos para: " + su.ut);
                     toRemove.add(su);
                 }
             }
@@ -154,15 +154,13 @@ public class UpdateHandler implements Runnable{
     private Runnable deleteNbrs = () ->{
 
         ArrayList<Nodo> myNbrs = this.nt.getNbrsN1();
-        System.out.println("Vamos la ver se tenho de eliminar alguem! " + myNbrs.size());
+        //System.out.println("Vamos la ver se tenho de eliminar alguem! " + myNbrs.size());
 
         try {
             lockUpdate.lock();
             for (int i = 0; i < this.updateSent.size(); i++) {
                 SupportUpdate su = this.updateSent.get(i);
-                System.out.println("O su antes: " + su.nbrs.size());
                 su.nbrs.removeIf(n -> !myNbrs.contains(n));
-                System.out.println("O su depois: " + su.nbrs.size());
             }
         }finally {
             lockUpdate.unlock();
@@ -217,15 +215,15 @@ public class UpdateHandler implements Runnable{
 
         Kryo kryo = new Kryo();
 
-        System.out.println("VOU ENVIAR O SEGUINTE: ");
-        System.out.println(ut.toString());
+        //System.out.println("VOU ENVIAR O SEGUINTE: ");
+        //System.out.println(ut.toString());
 
         SupportUpdate su = new SupportUpdate(myNbrs, ut, System.currentTimeMillis());
         //Vou adicionar à lista dos updates enviados
         lockUpdate.lock();
         updateSent.add(su);
         lockUpdate.unlock();
-        System.out.println("Vou enviar um update para os meus vizinhos: " + myNbrs.size());
+        //System.out.println("Vou enviar um update para os meus vizinhos: " + myNbrs.size());
 
         for(Nodo n: myNbrs){
             try {
@@ -266,7 +264,7 @@ public class UpdateHandler implements Runnable{
 
                     byte[] serializedMessage = bStream.toByteArray();
 
-                    System.out.println("A mandar um EMERGENCYUPDATE para o nodo: " + n.ip);
+                    //System.out.println("A mandar um EMERGENCYUPDATE para o nodo: " + n.ip);
                     DatagramPacket packet = new DatagramPacket(serializedMessage, serializedMessage.length, InetAddress.getByName(n.ip), this.ucp_Update);
                     socket.send(packet);
 
@@ -337,7 +335,7 @@ public class UpdateHandler implements Runnable{
                 input.close();
 
                 if (header instanceof UpdateTable) {
-                    System.out.println("Recebi um update table");
+                    //System.out.println("Recebi um update table");
                     UpdateTable ut = (UpdateTable) header;
                     String nodeID = ut.origin.id;
                     String requestID = ut.requestID;
@@ -354,8 +352,8 @@ public class UpdateHandler implements Runnable{
                             Ack ack = new Ack(this.idGen.getID(""), this.myNode, ut.requestID);
                             sendAck(ack, ut.origin);
                         } else {
-                            System.out.println("ATENÇÃO ATENÇÃO ATENÇÃO");
-                            System.out.println("\t Falta um pacote do UpdateHandler para o nodo: " + myNode.ip);
+                            //System.out.println("ATENÇÃO ATENÇÃO ATENÇÃO");
+                            //System.out.println("\t Falta um pacote do UpdateHandler para o nodo: " + myNode.ip);
                             this.sendEmergencyUpdate(ut);
                         }
                         //Para dar tempo no caso de recebermos repetidos ..
@@ -367,18 +365,18 @@ public class UpdateHandler implements Runnable{
                         sendAck(ack, ut.origin);
                     }
                 } else {
-                    System.out.println("Recebi um ack!!!");
+                    //System.out.println("Recebi um ack!!!");
                     if (header instanceof Ack) {
-                        System.out.println("Recebi efetivamente um ack!!!");
+                        //System.out.println("Recebi efetivamente um ack!!!");
                         Ack ack = (Ack) header;
                         try {
                             lockUpdate.lock();
                             for (int i = 0; i < this.updateSent.size(); i++) {
                                 SupportUpdate su = this.updateSent.get(i);
                                 if (ack.responseID.equals(su.ut.requestID)) {
-                                    System.out.println("Antes de eliminar da lista: " + su.nbrs);
+                                    //System.out.println("Antes de eliminar da lista: " + su.nbrs);
                                     su.nbrs.remove(ack.origin);
-                                    System.out.println("La se foi o ack e o gajo correspondete: " + su.nbrs);
+                                    //System.out.println("La se foi o ack e o gajo correspondete: " + su.nbrs);
                                     break;
                                 }
                             }
@@ -387,7 +385,7 @@ public class UpdateHandler implements Runnable{
                         }
                     } else {
                         if (header instanceof EmergencyUpdate) {
-                            System.out.println("RECEBI UM EMERGENCY UPDATE!!");
+                            //System.out.println("RECEBI UM EMERGENCY UPDATE!!");
                             EmergencyUpdate eu = (EmergencyUpdate) header;
                             this.sendAgainUpdateTable(eu.origin);
                         }

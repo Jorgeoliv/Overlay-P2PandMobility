@@ -79,7 +79,7 @@ public class NbrConfirmationHandler implements Runnable {
             }
 
             //falta adicionar o conteudo do vizinho
-            System.out.println("=============================================>New NBR Added\n\tID => " + nbrc.origin.id + "\n\tIP => " + nbrc.origin.ip);
+            //System.out.println("=============================================>New NBR Added\n\tID => " + nbrc.origin.id + "\n\tIP => " + nbrc.origin.ip);
             if(nbrc.added){
                 sendEmergencyAlive(nbrc);
             }

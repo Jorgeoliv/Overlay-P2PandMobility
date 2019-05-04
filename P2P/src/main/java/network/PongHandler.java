@@ -92,8 +92,11 @@ public class PongHandler implements Runnable {
                 //printPong(pong);
                 if(this.nh.isPingValid(pong.pingID)) {
                     //Enviar NBRConfirmation
-                    this.nh.addInConv(pong.origin);
-                    sendNbrConfirmation(pong);
+                    if(this.nh.registerNode(pong.requestID, pong.origin)) {
+                        this.nh.addInConv(pong.origin);
+                        sendNbrConfirmation(pong);
+                    }
+
                     //System.out.println("ENVIOU NBRCONFIRMATION");
                 }
                 else
@@ -112,7 +115,9 @@ public class PongHandler implements Runnable {
 
                 if(this.nh.isPingValid(pong.pingID)) {
                     //Enviar NBRConfirmation
-                    sendNbrConfirmation(pong);
+                    if(this.nh.registerNode(pong.requestID, pong.origin)) {
+                        sendNbrConfirmation(pong);
+                    }
                 }
                 else {
                     System.out.println("PING INVÁLIDO");
@@ -141,7 +146,6 @@ public class PongHandler implements Runnable {
     private void sendNbrConfirmation(Pong pong) {
         NbrConfirmation nc = new NbrConfirmation(pong.pingID, this.myNode, this.nt.getFileInfo(), pong.requestID, false,  this.nh.ft.getMyHash());
 
-        this.nh.registerNode(pong.requestID, pong.origin);
 
         ByteArrayOutputStream bStream = new ByteArrayOutputStream();
         Output output = new Output(bStream);

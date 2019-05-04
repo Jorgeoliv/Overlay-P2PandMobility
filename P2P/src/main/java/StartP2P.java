@@ -61,7 +61,32 @@ public class StartP2P {
         //Neste caso faz sentido só procurar por um ficheiro
 
         fh.sendDiscovery(file);
-        System.out.println("O ficheiro lido foi: " + file);
+        //System.out.println("O ficheiro lido foi: " + file);
+
+    }
+
+
+    private static void printNBR(NetworkHandler nh) {
+
+        ArrayList<Nodo> nbrN1 = nh.getNBRN1();
+        ArrayList<Nodo> nbrN2 = nh.getNBRN2();
+
+        System.out.println("");
+        System.out.println("***************************************");
+        System.out.println("*   Vizinhos N1:                      *");
+        for(Nodo n : nbrN1){
+            System.out.println("*       Node ID => " + n.id + "   *");
+            System.out.println("*       IP      => " + n.ip + "           *");
+            System.out.println("*                                     *");
+        }
+
+        System.out.println("*   Vizinhos N2:                      *");
+        for(Nodo n : nbrN2){
+            System.out.println("*       Node ID => " + n.id + "   *");
+            System.out.println("*       IP      => " + n.ip + "           *");
+            System.out.println("*                                     *");
+        }
+        System.out.println("***************************************");
 
     }
 
@@ -75,12 +100,9 @@ public class StartP2P {
 
         Thread nht = new Thread(nh);
         nht.start();
-        System.out.println("NETWORKHANDLER CRIADO");
 
         Thread fht = new Thread(fh);
         fht.start();
-        System.out.println("FILEHANDLER CRIADO");
-
 
         BufferedReader inP = new BufferedReader(new InputStreamReader(System.in));
         boolean sair = false;
@@ -98,6 +120,7 @@ public class StartP2P {
             System.out.println("*********** MENU ************");
             System.out.println("*    1 - Upload Ficheiro    *");
             System.out.println("*    2 - Download Ficheiro  *");
+            System.out.println("*    3 - Consultar Vizinhos *");
             System.out.println("*    Outro para sair        *");
             System.out.println("*****************************");
             System.out.print("Opção: ");
@@ -109,7 +132,6 @@ public class StartP2P {
                     opcao = Integer.parseInt(inP.readLine());
                     c = true;
                 } catch (Exception e) {
-                    System.out.println(e);
                     System.out.print("\nTente novamente: ");
                     c = false;
                 }
@@ -118,6 +140,7 @@ public class StartP2P {
             switch (opcao){
                 case 1: upload(inP, fh, fh.getFileTables(), nh.getID()); break;
                 case 2: download(inP, fh); break;
+                case 3: printNBR(nh); break;
                 default: sair = true;
             }
         }

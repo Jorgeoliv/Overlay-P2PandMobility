@@ -72,6 +72,7 @@ public class FileSender implements Runnable{
         output.close();
 
         byte[] serializedPing = bStream.toByteArray();
+        //System.out.println("TAMANHO DO DATAGRAM DO FILECUNK => " + serializedPing.length) ;
         try{
             DatagramPacket packet = new DatagramPacket(serializedPing, serializedPing.length, this.ipToSend, this.portToSend);
 
@@ -151,6 +152,6 @@ public class FileSender implements Runnable{
                 e.printStackTrace();
             }
         }
-        System.out.println("Enviei " + counter + " FILECHUNKS");
+        //System.out.println("Enviei " + counter + " FILECHUNKS");
     }
 }

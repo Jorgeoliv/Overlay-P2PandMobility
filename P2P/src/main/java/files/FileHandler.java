@@ -14,7 +14,6 @@ import java.util.Objects;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.ReentrantLock;
 
 class PairNodoFileInfo{
 
@@ -65,8 +64,6 @@ public class FileHandler implements Runnable {
     private Nodo myNode;
     private IDGen idGen;
 
-    private ReentrantLock cdValidIDsLock;
-    private ReentrantLock validNodesLock;
 
     private HashMap <String, ArrayList<PairNodoFileInfo>> cdResponses;
 
@@ -115,13 +112,13 @@ public class FileHandler implements Runnable {
 
     }
 
-    private void analisaCD(String id){
+    private void analisaCD(String id, String file){
         ArrayList<PairNodoFileInfo> aux = cdResponses.get(id);
         if(aux.size() > 0) {
-            System.out.println("A SUA PESQUISA POR " + id + " RETORNOU OS SEGUINTES RESOLTADOS:\n");
+            System.out.println("\nA SUA PESQUISA POR " + file + " RETORNOU OS SEGUINTES RESOLTADOS:\n");
             int i = 1;
             for (PairNodoFileInfo pnfi : aux)
-                System.out.println("\t" + i++ + ") " + pnfi.toString());
+                System.out.println("\t" + i++ + ") Node " + pnfi.nodo.id + "( ip: " + pnfi.nodo.ip + " )" + "\n\t\tNome => " + pnfi.fileInfo.name + "\n\t\tHash => " + pnfi.fileInfo.hash + "\n\t\tTamanho => " + pnfi.fileInfo.fileSize + " bytes ( " + pnfi.fileInfo.numOfFileChunks + " FileChunks )");
 
             PairNodoFileInfo choice = fileChoice(i, aux);
 
@@ -129,14 +126,14 @@ public class FileHandler implements Runnable {
             this.filePullHandler.send(choice);
         }
         else
-            System.out.println("A SUA PESQUISA POR " + id + " NÃO RETURNOU NENHUM RESULTADO");
+            System.out.println("\nA SUA PESQUISA POR " + file + " NÃO RETURNOU NENHUM RESULTADO");
     }
 
-    private Runnable analyseAndDelete(final String id){
+    private Runnable analyseAndDelete(final String id, String file){
         Runnable ret = new Runnable() {
             @Override
             public void run() {
-                analisaCD(id);
+                analisaCD(id, file);
                 drawMenu = true;
             }
         };
@@ -165,7 +162,6 @@ public class FileHandler implements Runnable {
             t = new Thread(this.contentDiscoveryHandler);
             this.threads.add(t);
             t.start();
-            System.out.println("\t=> CONTENTDISCOVERYHANDLER CRIADO");
         }
         catch (Exception e){
             e.printStackTrace();
@@ -176,7 +172,6 @@ public class FileHandler implements Runnable {
             t = new Thread(this.updateHandler);
             this.threads.add(t);
             t.start();
-            System.out.println("\t=> UPDATEHANDLER CRIADO");
         }
         catch (Exception e){
             e.printStackTrace();
@@ -187,7 +182,6 @@ public class FileHandler implements Runnable {
             t = new Thread(this.contentOwnerHandler);
             this.threads.add(t);
             t.start();
-            System.out.println("\t=> CONTENTOWNER CRIADO");
         }
         catch (Exception e){
             e.printStackTrace();
@@ -198,7 +192,6 @@ public class FileHandler implements Runnable {
             t = new Thread(this.filePushHandler);
             this.threads.add(t);
             t.start();
-            System.out.println("\t=> FILEPUSHHANDLER CRIADO");
         }
         catch (Exception e){
             e.printStackTrace();
@@ -209,7 +202,6 @@ public class FileHandler implements Runnable {
             t = new Thread(this.filePullHandler);
             this.threads.add(t);
             t.start();
-            System.out.println("\t=> FILEPULLHANDLER CRIADO");
         }
         catch (Exception e){
             e.printStackTrace();
@@ -231,7 +223,7 @@ public class FileHandler implements Runnable {
         this.cdResponses.put(id, new ArrayList<PairNodoFileInfo>());
         ContentDiscovery cd = new ContentDiscovery(id, myNode, 5, file, route, this.myNode);
         this.contentDiscoveryHandler.sendDiscovery(cd);
-        this.ses.schedule(analyseAndDelete(id), 5, TimeUnit.SECONDS);
+        this.ses.schedule(analyseAndDelete(id, file), 5, TimeUnit.SECONDS);
 
     }
 

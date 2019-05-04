@@ -53,7 +53,7 @@ public class FilePullHandler implements Runnable{
 
     private void processFPH(FilePull fp) {
 
-        System.out.println("RECEBI O FILEPULL " + "\n\t" + fp.fi.name + "\n\t" + fp.fi.hash);
+        //System.out.println("RECEBI O FILEPULL " + "\n\t" + fp.fi.name + "\n\t" + fp.fi.hash);
         this.fph.sendFile(fp);
     }
 
@@ -88,7 +88,7 @@ public class FilePullHandler implements Runnable{
             Thread.sleep(50);
             ds.send(packet);
 
-            System.out.println("ENVIEI O FILEPULL " + "\n\t" + choice.nodo.ip + "\n\t" + this.ucp_FilePullHandler + "\n\t" + choice.fileInfo.hash);
+            //System.out.println("ENVIEI O FILEPULL " + "\n\t" + choice.nodo.ip + "\n\t" + this.ucp_FilePullHandler + "\n\t" + choice.fileInfo.hash);
             this.fph.startReceivers(choice.fileInfo.hash);
         }
         catch (Exception e){

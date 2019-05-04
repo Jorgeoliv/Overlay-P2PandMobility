@@ -106,7 +106,7 @@ public class FilePushHandler implements Runnable{
         String id = this.idGen.getID("");
 
         Ficheiro f = this.ft.getFicheiro(fp.fi.name);
-        System.out.println("NUMERO DE FILECHUNKS " + f.getNumberOfChunks() + "\n\n");
+        //System.out.println("NUMERO DE FILECHUNKS " + f.getNumberOfChunks() + "\n\n");
 
         ArrayList<FileChunk> fcArray = null;
 
@@ -303,7 +303,7 @@ public class FilePushHandler implements Runnable{
 
         FCIDStruct structPointer = new FCIDStruct(referenceID, toAddArray, incArray);
 
-        System.out.println("TENHO " + counter +1 + " IDS");
+        //System.out.println("TENHO " + counter +1 + " IDS");
         return structPointer;
     }
 
@@ -315,7 +315,7 @@ public class FilePushHandler implements Runnable{
 
         //PERCENTAGEM DE PACOTES QUE TENHO
         int percentage = (totalNumOfFileChunks - mfc.size()) * 100 / totalNumOfFileChunks;
-        System.out.println("TENHO ESTA PERCENTAGEM  =======> " + percentage + "%");
+        System.out.println("Transferência de " + h + " em curso (" + percentage + "%)");
 
         //OBTER AS PORTAS QUE ESTAO A RECEBER O FICHEIRO
         int[] portas = new int[this.fileReceivers.get(h).size()];
@@ -366,7 +366,7 @@ public class FilePushHandler implements Runnable{
 
                 FCIDStruct fcIDS = getFCIDStruct(mfcGroup);
 
-                System.out.println("FALTAM " + this.ficheiros.get(h).getNumberOfMissingFileChunks() + " de " + this.ficheiros.get(h).getNumberOfChunks());
+                //System.out.println("FALTAM " + this.ficheiros.get(h).getNumberOfMissingFileChunks() + " de " + this.ficheiros.get(h).getNumberOfChunks());
 
                 FilePull fp = new FilePull(this.idGen.getID(""), this.myNode, this.fileInfos.get(h), portas, this.TimeOutpps, fcIDS);
 
@@ -390,7 +390,7 @@ public class FilePushHandler implements Runnable{
                     Thread.sleep(50);
                     ds.send(packet);
 
-                    System.out.println("ENVIEI O TIMEOUTPACKET " + "\n\t" + this.fileOwners.get(h).ip + "\n\t" + this.ucp_FilePullHandler + "\n\t" + this.fileInfos.get(h).hash + "\n\t" + "mfc.size = " + mfcGroup.size() + " => " + serializedTimeoutPacket.length + " bytes");
+                    //System.out.println("ENVIEI O TIMEOUTPACKET " + "\n\t" + this.fileOwners.get(h).ip + "\n\t" + this.ucp_FilePullHandler + "\n\t" + this.fileInfos.get(h).hash + "\n\t" + "mfc.size = " + mfcGroup.size() + " => " + serializedTimeoutPacket.length + " bytes");
                     mfcGroup.clear();
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -427,11 +427,11 @@ public class FilePushHandler implements Runnable{
                     if (packets == 0 && !filePointer.getFull()) {
                         to = this.timeouts.get(h) + 1;
                         this.timeouts.put(h, to);
-                        System.out.println("TIMEOUT NA TRANSFERÊNCIA DE " + filePointer.getFileName());
+                        //System.out.println("TIMEOUT NA TRANSFERÊNCIA DE " + filePointer.getFileName());
                     }
                     else {
                         if (filePointer.getFull()) {
-                            System.out.println("TRANSFERÊNCIA DE " + filePointer.getFileName() + " CONCLUIDA\n");
+                            System.out.println("TRANSFERÊNCIA DE " + filePointer.getFileName() + " CONCLUIDA");
                             toRemove.add(h);
 
                             this.fh.sendUpdate(this.ft.addFicheiroToMyContent(this.fileInfos.get(h), this.ficheiros.get(h)));
@@ -443,7 +443,7 @@ public class FilePushHandler implements Runnable{
                     if(this.timeouts.containsKey(h) && !toRemove.contains(h)) {
                         to = this.timeouts.get(h);
                         if (to >= 3) {
-                            System.out.println("ENVIAR MENSAGENS DE TIMEOUT");
+                            //System.out.println("ENVIAR MENSAGENS DE TIMEOUT");
                             sendTimeoutPackets(h);
                         }
 

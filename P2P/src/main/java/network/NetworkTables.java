@@ -93,7 +93,7 @@ public class NetworkTables{
             this.rlN2.unlock();
             this.rlUp.unlock();
         }
-        System.out.println(nbrN1.toString());
+        //System.out.println(nbrN1.toString());
 
     }
 

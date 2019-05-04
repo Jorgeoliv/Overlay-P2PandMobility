@@ -96,12 +96,10 @@ public class NetworkHandler implements Runnable{
 
         Thread t;
 
-        System.out.println("\n--------------------------------------------\n");
         try {
             t = new Thread(this.pingHandler);
             this.threads.add(t);
             t.start();
-            System.out.println("\t=> PINGHANDLER CRIADO");
         }
         catch (Exception e){
             e.printStackTrace();
@@ -112,7 +110,6 @@ public class NetworkHandler implements Runnable{
             t = new Thread(this.pongHandler);
             this.threads.add(t);
             t.start();
-            System.out.println("\t=> PONGHANDLER CRIADO");
         }
         catch (Exception e){
             e.printStackTrace();
@@ -123,7 +120,6 @@ public class NetworkHandler implements Runnable{
             t = new Thread(this.nbrcHandler);
             this.threads.add(t);
             t.start();
-            System.out.println("\t=> NBRCONFIRMATIONHANDLER CRIADO");
         }
         catch (Exception e){
             e.printStackTrace();
@@ -134,7 +130,6 @@ public class NetworkHandler implements Runnable{
             t = new Thread(this.addNbrHandler);
             this.threads.add(t);
             t.start();
-            System.out.println("\t=> ADDNBRHANDLER CRIADO");
         }
         catch (Exception e){
             e.printStackTrace();
@@ -145,7 +140,6 @@ public class NetworkHandler implements Runnable{
             t = new Thread(this.aliveHandler);
             this.threads.add(t);
             t.start();
-            System.out.println("\t=> ALIVEHANDLER CRIADO");
         }
         catch (Exception e){
             e.printStackTrace();
@@ -156,7 +150,6 @@ public class NetworkHandler implements Runnable{
             t = new Thread(this.quitHandler);
             this.threads.add(t);
             t.start();
-            System.out.println("\t=> QUITHANDLER CRIADO");
         }
         catch (Exception e){
             e.printStackTrace();
@@ -164,8 +157,6 @@ public class NetworkHandler implements Runnable{
         }
 
         t = null;
-        System.out.println("\n--------------------------------------------\n");
-
     }
 
     public String getID(){
@@ -225,22 +216,15 @@ public class NetworkHandler implements Runnable{
         this.addNbrsLock.unlock();
     }
 
-    private Runnable removeNodeR(String id, Nodo node){
-        Runnable r = new Runnable() {
-            @Override
-            public void run() {
-                removeNode(id, node);
-            }
-        };
 
-        return r;
-    }
-
-    public void registerNode(String id, Nodo node){
+    public boolean registerNode(String id, Nodo node){
+        boolean res;
         this.nodeLock.lock();
-        this.idNodo.put(id, node.id);
-        this.ses.schedule(removeNodeR(id, node),30, TimeUnit.SECONDS);
+        if(res = !this.idNodo.containsValue(node))
+            this.idNodo.put(id, node.id);
         this.nodeLock.unlock();
+
+        return res;
     }
 
     public boolean isNodeValid(String id, Nodo node){
@@ -288,7 +272,7 @@ public class NetworkHandler implements Runnable{
     public void addInConv(Nodo node){
         this.inPingConvLock.lock();
         this.inPingConv.add(node);
-        this.ses.schedule(remInConvR(node),30, TimeUnit.SECONDS);
+        this.ses.schedule(remInConvR(node),5, TimeUnit.SECONDS);
         this.inPingConvLock.unlock();
     }
 
@@ -351,4 +335,11 @@ public class NetworkHandler implements Runnable{
         System.out.println("NETWORKHANDLER KILLED");
     }
 
+    public ArrayList<Nodo> getNBRN1(){
+        return this.nt.getNbrsN1();
+    }
+
+    public ArrayList<Nodo> getNBRN2(){
+        return this.nt.getNbrsN2();
+    }
 }

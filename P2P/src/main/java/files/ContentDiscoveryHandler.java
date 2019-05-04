@@ -95,7 +95,7 @@ public class ContentDiscoveryHandler implements Runnable{
             Thread.sleep(50);
             ds.send(packet);
 
-            System.out.println("ENVIEI FOCUS DISCOVERY");
+            //System.out.println("ENVIEI FOCUS DISCOVERY");
         }
         catch (Exception e) {
             e.printStackTrace();
@@ -143,7 +143,7 @@ public class ContentDiscoveryHandler implements Runnable{
             Thread.sleep(50);
             ds.send(packet);
 
-            System.out.println("ENVIEI OWNER");
+            //System.out.println("ENVIEI OWNER");
         }
         catch (Exception e) {
             e.printStackTrace();
@@ -192,12 +192,12 @@ public class ContentDiscoveryHandler implements Runnable{
                         if (!containsRequest(requestID)) {
                             addRequest(requestID);
 
-                            System.out.println("Recebi um content discovery que pede o ficheiro: " + cd.fileName);
+                            //System.out.println("Recebi um content discovery que pede o ficheiro: " + cd.fileName);
 
                             String filename = cd.fileName;
                             //Primeiro verificar se eu tenho o ficheiro <- Depois podemos sacar o ficheiro logo e verificar se é null
                             if (this.ft.itsMyFile(filename)) {
-                                System.out.println("\tSou eu o Nodo " + this.myNodo + " que tem o ficheiro: " + filename);
+                                //System.out.println("\tSou eu o Nodo " + this.myNodo + " que tem o ficheiro: " + filename);
                                 FileInfo fileToSend = this.ft.getMyFile(filename);
                                 ContentOwner co = new ContentOwner(this.idGen.getID(""), this.myNodo, fileToSend, cd.requestID);
                                 this.sendOwner(co, cd.requester);
@@ -210,7 +210,7 @@ public class ContentDiscoveryHandler implements Runnable{
 
                                 if (fileInNbr != null) {
                                     //Só preciso de enviar o DiscoveryContent para os meus vizinhos do hashset ...
-                                    System.out.println("\tO ficheiro está num dos meus vizinhos ...");
+                                    //System.out.println("\tO ficheiro está num dos meus vizinhos ...");
                                     cd.ttl = 1;
                                     for (Nodo n : fileInNbr) {
                                         this.sendFocusDiscovery(cd, n);
@@ -218,7 +218,7 @@ public class ContentDiscoveryHandler implements Runnable{
                                 } else {
                                     //Preciso de enviar o discoveryContent para todos os vizinhos desde que o ttl ainda seja maior do que zero...
                                     cd.ttl--;
-                                    System.out.println("Não sei onde é que está o ficheiro ...");
+                                    //System.out.println("Não sei onde é que está o ficheiro ...");
                                     if (cd.ttl != 0) {
                                         ArrayList<Nodo> nodos = nt.getNbrsN1();
                                         for (Nodo n : nodos)

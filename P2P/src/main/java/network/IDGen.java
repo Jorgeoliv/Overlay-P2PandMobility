@@ -90,11 +90,11 @@ public class IDGen {
         catch (Exception e) {
             e.printStackTrace();
         }*/
-        System.out.println("NEW NODE ID => " + id);
+        //System.out.println("NEW NODE ID => " + id);
         return id;
     }
 
-    private String newID(){//String macAddress){
+    private String newID(){
         String id= null;
         try {
             Random rand = new Random();
