@@ -126,7 +126,6 @@ public class FilePushHandler implements Runnable{
         if(fp.missingFileChunks == null) {
             int nfcReceivers = fp.portas.length;
             if(fp.len < 0) {
-
                 int packetsPerThread = (int) Math.ceil(fp.fi.numOfFileChunks / nfcReceivers);
 
                 int startPointer = 0, portPointer = 0;
@@ -164,12 +163,11 @@ public class FilePushHandler implements Runnable{
 
                 int packetsPerThread = fp.len / numOfThreads;
 
-
-
-                int startPointer = 0, portPointer = 0;
+                int startPointer = 0, portPointer = 0, startingID = fp.startingID;
 
                 while(startPointer < numOfThreads){
-                    fsPointer = new FileSender(f, ports.get(startPointer), startPointer * packetsPerThread, this.fileChunksToRead, packetsPerThread, null, fp.pps, id, fp.fi.hash, this.myNode, fp.origin.ip);
+                    int toPrint = startingID + (startPointer * packetsPerThread);
+                    fsPointer = new FileSender(f, ports.get(startPointer), startingID + startPointer * packetsPerThread, this.fileChunksToRead, packetsPerThread, null, fp.pps, id, fp.fi.hash, this.myNode, fp.origin.ip);
                     t = new Thread(fsPointer);
                     t.start();
                     startPointer++;
@@ -180,7 +178,6 @@ public class FilePushHandler implements Runnable{
         else{
             //menos threads porque são pacotes que estao a ser pedidos novamente (max 250 para ja)
             ArrayList<Integer> aux = getIDsFromFCIDStruct(fp.missingFileChunks);
-
             Random rand = new Random();
             int pos = rand.nextInt(fp.portas.length);
             int porta = fp.portas[pos];
@@ -197,7 +194,6 @@ public class FilePushHandler implements Runnable{
         this.fileInfos.put(fi.hash, fi);
         this.fileOwners.put(fi.hash, nodes);
         this.timeouts.put(fi.hash, 0);
-        System.out.println("HASH =====================> " + fi.hash);
     }
 
     public ArrayList<Integer> getPorts(String id, int numOfFileChunks) {
@@ -248,6 +244,7 @@ public class FilePushHandler implements Runnable{
         this.fileReceivers.remove(h);
         this.fileReceiversThreads.remove(h);
         this.timeouts.remove(h);
+        this.fileOwners.remove(h);
         this.ficheiros.remove(h);
         this.fileInfos.remove(h);
     }
@@ -375,7 +372,7 @@ public class FilePushHandler implements Runnable{
         if(percentage < 40){
             if(this.fileOwners.get(h).size() == 1) {
                 //CASO NAO TENHA PELO MENOS ESTA PERCENTAGEM IREI PEDIR O FICHEIRO TODO DE NOVO
-                FilePull fp = new FilePull(this.idGen.getID(""), this.myNode, this.fileInfos.get(h), portas, this.TimeOutpps, null, 1, 1);
+                FilePull fp = new FilePull(this.idGen.getID(""), this.myNode, this.fileInfos.get(h), portas, this.TimeOutpps, null);
 
                 ByteArrayOutputStream bStream = new ByteArrayOutputStream();
                 Output output = new Output(bStream);
@@ -417,22 +414,15 @@ public class FilePushHandler implements Runnable{
                 }
             }
             else{
-                PairNodoFileInfo pnfi = new PairNodoFileInfo(this.fileInfos.get(h), this.fileOwners.get(h));
 
-                for(Nodo n : fileOwners.get(h))
-                    System.out.println("NODE IP => " + n.ip);
-                System.out.println("HERE");
-                try {
-                    Thread.sleep(10000000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                this.fph.sendToMultipleNodes(pnfi, portas);
+                this.fph.sendToMultipleNodes(h, portas);
             }
         }
         else {
             ArrayList<Integer> mfcGroup = new ArrayList<Integer>();
             int mfcGroupSize = 1000;
+            ArrayList<Nodo> owners = this.fileOwners.get(h);
+            int ownerIterator = 0;
 
             while (!mfc.isEmpty()) {
 
@@ -446,9 +436,8 @@ public class FilePushHandler implements Runnable{
 
                 //System.out.println("FALTAM " + this.ficheiros.get(h).getNumberOfMissingFileChunks() + " de " + this.ficheiros.get(h).getNumberOfChunks());
 
-                FilePull fp = new FilePull(this.idGen.getID(""), this.myNode, this.fileInfos.get(h), portas, this.TimeOutpps, fcIDS, 0, -1);
+                FilePull fp = new FilePull(this.idGen.getID(""), this.myNode, this.fileInfos.get(h), portas, this.TimeOutpps, fcIDS);
 
-                ArrayList<Nodo> owners = this.fileOwners.get(h);
 
                 ByteArrayOutputStream bStream = new ByteArrayOutputStream();
                 Output output = new Output(bStream);
@@ -462,7 +451,6 @@ public class FilePushHandler implements Runnable{
                 boolean twoPackets = false;
                 int tries = 0;
                 int failures = 0;
-                int ownerIterator = 0;
 
                 while(!twoPackets && tries < 2 && failures < 10) {
                     try {
@@ -470,7 +458,7 @@ public class FilePushHandler implements Runnable{
                         DatagramSocket ds = new DatagramSocket();
                         DatagramPacket packet;
                         if(owners.size() == 1)
-                            packet = new DatagramPacket(serializedTimeoutPacket, serializedTimeoutPacket.length, InetAddress.getByName(this.fileOwners.get(h).get(0).ip), this.ucp_FilePullHandler);
+                            packet = new DatagramPacket(serializedTimeoutPacket, serializedTimeoutPacket.length, InetAddress.getByName(owners.get(0).ip), this.ucp_FilePullHandler);
                         else
                             packet = new DatagramPacket(serializedTimeoutPacket, serializedTimeoutPacket.length, InetAddress.getByName(owners.get(ownerIterator++).ip), this.ucp_FilePullHandler);
 

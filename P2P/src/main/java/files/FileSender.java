@@ -65,14 +65,13 @@ public class FileSender implements Runnable{
 
         ByteArrayOutputStream bStream = new ByteArrayOutputStream();
         Output output = new Output(bStream);
-
         Kryo kryo = new Kryo();
 
         kryo.writeClassAndObject(output, fp);
         output.close();
 
         byte[] serializedPing = bStream.toByteArray();
-        //System.out.println("TAMANHO DO DATAGRAM DO FILECUNK => " + serializedPing.length) ;
+
         try{
             DatagramPacket packet = new DatagramPacket(serializedPing, serializedPing.length, this.ipToSend, this.portToSend);
 

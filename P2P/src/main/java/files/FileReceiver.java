@@ -19,7 +19,6 @@ public class FileReceiver implements Runnable {
     private DatagramSocket ds;
 
     private ArrayList<FileChunk> fc;
-    private Kryo kryo;
 
     private ReentrantLock lock;
 
@@ -28,7 +27,6 @@ public class FileReceiver implements Runnable {
     public FileReceiver(){
         this.port = -1;
         boolean b = true;
-        this.kryo = new Kryo();
 
         this.lock = new ReentrantLock();
         this.fc = new ArrayList<FileChunk>();
@@ -62,7 +60,7 @@ public class FileReceiver implements Runnable {
                 dp = new DatagramPacket(buffer, buffer.length);
 
                 this.ds.receive(dp);
-
+                Kryo kryo = new Kryo();
                 ByteArrayInputStream bStream = new ByteArrayInputStream(buffer);
                 Input input = new Input(bStream);
                 Header header = (Header) kryo.readClassAndObject(input);

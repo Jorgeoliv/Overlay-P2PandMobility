@@ -15,12 +15,22 @@ public class FilePull extends Header {
 
     public FilePull(){super();}
 
-    public FilePull(String requestID, Nodo origin, FileInfo fi, int[] portas, int pps, FCIDStruct missingFileChunks, int startingID, int len) {
+    public FilePull(String requestID, Nodo origin, FileInfo fi, int[] portas, int pps, FCIDStruct missingFileChunks) {
         super(requestID, origin);
         this.fi = fi;
         this.portas = portas;
         this.pps = pps;
         this.missingFileChunks = missingFileChunks;
+        this.startingID = 0;
+        this.len = -1;
+    }
+
+    public FilePull(String requestID, Nodo origin, FileInfo fi, int[] portas, int pps, int startingID, int len) {
+        super(requestID, origin);
+        this.fi = fi;
+        this.portas = portas;
+        this.pps = pps;
+        this.missingFileChunks = null;
         this.startingID = startingID;
         this.len = len;
     }

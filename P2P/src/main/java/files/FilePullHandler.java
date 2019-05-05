@@ -16,6 +16,7 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Random;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -37,6 +38,7 @@ public class FilePullHandler implements Runnable{
 
     private ArrayList<String> ids = new ArrayList<String>();
     private DatagramSocket ds;
+    private HashMap<String, PairNodoFileInfo> pulling;
 
     public FilePullHandler(int ucp_FilePull, FilePushHandler fph, IDGen idGen, Nodo myNode){
         this.myNode = myNode;
@@ -45,6 +47,8 @@ public class FilePullHandler implements Runnable{
         this.fph = fph;
         this.idGen = idGen;
         this.ses = Executors.newSingleThreadScheduledExecutor();
+
+        this.pulling = new HashMap<String, PairNodoFileInfo>();
 
         try {
             this.ds = new DatagramSocket(this.ucp_FilePullHandler);
@@ -60,34 +64,43 @@ public class FilePullHandler implements Runnable{
         this.fph.sendFile(fp);
     }
 
-    public void sendToMultipleNodes(PairNodoFileInfo choice, int[] portas){
+    public void sendToMultipleNodes(String hash, int[] portas){
         Random rand = new Random();
+
+        PairNodoFileInfo choice = this.pulling.get(hash);
 
         ArrayList<Nodo> nodesToSend;
 
-        int packetsPerNode = (int) Math.ceil(choice.fileInfo.numOfFileChunks / choice.nodo.size());
+        int numOfNodes = (int)Math.ceil(choice.fileInfo.numOfFileChunks / this.len);
 
-        int numOfNodes = packetsPerNode / this.len;
 
-        if (numOfNodes == 0)
+        if (numOfNodes == 0) {
             numOfNodes = 1;
-        if (numOfNodes > choice.nodo.size())
+        }
+        if (numOfNodes > choice.nodo.size()) {
             numOfNodes = choice.nodo.size();
+        }
+
+        int packetsPerNode = (int) Math.ceil(choice.fileInfo.numOfFileChunks / numOfNodes);
 
         int pos;
-        if(numOfNodes <= choice.nodo.size()){
-            nodesToSend = new ArrayList<Nodo>();
-            while(nodesToSend.size() < numOfNodes) {
-                pos = rand.nextInt(choice.nodo.size());
-                nodesToSend.add(choice.nodo.get(pos));
-                choice.nodo.remove(pos);
+
+        if(numOfNodes < choice.nodo.size()){
+            nodesToSend = new ArrayList<Nodo>(choice.nodo);
+            while(nodesToSend.size() > numOfNodes) {
+                pos = rand.nextInt(nodesToSend.size());
+                nodesToSend.remove(pos);
             }
         }
         else
             nodesToSend = choice.nodo;
-
+        FilePull fp;
         for(int i = 0; i < numOfNodes; i++){
-            FilePull fp = new FilePull(this.idGen.getID(""), this.myNode, choice.fileInfo, portas, this.pps, null, packetsPerNode * i, this.len);
+
+            if(numOfNodes == 1)
+                fp = new FilePull(this.idGen.getID(""), this.myNode, choice.fileInfo, portas, this.pps, null);
+            else
+                fp = new FilePull(this.idGen.getID(""), this.myNode, choice.fileInfo, portas, this.pps, i*packetsPerNode, packetsPerNode);
 
             ByteArrayOutputStream bStream = new ByteArrayOutputStream();
             Output output = new Output(bStream);
@@ -134,6 +147,8 @@ public class FilePullHandler implements Runnable{
     }
 
     public void send(PairNodoFileInfo choice) {
+        this.pulling.put(choice.fileInfo.hash, choice);
+
         this.fph.registerFile(choice.fileInfo, choice.nodo);
 
         ArrayList<Integer> ports = this.fph.getPorts(choice.fileInfo.hash, choice.fileInfo.numOfFileChunks);
@@ -144,12 +159,10 @@ public class FilePullHandler implements Runnable{
             portas[i] = ports.get(i);
 
         if(choice.nodo.size()> 1) {
-            System.out.println("MUITOS NODOS");
-            sendToMultipleNodes(choice, portas);
+            sendToMultipleNodes(choice.fileInfo.hash, portas);
         }
         else {
-            System.out.println("SO 1 NODO");
-            FilePull fp = new FilePull(this.idGen.getID(""), this.myNode, choice.fileInfo, portas, this.pps, null, 0, -1);
+            FilePull fp = new FilePull(this.idGen.getID(""), this.myNode, choice.fileInfo, portas, this.pps, null);
 
             ByteArrayOutputStream bStream = new ByteArrayOutputStream();
             Output output = new Output(bStream);
