@@ -4,6 +4,7 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import mensagens.FilePush;
 import mensagens.Header;
+import network.Nodo;
 
 import java.io.ByteArrayInputStream;
 import java.net.DatagramPacket;
@@ -11,6 +12,7 @@ import java.net.DatagramSocket;
 import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.Random;
+import java.util.TreeSet;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class FileReceiver implements Runnable {
@@ -23,6 +25,7 @@ public class FileReceiver implements Runnable {
     private ReentrantLock lock;
 
     private boolean run = true;
+    public TreeSet<Nodo> nodes;
 
     public FileReceiver(){
         this.port = -1;
@@ -30,6 +33,8 @@ public class FileReceiver implements Runnable {
 
         this.lock = new ReentrantLock();
         this.fc = new ArrayList<FileChunk>();
+
+        this.nodes = new TreeSet<Nodo>();
 
         Random rand = new Random();
         while(b) {
@@ -68,6 +73,7 @@ public class FileReceiver implements Runnable {
 
                 if(header instanceof FilePush) {
                     this.lock.lock();
+                    nodes.add(header.origin);
                     this.fc.add(((FilePush) header).fc);
                     this.lock.unlock();
                 }
@@ -88,5 +94,15 @@ public class FileReceiver implements Runnable {
         this.lock.unlock();
 
         return fcPointer;
+    }
+
+    public TreeSet<Nodo> getNodes(){
+        TreeSet<Nodo> res;
+        this.lock.lock();
+        res = new TreeSet<Nodo>(this.nodes);
+        this.nodes.clear();
+        this.lock.unlock();
+
+        return res;
     }
 }

@@ -122,7 +122,7 @@ public class FileHandler implements Runnable {
             int i = 1;
             for (PairNodoFileInfo pnfi : aux) {
                 auxHash.put(pnfi.fileInfo.hash, pnfi);
-                System.out.println("\t" + i++ + ") Node " + pnfi.nodo.get(0).id + "( ip: " + pnfi.nodo.get(0).ip + " )" + "\n\t\tNome => " + pnfi.fileInfo.name + "\n\t\tHash => " + pnfi.fileInfo.hash + "\n\t\tTamanho => " + pnfi.fileInfo.fileSize + " bytes ( " + pnfi.fileInfo.numOfFileChunks + " FileChunks )\n");
+                System.out.println("\t" + i++ + ")\n\t\tNode " + pnfi.nodo.get(0).id + "( ip: " + pnfi.nodo.get(0).ip + " )" + "\n\t\tNome => " + pnfi.fileInfo.name + "\n\t\tHash => " + pnfi.fileInfo.hash + "\n\t\tTamanho => " + pnfi.fileInfo.fileSize + " bytes ( " + pnfi.fileInfo.numOfFileChunks + " FileChunks )\n");
             }
 
             for(PairNodoFileInfo p : aux){
@@ -141,12 +141,13 @@ public class FileHandler implements Runnable {
 
             for(PairNodoFileInfo p : auxHash.values()){
                 newPnfi = sameFile.get(p.fileInfo.hash);
-                System.out.print("\t" + i++ + ")");
-                for(Nodo n : newPnfi.nodo) {
-                    System.out.println("Node " + n.id + "( ip: " + n.ip + " )");
-                    System.out.print("\t\t");
+                if(newPnfi.nodo.size() > 1) {
+                    System.out.println("\t" + i++ + ")");
+                    for (Nodo n : newPnfi.nodo) {
+                        System.out.println("\t\tNode " + n.id + "( ip: " + n.ip + " )");
+                    }
+                    System.out.print("\t\tNome => " + p.fileInfo.name + "\n\t\tHash => " + p.fileInfo.hash + "\n\t\tTamanho => " + p.fileInfo.fileSize + " bytes ( " + p.fileInfo.numOfFileChunks + " FileChunks )\n");
                 }
-                System.out.print("Nome => " + p.fileInfo.name + "\n\t\tHash => " + p.fileInfo.hash + "\n\t\tTamanho => " + p.fileInfo.fileSize + " bytes ( " + p.fileInfo.numOfFileChunks + " FileChunks )\n");
             }
 
             aux.addAll(sameFile.values());

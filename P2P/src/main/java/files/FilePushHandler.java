@@ -12,10 +12,7 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Random;
+import java.util.*;
 
 public class FilePushHandler implements Runnable{
 
@@ -38,6 +35,7 @@ public class FilePushHandler implements Runnable{
     private HashMap<String, ArrayList <FileReceiver>> fileReceivers;
     private HashMap<String, ArrayList <Thread>> fileReceiversThreads;
     private HashMap<String, Integer> timeouts;
+    private HashMap<String, HashMap<String, Integer>> nodeTimeOut;
 
     private int TimeOutpps = 200;
     private int fileChunksToRead = 1000;
@@ -62,6 +60,7 @@ public class FilePushHandler implements Runnable{
         this.fileReceivers = new HashMap<String, ArrayList<FileReceiver>>();
         this.fileReceiversThreads = new HashMap<String, ArrayList<Thread>>();
         this.timeouts = new HashMap<String, Integer>();
+        this.nodeTimeOut = new HashMap<String, HashMap<String, Integer>>();
 
         this.ft = ft;
         this.fh = fh;
@@ -194,6 +193,13 @@ public class FilePushHandler implements Runnable{
         this.fileInfos.put(fi.hash, fi);
         this.fileOwners.put(fi.hash, nodes);
         this.timeouts.put(fi.hash, 0);
+
+        HashMap<String, Integer> aux = new HashMap<String, Integer>();
+
+        for(Nodo n : nodes)
+            aux.put(n.id, 0);
+
+        this.nodeTimeOut.put(fi.hash, aux);
     }
 
     public ArrayList<Integer> getPorts(String id, int numOfFileChunks) {
@@ -247,6 +253,7 @@ public class FilePushHandler implements Runnable{
         this.fileOwners.remove(h);
         this.ficheiros.remove(h);
         this.fileInfos.remove(h);
+        this.fph.removePullRequest(h);
     }
 
     private FCIDStruct getFCIDStruct(ArrayList<Integer> mfcGroup){
@@ -414,8 +421,14 @@ public class FilePushHandler implements Runnable{
                 }
             }
             else{
-
-                this.fph.sendToMultipleNodes(h, portas);
+                ArrayList<String> nodesToSend = new ArrayList<String>();
+                HashMap<String, Integer> ndTO = this.nodeTimeOut.get(h);
+                for(String id : ndTO.keySet()){
+                    if(ndTO.get(id) < 5){
+                        nodesToSend.add(id);
+                    }
+                }
+                this.fph.sendToMultipleNodes(h, portas, nodesToSend);
             }
         }
         else {
@@ -491,6 +504,27 @@ public class FilePushHandler implements Runnable{
         }
     }
 
+
+    private void incrementNodeTimeouts(TreeSet<Nodo> aliveNodes, String hash) {
+        HashMap<String, Integer> ndTO = this.nodeTimeOut.get(hash);
+        ArrayList<String> aux = new ArrayList<String>();
+
+        for(Nodo n: aliveNodes)
+            aux.add(n.id);
+
+        int to;
+        for(String id : ndTO.keySet()){
+            if(!aux.contains(id)) {
+                to = ndTO.get(id);
+                ndTO.put(id, to++);
+            }
+            else
+                ndTO.put(id, 0);
+        }
+
+        this.nodeTimeOut.put(hash, ndTO);
+    }
+
     public void kill(){
         this.run = false;
     }
@@ -499,6 +533,7 @@ public class FilePushHandler implements Runnable{
         Ficheiro filePointer;
         ArrayList<FileReceiver> fRPointer;
         ArrayList<FileChunk> fCPointer;
+        TreeSet<Nodo> aliveNodes = new TreeSet<Nodo>();
         ArrayList<String> toRemove = new ArrayList<String>();
 
         int packets = 0, to, i, tam;
@@ -511,10 +546,14 @@ public class FilePushHandler implements Runnable{
 
                     for (FileReceiver fr : fRPointer) {
                         fCPointer = fr.getFileChunks();
+                        aliveNodes.addAll(fr.getNodes());
+
                         if (fCPointer.size() > 0)
                             filePointer.addFileChunks(fCPointer);
                         packets += fCPointer.size();
                     }
+
+                    incrementNodeTimeouts(aliveNodes, h);
 
                     if (packets == 0 && !filePointer.getFull()) {
                         to = this.timeouts.get(h) + 1;

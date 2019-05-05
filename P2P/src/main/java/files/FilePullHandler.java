@@ -58,17 +58,31 @@ public class FilePullHandler implements Runnable{
 
     }
 
+    public void removePullRequest(String hash){
+        this.pulling.remove(hash);
+    }
+
     private void processFPH(FilePull fp) {
 
         //System.out.println("RECEBI O FILEPULL " + "\n\t" + fp.fi.name + "\n\t" + fp.fi.hash);
         this.fph.sendFile(fp);
     }
 
-    public void sendToMultipleNodes(String hash, int[] portas){
+    public void sendToMultipleNodes(String hash, int[] portas, ArrayList<String> nodes){
         Random rand = new Random();
 
         PairNodoFileInfo choice = this.pulling.get(hash);
 
+        ArrayList<Nodo> nodos;
+        if(nodes == null)
+            nodos = choice.nodo;
+        else {
+            nodos = new ArrayList<Nodo>();
+            for(Nodo n : choice.nodo){
+                if(nodes.contains(n.id))
+                    nodos.add(n);
+            }
+        }
         ArrayList<Nodo> nodesToSend;
 
         int numOfNodes = (int)Math.ceil(choice.fileInfo.numOfFileChunks / this.len);
@@ -159,7 +173,7 @@ public class FilePullHandler implements Runnable{
             portas[i] = ports.get(i);
 
         if(choice.nodo.size()> 1) {
-            sendToMultipleNodes(choice.fileInfo.hash, portas);
+            sendToMultipleNodes(choice.fileInfo.hash, portas, null);
         }
         else {
             FilePull fp = new FilePull(this.idGen.getID(""), this.myNode, choice.fileInfo, portas, this.pps, null);
