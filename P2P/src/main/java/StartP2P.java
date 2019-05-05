@@ -1,6 +1,7 @@
 import java.io.*;
 import java.net.*;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import files.*;
 import network.*;
@@ -65,6 +66,19 @@ public class StartP2P {
 
     }
 
+    private static void printDownloadsInProgress(FileHandler fh){
+        HashMap<String, Ficheiro> dnl = fh.getDownloadsInProgress();
+        int filechunksDonloaded;
+        int totalFilechunks;
+        Ficheiro f;
+
+        for(String name : dnl.keySet()){
+            f = dnl.get(name);
+            totalFilechunks = f.getNumberOfChunks();
+            filechunksDonloaded = totalFilechunks - f.getNumberOfMissingFileChunks();
+            System.out.println("Name => " + name + " ( " + (filechunksDonloaded / totalFilechunks) + "% )");
+        }
+    }
 
     private static void printNBR(NetworkHandler nh) {
 
@@ -143,14 +157,15 @@ public class StartP2P {
                     //e.printStackTrace();
                 }
             }
-            System.out.println("*********** MENU ******************");
-            System.out.println("*    1 - Upload Ficheiro          *");
-            System.out.println("*    2 - Download Ficheiro        *");
-            System.out.println("*    3 - Consultar Vizinhos       *");
-            System.out.println("*    4 - Consultar meu Conteúdo   *");
-            System.out.println("*    5 - Conteúdo dos Vizinhos    *");
-            System.out.println("*        Outro para sair          *");
-            System.out.println("***********************************");
+            System.out.println("*********** MENU *******************");
+            System.out.println("*    1 - Upload Ficheiro           *");
+            System.out.println("*    2 - Download Ficheiro         *");
+            System.out.println("*    3 - Consultar Vizinhos        *");
+            System.out.println("*    4 - Consultar meu Conteúdo    *");
+            System.out.println("*    5 - Conteúdo dos Vizinhos     *");
+            System.out.println("*    6 - Downloads em Progresso    *");
+            System.out.println("*        Outro para sair           *");
+            System.out.println("************************************");
             System.out.print("Opção: ");
 
             boolean c = false;
@@ -171,6 +186,7 @@ public class StartP2P {
                 case 3: printNBR(nh); break;
                 case 4: printMyContent(fh); break;
                 case 5: printNBRContent(fh); break;
+                case 6: printDownloadsInProgress(fh); break;
                 default: sair = true;
             }
         }

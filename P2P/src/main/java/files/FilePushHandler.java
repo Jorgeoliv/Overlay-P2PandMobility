@@ -140,7 +140,7 @@ public class FilePushHandler implements Runnable{
             else{
                 Random rand = new Random();
 
-                int numOfThreads = fp.len / 4000;
+                int numOfThreads = (int) Math.ceil((fp.len / 4000) + 0.5);
                 ArrayList<Integer> ports = new ArrayList<Integer>();
 
                 for(int a : fp.portas)
@@ -163,10 +163,17 @@ public class FilePushHandler implements Runnable{
                 int packetsPerThread = fp.len / numOfThreads;
 
                 int startPointer = 0, portPointer = 0, startingID = fp.startingID;
+                int read = 0;
 
                 while(startPointer < numOfThreads){
-                    int toPrint = startingID + (startPointer * packetsPerThread);
-                    fsPointer = new FileSender(f, ports.get(startPointer), startingID + startPointer * packetsPerThread, this.fileChunksToRead, packetsPerThread, null, fp.pps, id, fp.fi.hash, this.myNode, fp.origin.ip);
+                    if((startPointer) * packetsPerThread > fp.len) {
+                        read = fp.len - (startPointer * packetsPerThread);
+                    }
+                    else {
+                        read = packetsPerThread;
+                    }
+                    System.out.println("READ => " + read + " | " + packetsPerThread);
+                    fsPointer = new FileSender(f, ports.get(startPointer), startingID + startPointer * packetsPerThread, this.fileChunksToRead, read, null, fp.pps, id, fp.fi.hash, this.myNode, fp.origin.ip);
                     t = new Thread(fsPointer);
                     t.start();
                     startPointer++;
@@ -504,6 +511,9 @@ public class FilePushHandler implements Runnable{
         }
     }
 
+    public HashMap<String, Ficheiro> getFicheiros() {
+        return this.ficheiros;
+    }
 
     private void incrementNodeTimeouts(TreeSet<Nodo> aliveNodes, String hash) {
         HashMap<String, Integer> ndTO = this.nodeTimeOut.get(hash);

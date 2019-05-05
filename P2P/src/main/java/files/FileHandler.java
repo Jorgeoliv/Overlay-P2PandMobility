@@ -295,6 +295,10 @@ public class FileHandler implements Runnable {
         return this.fileTables.getNBRFileInfo();
     }
 
+    public HashMap<String, Ficheiro> getDownloadsInProgress(){
+        return this.filePushHandler.getFicheiros();
+    }
+
     public void kill() {
         try {
 

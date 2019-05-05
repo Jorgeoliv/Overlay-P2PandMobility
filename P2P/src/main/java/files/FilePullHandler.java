@@ -95,8 +95,7 @@ public class FilePullHandler implements Runnable{
             numOfNodes = choice.nodo.size();
         }
 
-        int packetsPerNode = (int) Math.ceil(choice.fileInfo.numOfFileChunks / numOfNodes);
-
+        int packetsPerNode = (int) Math.ceil((choice.fileInfo.numOfFileChunks / numOfNodes) + 0.5);
         int pos;
 
         if(numOfNodes < choice.nodo.size()){
@@ -109,12 +108,21 @@ public class FilePullHandler implements Runnable{
         else
             nodesToSend = choice.nodo;
         FilePull fp;
+        int range;
         for(int i = 0; i < numOfNodes; i++){
 
             if(numOfNodes == 1)
                 fp = new FilePull(this.idGen.getID(""), this.myNode, choice.fileInfo, portas, this.pps, null);
-            else
-                fp = new FilePull(this.idGen.getID(""), this.myNode, choice.fileInfo, portas, this.pps, i*packetsPerNode, packetsPerNode);
+            else {
+                if(i * packetsPerNode + packetsPerNode < choice.fileInfo.numOfFileChunks) {
+                    range = packetsPerNode;
+                }
+                else {
+                    range = choice.fileInfo.numOfFileChunks - (i * packetsPerNode);
+                }
+                System.out.println("QUERO DESDE " + (i * packetsPerNode) + " | " + range + " | " + Integer.MIN_VALUE);
+                fp = new FilePull(this.idGen.getID(""), this.myNode, choice.fileInfo, portas, this.pps, i * packetsPerNode,range);
+            }
 
             ByteArrayOutputStream bStream = new ByteArrayOutputStream();
             Output output = new Output(bStream);

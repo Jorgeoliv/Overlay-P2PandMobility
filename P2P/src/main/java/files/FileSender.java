@@ -130,7 +130,7 @@ public class FileSender implements Runnable{
 
                 if((this.mfc == null) && flag &&  (this.fcToSend.size() < 500)){
 
-                    if(counter + this.len < this.pPT){
+                    if(read + this.len < this.pPT){
                         //System.out.println("VOU LER " + this.len + " | " + this.startID);
                         tmp = this.f.getFileChunks(startID, this.len);
                         this.startID += this.len;
