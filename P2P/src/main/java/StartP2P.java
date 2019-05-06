@@ -68,6 +68,7 @@ public class StartP2P {
 
     private static void printDownloadsInProgress(FileHandler fh){
         HashMap<String, Ficheiro> dnl = fh.getDownloadsInProgress();
+
         int filechunksDonloaded;
         int totalFilechunks;
         Ficheiro f;
@@ -76,7 +77,7 @@ public class StartP2P {
             f = dnl.get(name);
             totalFilechunks = f.getNumberOfChunks();
             filechunksDonloaded = totalFilechunks - f.getNumberOfMissingFileChunks();
-            System.out.println("Name => " + name + " ( " + (filechunksDonloaded / totalFilechunks) + "% )");
+            System.out.println("Name => " + name + " ( " + ((float)filechunksDonloaded*100 / (float)totalFilechunks) + "% )");
         }
     }
 

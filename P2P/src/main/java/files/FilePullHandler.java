@@ -109,6 +109,7 @@ public class FilePullHandler implements Runnable{
             nodesToSend = choice.nodo;
         FilePull fp;
         int range;
+        int multipleNodesPPS = 2*this.pps/3;
         for(int i = 0; i < numOfNodes; i++){
 
             if(numOfNodes == 1)
@@ -120,8 +121,8 @@ public class FilePullHandler implements Runnable{
                 else {
                     range = choice.fileInfo.numOfFileChunks - (i * packetsPerNode);
                 }
-                System.out.println("QUERO DESDE " + (i * packetsPerNode) + " | " + range + " | " + Integer.MIN_VALUE);
-                fp = new FilePull(this.idGen.getID(""), this.myNode, choice.fileInfo, portas, this.pps, i * packetsPerNode,range);
+                System.out.println("QUERO DESDE " + (i * packetsPerNode) + " | RANGE => " + range + " | PPS => " + multipleNodesPPS);
+                fp = new FilePull(this.idGen.getID(""), this.myNode, choice.fileInfo, portas, multipleNodesPPS, i * packetsPerNode,range);
             }
 
             ByteArrayOutputStream bStream = new ByteArrayOutputStream();
@@ -132,7 +133,6 @@ public class FilePullHandler implements Runnable{
             output.close();
 
             byte[] serializedPing = bStream.toByteArray();
-            //System.out.println("É ISTO QUE QUERO VER!!!!!!!!!!!!!!!!!!!!!!" + serializedPing.length);
 
             boolean twoPackets = false;
             int tries = 0;
@@ -151,7 +151,6 @@ public class FilePullHandler implements Runnable{
                     Thread.sleep(50);
                     ds.send(packet);
 
-                    //System.out.println("ENVIEI O FILEPULL " + "\n\t" + choice.nodo.ip + "\n\t" + this.ucp_FilePullHandler + "\n\t" + choice.fileInfo.hash);
                     this.fph.startReceivers(choice.fileInfo.hash);
                 } catch (IOException e) {
                     System.out.println("\t=======>Network is unreachable");

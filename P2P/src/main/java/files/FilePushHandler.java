@@ -373,7 +373,7 @@ public class FilePushHandler implements Runnable{
         int totalNumOfFileChunks = f.getNumberOfChunks();
 
         //PERCENTAGEM DE PACOTES QUE TENHO
-        int percentage = (totalNumOfFileChunks - mfc.size()) * 100 / totalNumOfFileChunks;
+        float percentage = (float)(totalNumOfFileChunks - mfc.size()) * 100 / (float)totalNumOfFileChunks;
         System.out.println("Transferência de " + h + " em curso (" + percentage + "%)");
 
         //OBTER AS PORTAS QUE ESTAO A RECEBER O FICHEIRO
@@ -435,7 +435,12 @@ public class FilePushHandler implements Runnable{
                         nodesToSend.add(id);
                     }
                 }
-                this.fph.sendToMultipleNodes(h, portas, nodesToSend);
+
+                if(nodesToSend.size() > 0)
+                    this.fph.sendToMultipleNodes(h, portas, nodesToSend);
+                else
+                    this.fph.sendToMultipleNodes(h, portas, null);
+
             }
         }
         else {

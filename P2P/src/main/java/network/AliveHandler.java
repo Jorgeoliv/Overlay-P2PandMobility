@@ -248,9 +248,9 @@ public class AliveHandler implements Runnable {
             DatagramPacket dp;
 
             //schedulers
-            this.ses.scheduleAtFixedRate(sendAlive, 0, 20, TimeUnit.SECONDS);
-            this.ses.scheduleAtFixedRate(emptyAliveTray, 1, 20, TimeUnit.SECONDS);
-            this.ses.scheduleAtFixedRate(upAll, 59, 20, TimeUnit.SECONDS);
+            this.ses.scheduleAtFixedRate(sendAlive, 0, 10, TimeUnit.SECONDS);
+            this.ses.scheduleAtFixedRate(emptyAliveTray, 0, 10, TimeUnit.SECONDS);
+            this.ses.scheduleAtFixedRate(upAll, 10, 10, TimeUnit.SECONDS);
 
             Kryo kryo = new Kryo();
 
