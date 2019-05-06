@@ -149,7 +149,7 @@ public class Ficheiro {
     }
 
     public ArrayList<FileChunk> getFileChunks(int start, int len){
-        System.out.println("QUERO DESDE " + start + " ATÉ " + (start + len) + " ( " + len + " )");
+        //System.out.println("QUERO DESDE " + start + " ATÉ " + (start + len) + " ( " + len + " )");
         start += Integer.MIN_VALUE;
         String tmpFolder = "NODE_" + this.nodeID + "/tmp/" + this.fileName;
 

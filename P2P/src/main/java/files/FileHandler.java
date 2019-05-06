@@ -95,7 +95,7 @@ public class FileHandler implements Runnable {
         while (!c) {
             try {
                 opcao = Integer.parseInt(inP.readLine());
-                if(opcao >= 1 && opcao < max)
+                if(opcao >= 0 && opcao < max)
                     c = true;
                 else
                     System.out.println("\nTente novamente: ");
@@ -106,7 +106,10 @@ public class FileHandler implements Runnable {
             }
         }
 
-        return aux.get(opcao-1);
+        if(opcao != 0)
+            return aux.get(opcao-1);
+        else
+            return null;
     }
 
     private void analisaCD(String id, String file){
@@ -150,12 +153,15 @@ public class FileHandler implements Runnable {
                 }
             }
 
+            System.out.println("\t0 Para Cancelar");
+
             aux.addAll(sameFile.values());
 
             PairNodoFileInfo choice = fileChoice(i, aux);
 
             this.cdResponses.remove(id);
-            this.filePullHandler.send(choice);
+            if(choice != null)
+                this.filePullHandler.send(choice);
         }
         else
             System.out.println("\nA SUA PESQUISA POR " + file + " NÃO RETURNOU NENHUM RESULTADO\n");

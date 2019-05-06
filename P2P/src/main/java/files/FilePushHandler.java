@@ -160,19 +160,19 @@ public class FilePushHandler implements Runnable{
                     }
                 }
 
-                int packetsPerThread = fp.len / numOfThreads;
+                int packetsPerThread = (int) Math.ceil((fp.len / numOfThreads) + 0.5);
 
                 int startPointer = 0, portPointer = 0, startingID = fp.startingID;
                 int read = 0;
 
                 while(startPointer < numOfThreads){
-                    if((startPointer) * packetsPerThread > fp.len) {
+                    if((startPointer + 1) * packetsPerThread > fp.len) {
                         read = fp.len - (startPointer * packetsPerThread);
                     }
                     else {
                         read = packetsPerThread;
                     }
-                    System.out.println("READ => " + read + " | " + packetsPerThread);
+                    //System.out.println("READ => " + read + " | " + packetsPerThread);
                     fsPointer = new FileSender(f, ports.get(startPointer), startingID + startPointer * packetsPerThread, this.fileChunksToRead, read, null, fp.pps, id, fp.fi.hash, this.myNode, fp.origin.ip);
                     t = new Thread(fsPointer);
                     t.start();

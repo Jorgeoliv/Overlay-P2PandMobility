@@ -165,7 +165,7 @@ public class StartP2P {
             System.out.println("*    4 - Consultar meu Conteúdo    *");
             System.out.println("*    5 - Conteúdo dos Vizinhos     *");
             System.out.println("*    6 - Downloads em Progresso    *");
-            System.out.println("*        Outro para sair           *");
+            System.out.println("*    0 - Outro para sair           *");
             System.out.println("************************************");
             System.out.print("Opção: ");
 
@@ -188,7 +188,8 @@ public class StartP2P {
                 case 4: printMyContent(fh); break;
                 case 5: printNBRContent(fh); break;
                 case 6: printDownloadsInProgress(fh); break;
-                default: sair = true;
+                case 0: sair = true;
+                default: break;
             }
         }
         nh.sendBroadcastQuit();

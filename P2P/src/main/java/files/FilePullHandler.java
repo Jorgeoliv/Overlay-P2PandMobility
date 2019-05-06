@@ -74,6 +74,7 @@ public class FilePullHandler implements Runnable{
         PairNodoFileInfo choice = this.pulling.get(hash);
 
         ArrayList<Nodo> nodos;
+
         if(nodes == null)
             nodos = choice.nodo;
         else {
@@ -110,6 +111,7 @@ public class FilePullHandler implements Runnable{
         FilePull fp;
         int range;
         int multipleNodesPPS = 2*this.pps/3;
+        int total = 0;
         for(int i = 0; i < numOfNodes; i++){
 
             if(numOfNodes == 1)
@@ -121,7 +123,8 @@ public class FilePullHandler implements Runnable{
                 else {
                     range = choice.fileInfo.numOfFileChunks - (i * packetsPerNode);
                 }
-                System.out.println("QUERO DESDE " + (i * packetsPerNode) + " | RANGE => " + range + " | PPS => " + multipleNodesPPS);
+                total += range;
+                //System.out.println("QUERO DESDE " + (i * packetsPerNode) + " | RANGE => " + range + " | PPS => " + multipleNodesPPS);
                 fp = new FilePull(this.idGen.getID(""), this.myNode, choice.fileInfo, portas, multipleNodesPPS, i * packetsPerNode,range);
             }
 
@@ -165,6 +168,7 @@ public class FilePullHandler implements Runnable{
                 }
             }
         }
+        //System.out.println("TOTAL IDS => " + total + " / " + choice.fileInfo.numOfFileChunks + " | PACKETSPERNODE => " + packetsPerNode);
     }
 
     public void send(PairNodoFileInfo choice) {

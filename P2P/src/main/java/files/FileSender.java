@@ -70,10 +70,10 @@ public class FileSender implements Runnable{
         kryo.writeClassAndObject(output, fp);
         output.close();
 
-        byte[] serializedPing = bStream.toByteArray();
+        byte[] serializedfc = bStream.toByteArray();
 
         try{
-            DatagramPacket packet = new DatagramPacket(serializedPing, serializedPing.length, this.ipToSend, this.portToSend);
+            DatagramPacket packet = new DatagramPacket(serializedfc, serializedfc.length, this.ipToSend, this.portToSend);
 
             this.ds.send(packet);
         }
