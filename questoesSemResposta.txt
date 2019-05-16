@@ -1,8 +1,0 @@
-- PRECISO VER MULTICAST (junção de grupos, inicio da rede)
-
-====> Fazer parsing das mensagens ou então, em algumas, dividir em diferentes portas? 
-    Ver qual a melhor estratégia, colocar os prós e contras (pensar neste aspeto)
-
-- SELEÇÃO DOS VIZINHOS
-
-- AO PEDIR FICHEIRO, MANDAR PELA REDE P2P E FAZER UM MULTICAST???????
